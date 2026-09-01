@@ -19,16 +19,29 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import unittest
 from typing import Any
+from unittest import mock
 
 import orjson
 import shapely.geometry
 
+from eodag.api.collection import Collection, CollectionsDict
+from eodag.config import ProviderConfig
 from eodag.databases.sqlite import (
     SQLiteDatabase,
+    _adapt_collection,
+    _adapt_dict,
+    _convert_collection,
+    _convert_dict,
+    _make_spatial_func,
+    _st_makeenvelope,
+    _strip_accents,
+    create_collections_federation_backends_table,
     create_collections_table,
+    create_federation_backends_table,
     register_custom_functions,
 )
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
@@ -49,7 +62,7 @@ def _norm(sql: str) -> str:
 #   FOUR  - no license / tags / count / score,    open-ended temporal
 # ---------------------------------------------------------------------------
 
-COLLECTIONS = [
+COLLECTIONS: list[dict[str, Any]] = [
     {
         "type": "Collection",
         "id": "ONE",
@@ -189,7 +202,8 @@ def _arith(arith_op: str, prop: str, operand, cmp_op: str, value):
 
 def _make_coll_fb(provider: str, collection_id: str) -> tuple[str, str, dict]:
     """Create a (collection_id, fb_name, plugins_config) tuple for the
-    private :meth:`SQLiteDatabase._upsert_collections_federation_backends`."""
+    private :meth:`SQLiteDatabase._upsert_collections_federation_backends`.
+    """
     return (collection_id, provider, {"search": {"type": "StacSearch"}})
 
 
@@ -223,6 +237,8 @@ class TestCQL2JsonToSql(unittest.TestCase):
     A single in-memory database is created once for the entire class,
     loaded with :data:`COLLECTIONS`.
     """
+
+    conn: sqlite3.Connection
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -832,6 +848,8 @@ class TestStacQToFts5(unittest.TestCase):
     so the FTS index is populated exactly as in production.
     """
 
+    conn: sqlite3.Connection
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.conn = _make_fts_conn(FTS_COLLECTIONS)
@@ -1107,6 +1125,8 @@ class TestCollectionsSearch(unittest.TestCase):
     datetime, limit, q, cql2, and their combinations.
     """
 
+    db: SQLiteDatabase
+
     @classmethod
     def setUpClass(cls) -> None:
         # Use a fresh in-memory SQLite DB (faster and isolated between tests)
@@ -1375,6 +1395,23 @@ class TestCollectionsSearch(unittest.TestCase):
                 self.assertSetEqual(set(self._ids(result)), expected_ids)
                 self.assertEqual(self._matched(result), expected_matched)
 
+    def test_ids_filter_keeps_with_fbs_only_constraint(self):
+        """Ids filtering must not bypass the default federation backend constraint."""
+        result_all = self.db.collections_search(
+            ids=["ONE", "THREE"], with_fbs_only=False
+        )
+        self.assertSetEqual({c["id"] for c in result_all[0]}, {"ONE", "THREE"})
+        self.assertEqual(result_all[1], 2)
+
+        result_with_backends = self.db.collections_search(ids=["ONE", "THREE"])
+        self.assertEqual([c["id"] for c in result_with_backends[0]], ["ONE"])
+        self.assertEqual(result_with_backends[1], 1)
+
+    def test_empty_q_is_ignored(self):
+        """Blank free-text search must behave like no q parameter."""
+        result = self.db.collections_search(q="   ", with_fbs_only=False)
+        self.assertEqual(result[1], len(COLLECTIONS))
+
     def test_federation_backends_denormalization_update(self):
         """Adding backends incrementally keeps the denormalized column in sync."""
         # Use a fresh in-memory SQLite DB (faster and isolated between tests)
@@ -1409,17 +1446,383 @@ class TestCollectionsSearch(unittest.TestCase):
         db.close()
 
 
-class TestDeleteFederationBackends(unittest.TestCase):
-    """Tests for :meth:`SQLiteDatabase.delete_federation_backends`."""
+def _collection(collection_id: str, **kwargs: Any) -> Collection:
+    """Build a minimal Collection using the public model constructor."""
+    return Collection(id=collection_id, title=collection_id, **kwargs)
+
+
+def _collection_from_fixture(data: dict[str, Any], **overrides: Any) -> Collection:
+    """Build a Collection from a fixture without injecting private _id data."""
+    collection_data = {key: value for key, value in data.items() if key != "_id"}
+    collection_data.update(overrides)
+    return Collection(**collection_data)
+
+
+def _collections_dict(*collections: Collection) -> CollectionsDict:
+    """Build the typed collection container expected by upsert_collections."""
+    return CollectionsDict(list(collections))
+
+
+def _make_memory_db(collections: list[dict[str, Any]] | None = None) -> SQLiteDatabase:
+    """Create an in-memory SQLite database for method-level tests."""
+    db = SQLiteDatabase(":memory:")
+    if collections:
+        db.upsert_collections(
+            CollectionsDict([_collection_from_fixture(item) for item in collections])
+        )
+    return db
+
+
+def _provider_config(mapping: dict[str, Any]) -> ProviderConfig:
+    """Create the concrete ProviderConfig expected by upsert_fb_configs."""
+    return ProviderConfig.from_mapping(mapping)
+
+
+class TestSQLiteModuleHelpers(unittest.TestCase):
+    """Tests for SQLite helper functions used by SQLiteDatabase."""
+
+    def test__adapt_collection_stores_internal_id_separately(self):
+        """_adapt_collection stores alias as id and private id as _id."""
+        collection = _collection(
+            "S2_MSI_L1C",
+            alias="S2_MSI_ALIAS",
+            **{"federation:backends": ["backend_a"]},
+        )
+
+        adapted = _adapt_collection(collection)
+        stored = orjson.loads(adapted)
+
+        self.assertEqual(stored["id"], "S2_MSI_ALIAS")
+        self.assertEqual(stored["_id"], "S2_MSI_L1C")
+        self.assertNotIn("federation:backends", stored)
+        self.assertNotIn("federation_backends", stored)
+
+    def test__convert_collection_restores_internal_id_as_id(self):
+        """_convert_collection remaps stored _id to id for Collection rebuilds."""
+        stored = {"id": "S2_MSI_ALIAS", "_id": "S2_MSI_L1C", "title": "S2"}
+
+        converted = _convert_collection(orjson.dumps(stored))
+
+        self.assertEqual(converted["id"], "S2_MSI_L1C")
+        self.assertNotIn("_id", converted)
+
+    def test__adapt_dict_and__convert_dict_roundtrip_json(self):
+        """Dict adapters round-trip nested JSON values."""
+        original = {"search": {"type": "StacSearch"}, "priority": 1}
+
+        adapted = _adapt_dict(original)
+        adapted_bytes = adapted if isinstance(adapted, bytes) else adapted.encode()
+
+        self.assertDictEqual(_convert_dict(adapted_bytes), original)
+
+    def test_text_and_spatial_helpers(self):
+        """Text, envelope, and spatial helpers expose deterministic behavior."""
+        envelope = _st_makeenvelope(0.0, 0.0, 10.0, 10.0)
+        point = orjson.dumps({"type": "Point", "coordinates": [5.0, 5.0]}).decode()
+        intersects = _make_spatial_func("intersects")
+
+        self.assertEqual(_strip_accents("Région de Chișinău"), "Region de Chisinau")
+        self.assertEqual(orjson.loads(envelope)["type"], "Polygon")
+        self.assertEqual(intersects(envelope, point), 1)
+        self.assertIsNone(intersects(None, point))
+
+    def test_register_custom_functions(self):
+        """register_custom_functions installs SQL functions used by CQL2 queries."""
+        con = sqlite3.connect(":memory:")
+        try:
+            register_custom_functions(con)
+            envelope = con.execute("SELECT st_makeenvelope(0, 0, 10, 10)").fetchone()[0]
+            point = orjson.dumps({"type": "Point", "coordinates": [5, 5]}).decode()
+
+            row = con.execute(
+                "SELECT strip_accents(?), div(7, 2), div(7, 0), st_intersects(?, ?)",
+                ("Région", envelope, point),
+            ).fetchone()
+
+            self.assertEqual(row, ("Region", 3, None, 1))
+        finally:
+            con.close()
+
+    def test_create_collections_table_creates_indexes_and_triggers(self):
+        """create_collections_table creates searchable collection side tables."""
+        con = sqlite3.connect(":memory:")
+        try:
+            create_collections_table(con)
+            # A second call must not fail because the helper uses
+            # CREATE ... IF NOT EXISTS for the table, indexes, and triggers.
+            create_collections_table(con)
+
+            collection = dict(COLLECTIONS[0])
+            con.execute(
+                "INSERT INTO collections (content) VALUES (jsonb(?))",
+                (orjson.dumps(collection),),
+            )
+
+            indexed_bbox_count = con.execute(
+                "SELECT COUNT(*) FROM collections_rtree"
+            ).fetchone()[0]
+            fts_match_count = con.execute(
+                "SELECT COUNT(*) FROM collections_fts WHERE collections_fts MATCH ?",
+                ('"optical"',),
+            ).fetchone()[0]
+            self.assertEqual(indexed_bbox_count, 1)
+            self.assertEqual(fts_match_count, 1)
+
+            updated = dict(collection)
+            updated["title"] = "Updated title"
+            updated["extent"] = {
+                "spatial": {"bbox": [[100.0, 100.0, 110.0, 110.0]]},
+                "temporal": collection["extent"]["temporal"],
+            }
+            con.execute(
+                "UPDATE collections SET content = jsonb(?) WHERE id = 'ONE'",
+                (orjson.dumps(updated),),
+            )
+
+            minx = con.execute("SELECT minx FROM collections_rtree").fetchone()[0]
+            updated_fts_count = con.execute(
+                "SELECT COUNT(*) FROM collections_fts WHERE collections_fts MATCH ?",
+                ('"updated"',),
+            ).fetchone()[0]
+            self.assertEqual(minx, 100.0)
+            self.assertEqual(updated_fts_count, 1)
+
+            con.execute("DELETE FROM collections WHERE id = 'ONE'")
+            remaining_rtree_rows = con.execute(
+                "SELECT COUNT(*) FROM collections_rtree"
+            ).fetchone()[0]
+            remaining_fts_rows = con.execute(
+                "SELECT COUNT(*) FROM collections_fts WHERE collections_fts MATCH ?",
+                ('"updated"',),
+            ).fetchone()[0]
+            self.assertEqual(remaining_rtree_rows, 0)
+            self.assertEqual(remaining_fts_rows, 0)
+        finally:
+            con.close()
+
+    def test_create_federation_tables_and_indexes(self):
+        """Federation table helpers create tables and lookup index."""
+        con = sqlite3.connect(":memory:")
+        try:
+            create_federation_backends_table(con)
+            create_collections_federation_backends_table(con)
+            # Both helpers should be safe to call more than once.
+            create_federation_backends_table(con)
+            create_collections_federation_backends_table(con)
+
+            schema_objects = {
+                row[0]
+                for row in con.execute(
+                    "SELECT name FROM sqlite_master WHERE type IN ('table', 'index')"
+                ).fetchall()
+            }
+
+            self.assertIn("federation_backends", schema_objects)
+            self.assertIn("collections_federation_backends", schema_objects)
+            self.assertIn("idx_cfb_backend_collection", schema_objects)
+        finally:
+            con.close()
+
+
+class TestSQLiteDatabaseConnection(unittest.TestCase):
+    """Tests for connection handling and execution helpers."""
 
     def setUp(self) -> None:
-        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        """Create an isolated in-memory database."""
         self.db = SQLiteDatabase(":memory:")
-        self.db._con.executemany(
-            "INSERT INTO collections (content) VALUES (jsonb(?))",
-            [(orjson.dumps(c),) for c in COLLECTIONS],
-        )
+
+    def tearDown(self) -> None:
+        """Close the in-memory database."""
+        self.db.close()
+
+    def test_close_closes_underlying_connection(self):
+        """Close makes later SQLite operations fail on the closed connection."""
+        self.db.close()
+
+        with self.assertRaises(sqlite3.ProgrammingError):
+            self.db._con.execute("SELECT 1")
+
+    def test__execute_binds_parameters(self):
+        """_execute forwards bound parameters to sqlite3."""
+        row = self.db._execute("SELECT ? AS value", ("ok",)).fetchone()
+
+        self.assertEqual(row["value"], "ok")
+
+    def test__execute_rolls_back_on_database_error(self):
+        """_execute rolls back pending writes if sqlite3 raises an error."""
+        self.db._execute("CREATE TABLE rollback_test (id INTEGER)")
         self.db._con.commit()
+
+        self.db._execute("INSERT INTO rollback_test VALUES (1)")
+        with self.assertRaises(sqlite3.DatabaseError):
+            self.db._execute("INSERT INTO missing_table VALUES (2)")
+
+        rows_after_error = self.db._execute(
+            "SELECT COUNT(*) FROM rollback_test"
+        ).fetchone()[0]
+        self.assertEqual(rows_after_error, 0)
+
+    def test__executemany_rolls_back_on_database_error(self):
+        """_executemany rolls back all pending writes on sqlite3 errors."""
+        self.db._execute("CREATE TABLE rollback_many_test (id INTEGER)")
+        self.db._con.commit()
+
+        self.db._executemany(
+            "INSERT INTO rollback_many_test VALUES (?)",
+            [(1,), (2,)],
+        )
+        with self.assertRaises(sqlite3.DatabaseError):
+            self.db._executemany("INSERT INTO missing_table VALUES (?)", [(3,), (4,)])
+
+        rows_after_error = self.db._execute(
+            "SELECT COUNT(*) FROM rollback_many_test"
+        ).fetchone()[0]
+        self.assertEqual(rows_after_error, 0)
+
+
+class TestSQLiteDatabaseCollections(unittest.TestCase):
+    """Tests for collection insertion, updates, and deletion."""
+
+    def setUp(self) -> None:
+        """Create an isolated in-memory database."""
+        self.db = SQLiteDatabase(":memory:")
+
+    def tearDown(self) -> None:
+        """Close the in-memory database."""
+        self.db.close()
+
+    def test_upsert_collections_skips_generic_collection(self):
+        """Calling upsert_collections ignores the generic placeholder."""
+        self.db.upsert_collections(
+            _collections_dict(
+                _collection("ONE"),
+                _collection("GENERIC_PRODUCT_TYPE"),
+            )
+        )
+
+        stored_ids = [
+            row["id"]
+            for row in self.db._execute("SELECT id FROM collections").fetchall()
+        ]
+        self.assertListEqual(stored_ids, ["ONE"])
+
+    def test_upsert_collections_updates_existing_collection(self):
+        """Calling upsert_collections replaces content for an existing id."""
+        self.db.upsert_collections(_collections_dict(_collection("ONE")))
+        self.db.upsert_collections(
+            _collections_dict(_collection("ONE", description="Updated title"))
+        )
+
+        description = self.db._execute(
+            "SELECT json_extract(content, '$.description') AS description "
+            "FROM collections WHERE id = 'ONE'"
+        ).fetchone()["description"]
+        self.assertEqual(description, "Updated title")
+
+    def test_upsert_collections_replaces_alias_conflict_with_latest_collection(self):
+        """Two Collections sharing an alias leave only the most recent internal id."""
+        self.db.upsert_collections(
+            _collections_dict(_collection("S2_MSI_L1C", alias="S2_MSI_ALIAS"))
+        )
+        self.db.upsert_collections(
+            _collections_dict(_collection("S2_MSI_L2A", alias="S2_MSI_ALIAS"))
+        )
+
+        rows = self.db._execute(
+            "SELECT id, internal_id FROM collections ORDER BY key"
+        ).fetchall()
+        self.assertListEqual(
+            [(row["id"], row["internal_id"]) for row in rows],
+            [("S2_MSI_ALIAS", "S2_MSI_L2A")],
+        )
+
+    def test_delete_collections_empty_raises(self):
+        """Calling delete_collections rejects empty input."""
+        with self.assertRaises(ValueError):
+            self.db.delete_collections([])
+
+    def test_delete_collections_removes_collection_and_mappings(self):
+        """Calling delete_collections removes collection rows and mappings."""
+        self.db.upsert_collections(
+            _collections_dict(_collection("ONE"), _collection("TWO"))
+        )
+        _register_fb_and_collections(
+            self.db,
+            [_make_coll_fb("backend_a", "ONE"), _make_coll_fb("backend_b", "TWO")],
+        )
+
+        self.db.delete_collections(["ONE"])
+
+        remaining_ids = [
+            row["id"]
+            for row in self.db._execute("SELECT id FROM collections").fetchall()
+        ]
+        remaining_mappings = [
+            row["collection_id"]
+            for row in self.db._execute(
+                "SELECT collection_id FROM collections_federation_backends"
+            ).fetchall()
+        ]
+        self.assertEqual(remaining_ids, ["TWO"])
+        self.assertEqual(remaining_mappings, ["TWO"])
+
+    def test_delete_collections_matches_internal_id(self):
+        """Calling delete_collections accepts the internal id behind an alias."""
+        self.db.upsert_collections(
+            _collections_dict(_collection("ONE_INTERNAL", alias="ONE_ALIAS"))
+        )
+        _register_fb_and_collections(
+            self.db, [_make_coll_fb("backend_a", "ONE_INTERNAL")]
+        )
+
+        self.db.delete_collections(["ONE_INTERNAL"])
+
+        collection_count = self.db._execute(
+            "SELECT COUNT(*) FROM collections"
+        ).fetchone()[0]
+        mapping_count = self.db._execute(
+            "SELECT COUNT(*) FROM collections_federation_backends"
+        ).fetchone()[0]
+        self.assertEqual(collection_count, 0)
+        self.assertEqual(mapping_count, 0)
+
+    def test_delete_collections_federation_backends_empty_is_noop(self):
+        """Calling delete_collections_federation_backends accepts empty input."""
+        self.db.delete_collections_federation_backends([])
+
+        mapping_count = self.db._execute(
+            "SELECT COUNT(*) FROM collections_federation_backends"
+        ).fetchone()[0]
+        self.assertEqual(mapping_count, 0)
+
+    def test_delete_collections_federation_backends_removes_selected(self):
+        """Calling delete_collections_federation_backends removes requested ids."""
+        self.db.upsert_collections(
+            _collections_dict(_collection("ONE"), _collection("TWO"))
+        )
+        _register_fb_and_collections(
+            self.db,
+            [_make_coll_fb("backend_a", "ONE"), _make_coll_fb("backend_a", "TWO")],
+        )
+
+        self.db.delete_collections_federation_backends(["ONE"])
+
+        remaining_mappings = [
+            row["collection_id"]
+            for row in self.db._execute(
+                "SELECT collection_id FROM collections_federation_backends "
+                "ORDER BY collection_id"
+            ).fetchall()
+        ]
+        self.assertEqual(remaining_mappings, ["TWO"])
+
+
+class TestSQLiteDatabaseFederationBackendDeletion(unittest.TestCase):
+    """Tests for delete_federation_backends."""
+
+    def setUp(self) -> None:
+        """Create collections and backend mappings used by deletion tests."""
+        self.db = _make_memory_db(COLLECTIONS)
         # ONE  -> ["backend_a", "backend_b"]
         # TWO  -> ["backend_b"]
         # THREE, FOUR -> no backends
@@ -1433,88 +1836,587 @@ class TestDeleteFederationBackends(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
+        """Close the in-memory database."""
         self.db.close()
 
-    def test_raises_on_empty_list(self):
-        """delete_federation_backends([]) must raise ValueError."""
+    def test_delete_federation_backends_raises_on_empty_list(self):
+        """Calling delete_federation_backends rejects empty input."""
         with self.assertRaises(ValueError):
             self.db.delete_federation_backends([])
 
-    def test_delete_single_backend(self):
-        """Deleting backend_a removes it from federation_backends and from
-        collections_federation_backends; ONE loses backend_a but keeps backend_b."""
+    def test_delete_federation_backends_removes_single_backend(self):
+        """Deleting backend_a leaves ONE reachable only through backend_b."""
         self.db.delete_federation_backends(["backend_a"])
 
-        # federation_backends table: backend_a gone
-        fb_names = {
-            row[0]
-            for row in self.db._con.execute(
-                "SELECT name FROM federation_backends"
-            ).fetchall()
+        backend_names = {
+            row["name"]
+            for row in self.db._execute("SELECT name FROM federation_backends")
         }
-        self.assertNotIn("backend_a", fb_names)
-        self.assertIn("backend_b", fb_names)
+        mapping_backends = {
+            row["federation_backend_name"]
+            for row in self.db._execute(
+                "SELECT federation_backend_name FROM collections_federation_backends"
+            )
+        }
+        self.assertNotIn("backend_a", backend_names)
+        self.assertNotIn("backend_a", mapping_backends)
 
-        # collections_federation_backends: no row for backend_a
-        cfb_rows = self.db._con.execute(
-            "SELECT federation_backend_name FROM collections_federation_backends"
-        ).fetchall()
-        cfb_names = {r[0] for r in cfb_rows}
-        self.assertNotIn("backend_a", cfb_names)
+        backend_a_result = self.db.collections_search(federation_backends=["backend_a"])
+        backend_b_result = self.db.collections_search(federation_backends=["backend_b"])
+        self.assertEqual(backend_a_result[1], 0)
+        self.assertSetEqual(
+            {item["id"] for item in backend_b_result[0]}, {"ONE", "TWO"}
+        )
 
-        # denormalized column on ONE: only backend_b remains
-        result = self.db.collections_search(federation_backends=["backend_a"])
-        self.assertEqual(result[1], 0)
-
-        result = self.db.collections_search(federation_backends=["backend_b"])
-        self.assertSetEqual({c["id"] for c in result[0]}, {"ONE", "TWO"})
-
-    def test_delete_shared_backend(self):
-        """Deleting backend_b (shared by ONE and TWO) removes both collections
-        from being reachable via backend_b; ONE still has backend_a."""
+    def test_delete_federation_backends_refreshes_shared_backend(self):
+        """Deleting a shared backend removes collections with no remaining backend."""
         self.db.delete_federation_backends(["backend_b"])
 
-        # TWO no longer has any backend → not returned with with_fbs_only=True
-        result_all = self.db.collections_search(with_fbs_only=True)
-        ids = {c["id"] for c in result_all[0]}
-        self.assertIn("ONE", ids)
-        self.assertNotIn("TWO", ids)
+        visible_ids = {item["id"] for item in self.db.collections_search()[0]}
+        self.assertSetEqual(visible_ids, {"ONE"})
 
-        # ONE is still reachable via backend_a
-        result = self.db.collections_search(federation_backends=["backend_a"])
-        self.assertSetEqual({c["id"] for c in result[0]}, {"ONE"})
-
-    def test_delete_multiple_backends(self):
-        """Deleting all backends leaves no collection with a federation backend."""
+    def test_delete_federation_backends_removes_all_backends(self):
+        """Deleting all backends leaves no reachable collection by default."""
         self.db.delete_federation_backends(["backend_a", "backend_b"])
 
-        # No federation backends left
-        fb_count = self.db._con.execute(
+        backend_count = self.db._execute(
             "SELECT COUNT(*) FROM federation_backends"
         ).fetchone()[0]
-        self.assertEqual(fb_count, 0)
-
-        # No collection-backend mappings left
-        cfb_count = self.db._con.execute(
+        mapping_count = self.db._execute(
             "SELECT COUNT(*) FROM collections_federation_backends"
         ).fetchone()[0]
-        self.assertEqual(cfb_count, 0)
+        visible_count = self.db.collections_search()[1]
+        self.assertEqual(backend_count, 0)
+        self.assertEqual(mapping_count, 0)
+        self.assertEqual(visible_count, 0)
 
-        # collections_search returns nothing (no backend attached to any collection)
-        result = self.db.collections_search()
-        self.assertEqual(result[1], 0)
-
-    def test_delete_nonexistent_backend_is_noop(self):
-        """Deleting a backend that does not exist must not raise and must not
-        affect existing data."""
+    def test_delete_federation_backends_nonexistent_is_noop(self):
+        """Deleting an unknown backend leaves existing mappings untouched."""
         self.db.delete_federation_backends(["nonexistent"])
 
-        # Existing backends and mappings are untouched
-        result = self.db.collections_search(federation_backends=["backend_a"])
+        backend_a_count = self.db.collections_search(federation_backends=["backend_a"])[
+            1
+        ]
+        backend_b_count = self.db.collections_search(federation_backends=["backend_b"])[
+            1
+        ]
+        self.assertEqual(backend_a_count, 1)
+        self.assertEqual(backend_b_count, 2)
+
+
+class TestSQLiteDatabasePrivateBackendUpserts(unittest.TestCase):
+    """Tests for private federation backend upsert helpers."""
+
+    def setUp(self) -> None:
+        """Create an isolated in-memory database."""
+        self.db = SQLiteDatabase(":memory:")
+
+    def tearDown(self) -> None:
+        """Close the in-memory database."""
+        self.db.close()
+
+    def test__upsert_federation_backends_empty_is_noop(self):
+        """_upsert_federation_backends accepts empty input as no-op."""
+        with self.db._con:
+            self.db._upsert_federation_backends([])
+
+        self.assertEqual(self.db.get_federation_backends(), {})
+
+    def test__upsert_federation_backends_inserts_backend(self):
+        """_upsert_federation_backends stores provider-level metadata."""
+        with self.db._con:
+            self.db._upsert_federation_backends(
+                [
+                    (
+                        "backend_a",
+                        {"search": {"type": "StacSearch"}},
+                        1,
+                        {"fetchable": True},
+                        True,
+                    )
+                ]
+            )
+
+        self.assertEqual(
+            self.db.get_federation_backends(),
+            {
+                "backend_a": {
+                    "priority": 1,
+                    "enabled": True,
+                    "metadata": {"fetchable": True},
+                }
+            },
+        )
+
+    def test__upsert_federation_backends_updates_backend(self):
+        """_upsert_federation_backends replaces existing provider fields."""
+        with self.db._con:
+            self.db._upsert_federation_backends(
+                [
+                    (
+                        "backend_a",
+                        {"search": {"type": "StacSearch"}},
+                        1,
+                        {"fetchable": True},
+                        True,
+                    )
+                ]
+            )
+            self.db._upsert_federation_backends(
+                [
+                    (
+                        "backend_a",
+                        {"search": {"type": "UpdatedSearch"}},
+                        5,
+                        {"fetchable": False},
+                        False,
+                    )
+                ]
+            )
+
+        self.assertEqual(
+            self.db.get_federation_backends(),
+            {
+                "backend_a": {
+                    "priority": 5,
+                    "enabled": False,
+                    "metadata": {"fetchable": False},
+                }
+            },
+        )
+
+    def test__upsert_collections_federation_backends_empty_is_noop(self):
+        """_upsert_collections_federation_backends accepts empty input."""
+        with self.db._con:
+            self.db._upsert_collections_federation_backends([])
+
+        mapping_count = self.db._execute(
+            "SELECT COUNT(*) FROM collections_federation_backends"
+        ).fetchone()[0]
+        self.assertEqual(mapping_count, 0)
+
+    def test__upsert_collections_federation_backends_inserts_and_updates(self):
+        """_upsert_collections_federation_backends upserts per-collection config."""
+        with self.db._con:
+            self.db._upsert_federation_backends(
+                [("backend_a", {"search": {"type": "StacSearch"}}, 0, {}, True)]
+            )
+            # Initial insert.
+            self.db._upsert_collections_federation_backends(
+                [("ONE", "backend_a", {"search": {"first": True}})]
+            )
+            # Same primary key updates the stored config.
+            self.db._upsert_collections_federation_backends(
+                [("ONE", "backend_a", {"search": {"second": True}})]
+            )
+
+        backend_config = self.db.get_fb_config("backend_a", {"ONE"})
+        self.assertEqual(backend_config["products"]["ONE"], {"second": True})
+
+
+class TestSQLiteDatabaseDenormalization(unittest.TestCase):
+    """Tests for refreshing denormalized collection backend fields."""
+
+    def setUp(self) -> None:
+        """Create collections used by denormalization tests."""
+        self.db = _make_memory_db(COLLECTIONS[:2])
+
+    def tearDown(self) -> None:
+        """Close the in-memory database."""
+        self.db.close()
+
+    def test__refresh_collections_denorm_empty_is_noop(self):
+        """_refresh_collections_denorm does nothing without changed backends."""
+        self.db._refresh_collections_denorm([])
+
+        visible_count = self.db.collections_search()[1]
+        self.assertEqual(visible_count, 0)
+
+    def test__refresh_collections_denorm_uses_enabled_backends_and_priority(self):
+        """Only enabled backends are exposed and max priority drives ordering."""
+        with self.db._con:
+            self.db._upsert_federation_backends(
+                [
+                    ("low", {"search": {"type": "StacSearch"}}, 1, {}, True),
+                    ("high", {"search": {"type": "StacSearch"}}, 10, {}, True),
+                    ("disabled", {"search": {"type": "StacSearch"}}, 99, {}, False),
+                ]
+            )
+            self.db._upsert_collections_federation_backends(
+                [
+                    _make_coll_fb("low", "ONE"),
+                    _make_coll_fb("high", "ONE"),
+                    _make_coll_fb("disabled", "ONE"),
+                    _make_coll_fb("low", "TWO"),
+                ]
+            )
+            self.db._refresh_collections_denorm(["low", "high", "disabled"])
+
+        rows = self.db.collections_search(with_fbs_only=True)[0]
+        backends_by_id = {row["id"]: row["federation:backends"] for row in rows}
+        self.assertSetEqual(set(backends_by_id["ONE"]), {"low", "high"})
+        self.assertEqual(backends_by_id["TWO"], ["low"])
+        self.assertEqual(rows[0]["id"], "ONE")
+
+    def test__refresh_collections_denorm_removes_disabled_backend(self):
+        """Disabling a backend refreshes affected collection backend lists."""
+        with self.db._con:
+            self.db._upsert_federation_backends(
+                [
+                    ("low", {"search": {"type": "StacSearch"}}, 1, {}, True),
+                    ("high", {"search": {"type": "StacSearch"}}, 10, {}, True),
+                ]
+            )
+            self.db._upsert_collections_federation_backends(
+                [_make_coll_fb("low", "ONE"), _make_coll_fb("high", "ONE")]
+            )
+            self.db._refresh_collections_denorm(["low", "high"])
+            self.db._upsert_federation_backends(
+                [("high", {"search": {"type": "StacSearch"}}, 10, {}, False)]
+            )
+            self.db._refresh_collections_denorm(["high"])
+
+        collection = self.db.collections_search(ids=["ONE"])[0][0]
+        self.assertEqual(collection["federation:backends"], ["low"])
+
+
+class TestSQLiteDatabaseProviderConfigUpsert(unittest.TestCase):
+    """Tests for upsert_fb_configs using concrete ProviderConfig objects."""
+
+    def test_upsert_fb_configs_strict_mode_skips_unknown_collection(self):
+        """Strict mode stores only configs for collections already in the DB."""
+        db = _make_memory_db(COLLECTIONS[:1])
+        try:
+            provider = _provider_config(
+                {
+                    "name": "provider_strict",
+                    "priority": 4,
+                    "enabled": True,
+                    "fetchable": True,
+                    "search": {
+                        "type": "StacSearch",
+                        "api_endpoint": "https://example.test",
+                    },
+                    "products": {
+                        "ONE": {"search_param": "known"},
+                        "UNKNOWN": {"search_param": "unknown"},
+                    },
+                }
+            )
+
+            with mock.patch.dict(os.environ, {"EODAG_STRICT_COLLECTIONS": "true"}):
+                db.upsert_fb_configs([provider])
+
+            provider_config = db.get_fb_config("provider_strict", {"ONE", "UNKNOWN"})
+            unknown_collections, unknown_count = db.collections_search(
+                ids=["UNKNOWN"], with_fbs_only=False
+            )
+            self.assertDictEqual(
+                provider_config["products"]["ONE"], {"search_param": "known"}
+            )
+            self.assertNotIn("UNKNOWN", provider_config["products"])
+            self.assertEqual(unknown_collections, [])
+            self.assertEqual(unknown_count, 0)
+        finally:
+            db.close()
+
+    def test_upsert_fb_configs_permissive_mode_adds_unknown_collection(self):
+        """Permissive mode creates placeholder collections for provider products."""
+        db = SQLiteDatabase(":memory:")
+        try:
+            provider = _provider_config(
+                {
+                    "name": "provider_permissive",
+                    "search": {"type": "StacSearch"},
+                    "products": {"UNKNOWN": {"search_param": "unknown"}},
+                }
+            )
+
+            with mock.patch.dict(os.environ, {"EODAG_STRICT_COLLECTIONS": "false"}):
+                db.upsert_fb_configs([provider])
+
+            placeholder_collections, placeholder_count = db.collections_search(
+                ids=["UNKNOWN"], with_fbs_only=False
+            )
+            collection_with_backend = db.collections_search(ids=["UNKNOWN"])[0][0]
+            self.assertEqual(placeholder_count, 1)
+            self.assertEqual(placeholder_collections[0]["id"], "UNKNOWN")
+            self.assertEqual(
+                collection_with_backend["federation:backends"],
+                ["provider_permissive"],
+            )
+        finally:
+            db.close()
+
+    def test_upsert_fb_configs_strips_plugin_credentials(self):
+        """Credentials are not persisted in provider plugin config JSON."""
+        db = _make_memory_db(COLLECTIONS[:1])
+        try:
+            provider = _provider_config(
+                {
+                    "name": "provider_credentials",
+                    "search": {
+                        "type": "StacSearch",
+                        "api_endpoint": "https://example.test",
+                        "credentials": {"username": "secret"},
+                    },
+                    "download": {
+                        "type": "HTTPDownload",
+                        "products": {"ONE": {"download_param": "known"}},
+                        "credentials": {"password": "secret"},
+                    },
+                    "products": {"ONE": {"search_param": "known"}},
+                }
+            )
+
+            db.upsert_fb_configs([provider])
+
+            provider_config = db.get_fb_config("provider_credentials", {"ONE"})
+            self.assertNotIn("credentials", provider_config["search"])
+            self.assertNotIn("credentials", provider_config["download"])
+            self.assertEqual(
+                provider_config["download"]["products"]["ONE"],
+                {"download_param": "known"},
+            )
+        finally:
+            db.close()
+
+    def test_upsert_fb_configs_api_provider_uses_api_products(self):
+        """API providers store collection products under the api topic."""
+        db = _make_memory_db(COLLECTIONS[:1])
+        try:
+            provider = _provider_config(
+                {
+                    "name": "provider_api",
+                    "api": {"type": "Api"},
+                    "products": {"ONE": {"api_param": "value"}},
+                }
+            )
+
+            db.upsert_fb_configs([provider])
+
+            provider_config = db.get_fb_config("provider_api", {"ONE"})
+            self.assertIn("api", provider_config)
+            self.assertEqual(provider_config["products"]["ONE"], {"api_param": "value"})
+        finally:
+            db.close()
+
+
+class TestSQLiteDatabaseBackendState(unittest.TestCase):
+    """Tests for backend state updates exposed through public methods."""
+
+    def setUp(self) -> None:
+        """Create collections used by backend state tests."""
+        self.db = _make_memory_db(COLLECTIONS[:2])
+
+    def tearDown(self) -> None:
+        """Close the in-memory database."""
+        self.db.close()
+
+    def test_restore_fbs_reenables_backends_and_refreshes_collections(self):
+        """Calling restore_fbs makes disabled backends searchable again."""
+        with self.db._con:
+            self.db._upsert_federation_backends(
+                [("disabled_backend", {"search": {"type": "StacSearch"}}, 1, {}, False)]
+            )
+            self.db._upsert_collections_federation_backends(
+                [_make_coll_fb("disabled_backend", "ONE")]
+            )
+            self.db._refresh_collections_denorm(["disabled_backend"])
+
+        self.assertEqual(self.db.collections_search()[1], 0)
+
+        self.db.restore_fbs()
+
+        result = self.db.collections_search()
+        backend = self.db.get_federation_backends(names={"disabled_backend"})[
+            "disabled_backend"
+        ]
         self.assertEqual(result[1], 1)
+        self.assertEqual(result[0][0]["federation:backends"], ["disabled_backend"])
+        self.assertTrue(backend["enabled"])
 
-        result = self.db.collections_search(federation_backends=["backend_b"])
-        self.assertEqual(result[1], 2)
+    def test_set_priority_updates_backend_and_collection_order(self):
+        """Calling set_priority refreshes denormalized collection ordering."""
+        _register_fb_and_collections(
+            self.db,
+            [_make_coll_fb("backend_a", "ONE"), _make_coll_fb("backend_b", "TWO")],
+        )
+
+        self.db.set_priority("backend_b", 20)
+
+        backend_b = self.db.get_federation_backends(names={"backend_b"})["backend_b"]
+        ordered_collection_ids = [
+            item["id"] for item in self.db.collections_search()[0]
+        ]
+        self.assertEqual(backend_b["priority"], 20)
+        self.assertEqual(ordered_collection_ids, ["TWO", "ONE"])
 
 
-# TODO: add tests on all methods of SQLiteDatabase, not only on collections search.
+class TestSQLiteDatabaseFederationBackendSearch(unittest.TestCase):
+    """Tests for get_federation_backends filters."""
+
+    db: SQLiteDatabase
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Create shared backend fixtures for read-only filter tests."""
+        cls.db = _make_memory_db(COLLECTIONS[:2])
+        with cls.db._con:
+            cls.db._upsert_federation_backends(
+                [
+                    (
+                        "backend_low",
+                        {"search": {"type": "StacSearch"}},
+                        1,
+                        {"fetchable": False},
+                        True,
+                    ),
+                    (
+                        "backend_high",
+                        {"search": {"type": "StacSearch"}},
+                        10,
+                        {"fetchable": True},
+                        True,
+                    ),
+                    (
+                        "backend_disabled",
+                        {"search": {"type": "StacSearch"}},
+                        99,
+                        {"fetchable": True},
+                        False,
+                    ),
+                ]
+            )
+            cls.db._upsert_collections_federation_backends(
+                [
+                    _make_coll_fb("backend_low", "ONE"),
+                    _make_coll_fb("backend_high", "ONE"),
+                    _make_coll_fb("backend_disabled", "TWO"),
+                ]
+            )
+            cls.db._refresh_collections_denorm(
+                ["backend_low", "backend_high", "backend_disabled"]
+            )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        """Close the shared in-memory database."""
+        cls.db.close()
+
+    def test_get_federation_backends_orders_by_priority(self):
+        """Calling get_federation_backends returns highest priority first."""
+        self.assertEqual(
+            list(self.db.get_federation_backends(limit=1)), ["backend_disabled"]
+        )
+
+    def test_get_federation_backends_filters_by_enabled_state(self):
+        """Calling get_federation_backends filters enabled state."""
+        self.assertEqual(
+            set(self.db.get_federation_backends(enabled=True)),
+            {"backend_high", "backend_low"},
+        )
+        self.assertEqual(
+            set(self.db.get_federation_backends(enabled=False)),
+            {"backend_disabled"},
+        )
+
+    def test_get_federation_backends_filters_by_fetchable_metadata(self):
+        """Calling get_federation_backends filters on metadata.fetchable."""
+        self.assertEqual(
+            set(self.db.get_federation_backends(fetchable=True)),
+            {"backend_disabled", "backend_high"},
+        )
+        self.assertEqual(
+            set(self.db.get_federation_backends(fetchable=False)),
+            {"backend_low"},
+        )
+
+    def test_get_federation_backends_filters_by_collection_and_names(self):
+        """Calling get_federation_backends combines collection and names."""
+        self.assertEqual(
+            set(self.db.get_federation_backends(collection="ONE")),
+            {"backend_high", "backend_low"},
+        )
+        self.assertEqual(
+            set(self.db.get_federation_backends(names={"backend_low", "backend_high"})),
+            {"backend_low", "backend_high"},
+        )
+        self.assertEqual(self.db.get_federation_backends(names={"missing"}), {})
+
+
+class TestSQLiteDatabaseFederationBackendConfig(unittest.TestCase):
+    """Tests for reconstructing provider configs from stored rows."""
+
+    db: SQLiteDatabase
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Create shared provider rows for read-only config tests."""
+        cls.db = SQLiteDatabase(":memory:")
+        with cls.db._con:
+            cls.db._upsert_federation_backends(
+                [
+                    (
+                        "backend_a",
+                        {
+                            "search": {"type": "StacSearch"},
+                            "download": {"type": "HTTPDownload"},
+                        },
+                        3,
+                        {"fetchable": True, "custom": "metadata"},
+                        True,
+                    )
+                ]
+            )
+            cls.db._upsert_collections_federation_backends(
+                [
+                    (
+                        "ONE",
+                        "backend_a",
+                        {
+                            "search": {"search_param": "one"},
+                            "download": {"download_param": "one"},
+                        },
+                    ),
+                    (
+                        "TWO",
+                        "backend_a",
+                        {
+                            "search": {"search_param": "two"},
+                            "download": {"download_param": "two"},
+                        },
+                    ),
+                ]
+            )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        """Close the shared in-memory database."""
+        cls.db.close()
+
+    def test_get_fb_config_provider_only(self):
+        """Calling get_fb_config without collections returns provider config."""
+        provider_config = self.db.get_fb_config("backend_a")
+
+        self.assertEqual(provider_config["name"], "backend_a")
+        self.assertEqual(provider_config["priority"], 3)
+        self.assertTrue(provider_config["enabled"])
+        self.assertEqual(provider_config["custom"], "metadata")
+        self.assertEqual(provider_config["products"], {})
+        self.assertEqual(provider_config["download"]["products"], {})
+
+    def test_get_fb_config_filters_collection_products(self):
+        """Calling get_fb_config returns only requested collection products."""
+        provider_config = self.db.get_fb_config("backend_a", {"ONE"})
+
+        self.assertEqual(provider_config["products"], {"ONE": {"search_param": "one"}})
+        self.assertEqual(
+            provider_config["download"]["products"],
+            {"ONE": {"download_param": "one"}},
+        )
+
+    def test_get_fb_config_missing_provider_raises(self):
+        """Calling get_fb_config raises KeyError for unknown provider names."""
+        with self.assertRaises(KeyError):
+            self.db.get_fb_config("missing")

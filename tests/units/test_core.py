@@ -5374,56 +5374,6 @@ class TestCoreProductAlias(TestCoreBase):
         with self.assertRaises(NoMatchingCollection):
             self.dag.get_collection_from_alias("JUST_A_TYPE")
 
-    # TODO: move this test with tests of the DB methods, when testing upsert_collections()
-    def test_get_collection_from_alias_multiple_matches(self):
-        """get_collection_from_alias must return the most recent collection if alias is ambiguous.
-
-        Two collections with the same alias can not be created in the DB,
-        then the most recent one overwrites the existing one.
-        """
-        s2_msi_l1c = self.dag.get_collection("S2_MSI_L1C")
-
-        self.assertEqual(
-            "S2_MSI_L1C", self.dag.get_collection_from_alias("S2_MSI_ALIAS")
-        )
-
-        s2msil2a = self.dag.get_collection("S2_MSI_L2A")
-        assert s2msil2a is not None
-        # add the same alias as S2_MSI_L1C to a new collection in the DB
-        self.dag.db.upsert_collections(
-            CollectionsDict(
-                [
-                    Collection(
-                        id="S2_MSI_L2A_ALIAS",
-                        alias="S2_MSI_ALIAS",
-                        **s2msil2a.model_dump(exclude={"id", "alias"}),
-                    )
-                ]
-            )
-        )
-
-        # check that the alias now returns the new collection id
-        self.assertEqual(
-            "S2_MSI_L2A_ALIAS", self.dag.get_collection_from_alias("S2_MSI_ALIAS")
-        )
-
-        # not existing collection anymore, since the alias was overwritten by the new collection
-        with self.assertRaises(NoMatchingCollection):
-            self.dag.get_alias_from_collection(s2_msi_l1c._id)
-
-        # restore the original state of the DB to avoid side effects on other tests
-        self.dag.db.upsert_collections(
-            CollectionsDict(
-                [
-                    Collection(
-                        id=s2_msi_l1c._id,
-                        alias="S2_MSI_ALIAS",
-                        **s2_msi_l1c.model_dump(exclude={"id", "alias"}),
-                    )
-                ]
-            )
-        )
-
 
 class TestCoreStrictMode(TestCoreBase):
     def setUp(self):
