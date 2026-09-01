@@ -23,7 +23,7 @@ import tempfile
 import warnings
 from importlib.resources import files as res_files
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union, cast
 
 import orjson
 import requests
@@ -157,13 +157,13 @@ class EODAGSettings(BaseSettings):
         default=False, description="Log collections validation errors as warning."
     )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def resolved_cfg_file(self) -> Path:
         """Get the resolved path to the main EODAG user configuration file."""
         return self.cfg_file or self.cfg_dir / "eodag.yml"
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def resolved_locations_cfg_file(self) -> Path:
         """Get the resolved path to the locations configuration file."""
@@ -927,7 +927,7 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     )
 
 
-def load_locations_config(location_cfg_file: str) -> dict[str, Any]:
+def load_locations_config(location_cfg_file: str) -> list[dict[str, Any]]:
     """Load locations configuration.
 
     This configuration (YML format) will contain a shapefile list associated
@@ -949,9 +949,12 @@ def load_locations_config(location_cfg_file: str) -> dict[str, Any]:
                 name: country
                 attr: FRA
     """
-    locations_config = load_yml_config(location_cfg_file)
+    raw_locations_config = load_yml_config(location_cfg_file)
 
-    locations_config = next(iter(locations_config.values()))
+    locations_config = cast(
+        list[dict[str, Any]],
+        next(iter(raw_locations_config.values())),
+    )
 
     logger.info(
         "Locations configuration loaded from %s",
@@ -1051,7 +1054,7 @@ def load_stac_config() -> dict[str, Any]:
 
     :returns: The stac configuration
     """
-    return load_yml_config(RESOURCES_DIR / "stac.yml")
+    return load_yml_config(str(RESOURCES_DIR / "stac.yml"))
 
 
 def load_stac_api_config() -> dict[str, Any]:
@@ -1059,7 +1062,7 @@ def load_stac_api_config() -> dict[str, Any]:
 
     :returns: The stac API configuration
     """
-    return load_yml_config(RESOURCES_DIR / "stac_api.yml")
+    return load_yml_config(str(RESOURCES_DIR / "stac_api.yml"))
 
 
 def load_stac_provider_config() -> dict[str, Any]:
