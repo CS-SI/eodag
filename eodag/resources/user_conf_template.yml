@@ -58,6 +58,10 @@ cop_ghsl:
     priority: # Lower value means lower priority (Default: 0)
 cop_marine:
     priority: # Lower value means lower priority (Default: 0)
+    auth:
+        credentials:
+            username:
+            password:
 creodias:
     priority: # Lower value means lower priority (Default: 0)
     auth:
@@ -117,12 +121,6 @@ earth_search_gcs:
 ecmwf:
     priority: # Lower value means lower priority (Default: 0)
     api:
-        credentials:
-            username:
-            password:
-eocat:
-    priority: # Lower value means lower priority (Default: 0)
-    auth:
         credentials:
             username:
             password:
