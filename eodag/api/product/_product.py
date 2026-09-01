@@ -50,13 +50,16 @@ from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 
-try:
-    # import from eodag-cube if installed
-    from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
-        AssetsDict,
-    )
-except ImportError:
+if TYPE_CHECKING:
     from ._assets import AssetsDict
+else:
+    try:
+        # Import extended assets from eodag-cube if installed.
+        from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
+            AssetsDict,
+        )
+    except ImportError:
+        from ._assets import AssetsDict
 
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver
