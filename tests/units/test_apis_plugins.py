@@ -43,7 +43,7 @@ from tests.context import (
     USGSAuthExpiredError,
     USGSError,
     get_geometry_from_various,
-    load_default_config,
+    load_provider_configs,
     path_to_uri,
     urlsplit,
 )
@@ -53,7 +53,7 @@ class BaseApisPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseApisPluginTest, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
+        providers = ProvidersDict.from_configs(load_provider_configs())
         cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()

@@ -91,14 +91,14 @@ from tests.context import (
     cached_yaml_load_all,
     ecmwf_temporal_to_eodag,
     get_geometry_from_various,
-    load_default_config,
+    load_provider_configs,
 )
 
 
 class BaseSearchPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseSearchPluginTest, self).setUp()
-        providers = ProvidersDict.from_configs(load_default_config())
+        providers = ProvidersDict.from_configs(load_provider_configs())
         self.plugins_manager = PluginManager(providers)
         self.collection = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
@@ -3473,7 +3473,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestSearchPluginECMWFSearch, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
+        providers = ProvidersDict.from_configs(load_provider_configs())
         cls.plugins_manager = PluginManager(providers)
 
     def setUp(self):
@@ -5854,7 +5854,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
     def test_plugins_search_wekeosearch_init_wekeomain(self):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
-        default_config = load_default_config()["wekeo_main"]
+        default_config = load_provider_configs()["wekeo_main"]
         # "eodag:order_link" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
         self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
         self.assertIn(

@@ -26,6 +26,7 @@ import shutil
 import tempfile
 import unittest
 from importlib.resources import files as res_files
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -59,7 +60,7 @@ from tests.context import (
     SearchResult,
     UnsupportedProvider,
     get_geometry_from_various,
-    load_default_config,
+    load_provider_configs,
     makedirs,
     mock,
     model_fields_to_annotated,
@@ -89,7 +90,7 @@ class TestCoreBase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestCoreBase, cls).tearDownClass()
+        super().tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
@@ -1429,23 +1430,27 @@ class TestCore(TestCoreBase):
         self, mock_discover_collections, mock_get_ext_collections_conf
     ):
         """Core api must fetch collections list and update if needed"""
+        default_ext_collections_cfg_uri = self.dag.settings.ext_collections_cfg_uri
+
         # check that no provider has already been fetched
         for provider in self.dag._providers.values():
             self.assertFalse(provider.collections_fetched)
 
-        # check that by default get_ext_collections_conf() is called without args
+        # check that by default get_ext_collections_conf() is called with settings value
         self.dag.fetch_collections_list()
-        mock_get_ext_collections_conf.assert_called_with()
+        mock_get_ext_collections_conf.assert_called_with(
+            self.dag.settings.ext_collections_cfg_uri
+        )
 
         # check that with an empty/mocked ext-conf, no provider has been fetched
         for provider in self.dag._providers.values():
             self.assertFalse(provider.collections_fetched)
 
-        # check that EODAG_EXT_COLLECTIONS_CFG_FILE env var will be used as get_ext_collections_conf() arg
-        os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = "some/file"
+        # check that runtime settings override is used as get_ext_collections_conf() arg
+        self.dag.settings.ext_collections_cfg_uri = "some/file"
         self.dag.fetch_collections_list()
         mock_get_ext_collections_conf.assert_called_with("some/file")
-        os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE")
+        self.dag.settings.ext_collections_cfg_uri = default_ext_collections_cfg_uri
 
         # check that with a non-empty ext-conf, a provider will be marked as fetched, and eodag conf updated
         mock_get_ext_collections_conf.return_value = {
@@ -1537,25 +1542,30 @@ class TestCore(TestCoreBase):
     ):
         """fetch_collections_list must launch collections discovery for new system-wide providers"""
         # add a new system-wide provider not listed in ext-conf
-        new_default_conf = load_default_config()
+        new_default_conf = load_provider_configs()
         new_default_conf["new_provider"] = new_default_conf["earth_search"].with_name(
             "new_provider"
         )
 
         with mock.patch(
-            "eodag.api.core.load_default_config",
+            "eodag.api.core.load_provider_configs",
             return_value=new_default_conf,
             autospec=True,
         ):
             self.dag = EODataAccessGateway()
+            default_ext_collections_cfg_uri = self.dag.settings.ext_collections_cfg_uri
 
             mock_get_ext_collections_conf.return_value = {}
 
-            # disabled collections discovery
-            os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = ""
+            # an empty configured URI still falls back to discovery
+            self.dag.settings.ext_collections_cfg_uri = ""
             self.dag.fetch_collections_list()
-            mock_discover_collections.assert_not_called()
-            os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE")
+            mock_get_ext_collections_conf.assert_called_with("")
+            mock_discover_collections.assert_called_once_with(self.dag, provider=None)
+
+            mock_discover_collections.reset_mock()
+
+            self.dag.settings.ext_collections_cfg_uri = default_ext_collections_cfg_uri
 
             # add an empty ext-conf for other providers to prevent them to be fetched
             for provider in self.dag._providers.values():
@@ -1571,14 +1581,16 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
     )
     def test_fetch_collections_list_disabled(self, mock_discover_collections):
-        """fetch_collections_list must not launch collections discovery if disabled"""
+        """An empty ext collections URI still falls back to collections discovery."""
 
-        # disable collections discovery
-        os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = ""
+        # configure an empty external collections URI
+        self.dag.settings.ext_collections_cfg_uri = ""
 
-        # default settings
+        # default settings still fall back to discover_collections
         self.dag.fetch_collections_list()
-        mock_discover_collections.assert_not_called()
+        mock_discover_collections.assert_called_once_with(self.dag, provider=None)
+
+        mock_discover_collections.reset_mock()
 
         # only user-defined providers must be fetched
         self.dag.update_providers_config("""
@@ -1595,7 +1607,14 @@ class TestCore(TestCoreBase):
                         _collection: '{collection}'
             """)
         self.dag.fetch_collections_list()
-        self.assertEqual(mock_discover_collections.call_count, 2)
+        self.assertEqual(
+            mock_discover_collections.call_args_list,
+            [
+                mock.call(self.dag, provider=None),
+                mock.call(self.dag, provider="earth_search"),
+                mock.call(self.dag, provider="foo_provider"),
+            ],
+        )
 
     def test_core_object_set_default_locations_config(self):
         """The core object must set the default locations config on instantiation"""
@@ -1609,9 +1628,24 @@ class TestCore(TestCoreBase):
         )
 
     def test_core_object_locations_file_not_found(self):
-        """The core object must set the locations to an empty list when the file is not found"""
-        dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
-        self.assertEqual(dag.locations_config, [])
+        """The core object must create a default locations file when the configured file is missing"""
+        missing_locations_path = os.path.join(
+            self.tmp_home_dir.name, "missing_locations.yml"
+        )
+        dag = EODataAccessGateway(locations_conf_path=missing_locations_path)
+        self.assertTrue(os.path.exists(missing_locations_path))
+        self.assertEqual(
+            dag.locations_config,
+            [
+                {
+                    "attr": "ADM0_A3_US",
+                    "name": "country",
+                    "path": os.path.join(
+                        self.conf_dir, "shp", "ne_110m_admin_0_map_units.shp"
+                    ),
+                }
+            ],
+        )
 
     def test_prune_providers_list(self):
         """Providers needing auth for search but without credentials must be pruned on init"""
@@ -2716,8 +2750,9 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
 
     def tearDown(self):
         super().tearDown()
-        for old_path in glob.glob(os.path.join(self.dag.conf_dir, "*.old")) + glob.glob(
-            os.path.join(self.dag.conf_dir, ".*.old")
+        conf_dir = str(self.dag.settings.cfg_dir)
+        for old_path in glob.glob(os.path.join(conf_dir, "*.old")) + glob.glob(
+            os.path.join(conf_dir, ".*.old")
         ):
             if os.path.exists(old_path):
                 try:
@@ -2775,15 +2810,17 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
         del os.environ["EODAG_CFG_DIR"]
 
         # fallback temporary folder
-        def makedirs_side_effect(dir):
-            if dir == os.path.join(os.path.expanduser("~"), ".config", "eodag"):
-                raise OSError("Mock makedirs error")
-            else:
-                return makedirs(dir)
+        def ensure_cfg_dir_exists_side_effect(config_dir):
+            if config_dir == Path(home_dir):
+                temp_dir = Path(tempfile.gettempdir()) / ".config" / "eodag"
+                makedirs(str(temp_dir))
+                return temp_dir
+            return config_dir
 
         with mock.patch(
-            "eodag.api.core.makedirs", side_effect=makedirs_side_effect
-        ) as mock_makedirs:
+            "eodag.api.core.ensure_cfg_dir_exists",
+            side_effect=ensure_cfg_dir_exists_side_effect,
+        ) as mock_ensure_cfg_dir_exists:
             # backup temp_dir if exists
             temp_dir = temp_dir_old = os.path.join(
                 tempfile.gettempdir(), ".config", "eodag"
@@ -2793,8 +2830,7 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
                 shutil.move(temp_dir, temp_dir_old)
 
             EODataAccessGateway()
-            expected = [unittest.mock.call(home_dir), unittest.mock.call(temp_dir)]
-            mock_makedirs.assert_has_calls(expected)
+            mock_ensure_cfg_dir_exists.assert_called_once_with(Path(home_dir))
             self.assertTrue(os.path.exists(temp_dir))
 
             # restore temp_dir
