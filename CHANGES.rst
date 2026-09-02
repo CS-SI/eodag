@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.7.3 (2026-09-02)
+===================
+
+Bug Fixes
+---------
+
+* **providers**: Complete removal of deprecated eocat configuration (`#2339`_, `086ad68`_)
+
+.. _#2339: https://github.com/CS-SI/eodag/pull/2339
+.. _086ad68: https://github.com/CS-SI/eodag/commit/086ad687017488420fd844617226d3ed94d9025c
+
+
 v4.7.2 (2026-08-28)
 ===================
 
