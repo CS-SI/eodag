@@ -234,6 +234,7 @@ class PluginManager:
             configs = list(p.config for p in self.providers.values())
 
         if provider:
+            self.providers.check_supported(provider, include_groups=True)
             configs = [
                 c for c in configs if provider in [getattr(c, "group", None), c.name]
             ]

@@ -593,6 +593,28 @@ class ProvidersDict(UserDict[str, Provider]):
     :param providers: Initial providers to populate the dictionary.
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # configs of providers removed because they needed auth but had no credentials set
+        self.pruned_providers_config: dict[str, Any] = {}
+
+    def check_supported(self, provider: str, include_groups: bool = False) -> None:
+        """
+        Check that a provider is known and usable, raising the most relevant error.
+
+        :param provider: The name of the provider (or group, if ``include_groups``) to check.
+        :param include_groups: Whether a provider group name is also accepted as known.
+        :raises MisconfiguredError: If the provider was pruned because no credentials could be found.
+        :raises UnsupportedProvider: If the provider is not recognised by eodag.
+        """
+        if provider in self.pruned_providers_config:
+            msg = f"{provider}: provider needing auth for search was pruned because no credentials could be found"
+            raise MisconfiguredError(msg)
+        known = provider in self.names or (include_groups and provider in self.groups)
+        if not known:
+            msg = f"{provider}: provider is not recognised by eodag"
+            raise UnsupportedProvider(msg)
+
     def __contains__(self, item: object) -> bool:
         """
         Check if a provider is in the dictionary by name or :class:`~eodag.api.provider.Provider` instance.
