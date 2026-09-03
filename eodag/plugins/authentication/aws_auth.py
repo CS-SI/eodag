@@ -217,7 +217,7 @@ class AwsAuth(Authentication):
         :return: authenticated objects per bucket
         """
 
-        authenticated_objects: dict[str, Any] = {}
+        authenticated_objects: dict[str, BucketObjectsCollection] = {}
         auth_error_messages: set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
 
