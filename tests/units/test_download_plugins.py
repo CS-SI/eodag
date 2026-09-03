@@ -115,9 +115,10 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
-    def test_plugins_download_base_prepare_download_existing(self):
-        """Download._prepare_download must detect if product destination already exists"""
+    """Test cases for the base download plugin."""
 
+    def test_plugins_download_base_prepare_download_existing(self):
+        """Download._prepare_download must detect if product destination already exists."""
         product_file = NamedTemporaryFile()
         self.product.location = path_to_uri(product_file.name)
         Path(product_file.name).touch()
@@ -132,8 +133,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             self.assertIn("Product already present on this platform", str(cm.output))
 
     def test_plugins_download_base_prepare_download_record_file(self):
-        """Download._prepare_download must check existing record files"""
-
+        """Download._prepare_download must check existing record files."""
         self.product.location = self.product.remote_location = "http://foo.bar"
         self.product.collection = "foo"
 
@@ -189,8 +189,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                 self.assertIn("Product already downloaded", str(cm.output))
 
     def test_plugins_download_base_prepare_download_record_file_collision_dir(self):
-        """Download._prepare_download must detect already-downloaded dir without collision suffix"""
-
+        """Download._prepare_download must detect already-downloaded dir without collision suffix."""
         self.product.properties["title"] = "title to sanitïze"
         self.product.properties["id"] = "id alsô"
         self.product.location = self.product.remote_location = "http://foo.bar"
@@ -221,8 +220,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                 )
 
     def test_plugins_download_base_prepare_download_no_url(self):
-        """Download._prepare_download must return None when no download url"""
-
+        """Download._prepare_download must return None when no download url."""
         self.assertEqual(self.product.remote_location, "")
 
         plugin = self.get_download_plugin(self.product)
@@ -233,8 +231,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         self.assertIsNone(record_filename)
 
     def test_plugins_download_base_prepare_download_collision_avoidance(self):
-        """Download._prepare_download must use collision avoidance suffix"""
-
+        """Download._prepare_download must use collision avoidance suffix."""
         self.product.properties["title"] = "needs sanitïze"
         self.product.properties["id"] = "alsô.zip"
         self.product.location = self.product.remote_location = "somewhere"
@@ -246,7 +243,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         self.assertEqual(fs_path, os.path.join(gettempdir(), "needs_sanitize-also.zip"))
 
     def test_plugins_download_base_prepare_download_dir_permission(self):
-        """Download._prepare_download must check output directory permissions"""
+        """Download._prepare_download must check output directory permissions."""
         if os.name == "nt":
             self.skipTest("windows permissions too complex to set for this test")
 
@@ -261,7 +258,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             self.assertIn("Unable to create records directory", str(cm.output))
 
     def test_plugins_download_base_finalize_extract_not_complete(self):
-        """Download._finalize must not delete archive if extract is True but file is not an archive"""
+        """Download._finalize must not delete archive if extract is True but file is not an archive."""
         plugin = self.get_download_plugin(self.product)
 
         with TemporaryDirectory() as output_dir:
@@ -277,7 +274,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             self.assertTrue(os.path.isfile(fs_path))
 
     def test_plugins_download_base_finalize_extract_complete(self):
-        """Download._finalize must delete archive if extract is True and file is an archive"""
+        """Download._finalize must delete archive if extract is True and file is an archive."""
         plugin = self.get_download_plugin(self.product)
 
         with TemporaryDirectory() as output_dir:
@@ -299,6 +296,8 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
+    """Test cases for the HTTP download plugin."""
+
     def _dummy_product(
         self, provider: str, properties: dict[str, Any], collection: str
     ):
@@ -330,8 +329,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @responses.activate
     def test_plugins_download_http_zip_file_ok(self):
-        """HTTPDownload.download() must keep the output as it is when it is a zip file"""
-
+        """HTTPDownload.download() must keep the output as it is when it is a zip file."""
         provider = "creodias"
         download_url = (
             "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
@@ -412,9 +410,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_nonzip_file_with_zip_extension_ok(
         self, mock_stream, mock_stream_download
     ):
-        """HTTPDownload.download() must create an output directory
-        when the result is a non-zip file with a '.zip' outputs extension"""
+        """HTTPDownload.download() must create an output directory in certain conditions.
 
+        One is when the result is a non-zip file with a '.zip' outputs extension.
+        """
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -458,9 +457,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_file_without_zip_extension_ok(
         self, mock_stream, mock_stream_download
     ):
-        """HTTPDownload.download() must create an output directory
-        when the result is a file without a '.zip' outputs extension"""
+        """HTTPDownload.download() must create an output directory in certain conditions.
 
+        One is when the result is a file without a '.zip' outputs extension.
+        """
         # we use a provider having '.nc' as outputs file extension in its configuration
         product = EOProduct(
             "meteoblue",
@@ -518,8 +518,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_ignore_assets(
         self, mock_requests_get, mock_requests_head, mock_stream, mock_stream_download
     ):
-        """HTTPDownload.download() must ignore assets if configured to"""
-
+        """HTTPDownload.download() must ignore assets if configured to."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = (
             "http://somewhere/download_from_location"
@@ -583,8 +582,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_ignore_assets_without_ssl(
         self, mock_requests_get, mock_requests_head
     ):
-        """HTTPDownload.download() must ignore assets if configured to"""
-
+        """HTTPDownload.download() must ignore assets if configured to."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = (
             "http://somewhere/download_from_location"
@@ -628,8 +626,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_ignore_assets_product_config_true(
         self, mock_stream_download, mock_stream, mock_download_assets
     ):
-        """HTTPDownload.download() must support product-level ignore_assets=True"""
-
+        """HTTPDownload.download() must support product-level ignore_assets=True."""
         product = self._dummy_downloadable_product(
             "dummy_provider",
             {
@@ -665,8 +662,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_ignore_assets_product_config_false(
         self, mock_stream_download, mock_download_assets
     ):
-        """HTTPDownload.download() must support product-level ignore_assets=False"""
-
+        """HTTPDownload.download() must support product-level ignore_assets=False."""
         product = self._dummy_downloadable_product(
             "dummy_provider",
             {
@@ -699,8 +695,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_filename_from_href(
         self, mock_requests_get, mock_requests_head
     ):
-        """HTTPDownload.download() must create an outputfile"""
-
+        """HTTPDownload.download() must create an output file."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -752,8 +747,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_filename_from_get(
         self, mock_requests_get, mock_requests_head
     ):
-        """HTTPDownload.download() must create an outputfile"""
-
+        """HTTPDownload.download() must create an outputfile."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -785,8 +779,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_error(
         self, mock_requests_get, mock_requests_head, mock_asset_size
     ):
-        """HTTPDownload.download() must create an outputfile"""
-
+        """HTTPDownload.download() must create an outputfile."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -810,8 +803,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_interrupt(
         self, mock_requests_get, mock_requests_head, mock_progress_callback
     ):
-        """HTTPDownload.download() must download assets to a temporary file"""
-
+        """HTTPDownload.download() must download assets to a temporary file."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -865,8 +857,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_stream_zip_interrupt(
         self, mock_requests_get, mock_requests_head, mock_progress_callback
     ):
-        """HTTPDownload.stream_download must raise an error if an error is returned by the provider"""
-
+        """HTTPDownload.stream_download must raise an error if an error is returned by the provider."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -896,8 +887,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_too_many_requests_error(
         self, mock_requests_get, mock_requests_head, mock_asset_size
     ):
-        """HTTPDownload.download() must handle a 429 (Too many requests) error"""
-
+        """HTTPDownload.download() must handle a 429 (Too many requests) error."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -913,8 +903,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             plugin.download(self.product, output_dir=self.output_dir)
 
     def test_plugins_download_http_stream_dict_misconfigured(self):
-        """HTTPDownload.stream_download() must raise an error if misconfigured"""
-
+        """HTTPDownload.stream_download() must raise an error if misconfigured."""
         plugin = self.get_download_plugin(self.product)
         with self.assertRaises(MisconfiguredError):
             # Wrong auth instance
@@ -924,8 +913,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
 
     def test_stream_download_single_asset(self):
-        """HTTPDownload.stream_download() must return a response with a single asset"""
-
+        """HTTPDownload.stream_download() must return a response with a single asset."""
         plugin = self.get_download_plugin(self.product)
 
         asset = mock.Mock()
@@ -951,8 +939,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(response.content, [b"chunk1"])
 
     def test_stream_download_multiple_assets_zip(self):
-        """HTTPDownload.stream_download() must return a zipped response with multiple assets"""
-
+        """HTTPDownload.stream_download() must return a zipped response with multiple assets."""
         plugin = self.get_download_plugin(self.product)
 
         asset1 = mock.Mock(filename="file1.txt")
@@ -999,8 +986,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertIn(".zip", response.headers["Content-Disposition"])
 
     def test_stream_download_asset_not_available(self):
-        """HTTPDownload.stream_download() must raise NotAvailableError if asset not available"""
-
+        """HTTPDownload.stream_download() must raise NotAvailableError if asset not available."""
         plugin = self.get_download_plugin(self.product)
 
         self.product.assets = mock.Mock()
@@ -1013,8 +999,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
 
     def test_stream_download_single_asset_with_type(self):
-        """HTTPDownload.stream_download() must return a response with a single asset and its type"""
-
+        """HTTPDownload.stream_download() must return a response with a single asset and its type."""
         plugin = self.get_download_plugin(self.product)
 
         asset = mock.Mock()
@@ -1044,8 +1029,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(response.content, [b"chunk1"])
 
     def test_stream_download_fallback_to_product(self):
-        """HTTPDownload.stream_download() must return a response with product headers if no asset headers"""
-
+        """HTTPDownload.stream_download() must return a response with product headers if no asset headers."""
         plugin = self.get_download_plugin(self.product)
 
         self.product.assets = mock.Mock()
@@ -1062,8 +1046,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(response.headers, self.product.headers)
 
     def test_stream_download_product_empty_raises(self):
-        """HTTPDownload.stream_download() must raise NotAvailableError if no asset and no product headers"""
-
+        """HTTPDownload.stream_download() must raise NotAvailableError if no asset and no product headers."""
         plugin = self.get_download_plugin(self.product)
 
         self.product.assets = mock.Mock()
@@ -1083,8 +1066,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_resume(
         self, mock_requests_get, mock_requests_head
     ):
-        """HTTPDownload.download() must resume the interrupted download of assets"""
-
+        """HTTPDownload.download() must resume the interrupted download of assets."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -1128,8 +1110,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_asset_filter(
         self, mock_requests_get, mock_requests_head
     ):
-        """HTTPDownload.download() must create an outputfile"""
-
+        """HTTPDownload.download() must create an outputfile."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -1169,8 +1150,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_filename_from_head(
         self, mock_requests_get, mock_requests_head
     ):
-        """HTTPDownload.download() must create an outputfile"""
-
+        """HTTPDownload.download() must create an outputfile."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -1202,8 +1182,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_size(
         self, mock_requests_get, mock_requests_head, mock_progress_callback_reset
     ):
-        """HTTPDownload.download() must get assets sizes"""
-
+        """HTTPDownload.download() must get assets sizes."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.assets.clear()
@@ -1307,8 +1286,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_one_local_asset(
         self,
     ):
-        """HTTPDownload.download() must handle one local asset"""
-
+        """HTTPDownload.download() must handle one local asset."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -1332,8 +1310,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_several_local_assets(
         self,
     ):
-        """HTTPDownload.download() must handle several local assets"""
-
+        """HTTPDownload.download() must handle several local assets."""
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
@@ -1375,8 +1352,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_download_cop_ads(
         self,
     ):
-        """HTTPDownload.download must order the product if needed"""
-
+        """HTTPDownload.download must order the product if needed."""
         self.product.provider = "cop_ads"
         self.product.collection = "CAMS_EAC4"
         product_dataset = "cams-global-reanalysis-eac4"
@@ -1472,7 +1448,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_get(self, mock_request):
-        """HTTPDownload._order() must request using eodag:order_link and GET protocol"""
+        """HTTPDownload._order() must request using eodag:order_link and GET protocol."""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
@@ -1506,9 +1482,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_get_raises_if_request_500(self, mock_request):
-        """HTTPDownload._order() must raise an error if request to backend
-        provider failed"""
-
+        """HTTPDownload._order() must raise an error if request to backend provider failed."""
         # Configure mock to raise an error
         mock_request.return_value = MockResponse(status_code=500)
 
@@ -1571,7 +1545,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):
-        """HTTPDownload._order() must request using eodag:order_link and POST protocol"""
+        """HTTPDownload._order() must request using eodag:order_link and POST protocol."""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
@@ -1628,7 +1602,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def test_plugins_download_http_order_status(self):
-        """HTTPDownload._order_status() must request status using eodag:status_link"""
+        """HTTPDownload._order_status() must request status using eodag:status_link."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {
@@ -1668,7 +1642,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_status_from_head_headers(self, mock_request):
-        """HTTPDownload._order_status() must not parse an empty HEAD response"""
+        """HTTPDownload._order_status() must not parse an empty HEAD response."""
         plugin = HTTPDownload(
             provider=self.product.provider,
             config=PluginConfig.from_mapping(
@@ -1709,9 +1683,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_status_get_raises_if_request_500(
         self, mock_request
     ):
-        """HTTPDownload._order() must raise an error if request to backend
-        provider failed"""
-
+        """HTTPDownload._order() must raise an error if request to backend provider failed."""
         # Configure mock to raise an error
         mock_request.return_value = MockResponse(status_code=500)
 
@@ -1836,7 +1808,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_status_search_again_raises_if_request_failed(
         self,
     ):
-        """HTTPDownload._order_status() must raise an error if the search request after success failed"""
+        """HTTPDownload._order_status() must raise an error if the search request after success failed."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {"eodag:order_status": "$.json.status"},
@@ -1887,6 +1859,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
+    """Test cases for the HTTP download plugin with retry logic."""
+
     def setUp(self):
         super(TestDownloadPluginHttpRetry, self).setUp()
 
@@ -1896,7 +1870,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         self.product.properties["order:status"] = OFFLINE_STATUS
 
     def test_plugins_download_http_retry_error_timeout(self):
-        """HTTPDownload.download() must retry on error until timeout"""
+        """HTTPDownload.download() must retry on error until timeout."""
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
@@ -1932,7 +1906,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         run()
 
     def test_plugins_download_http_retry_notready_timeout(self):
-        """HTTPDownload.download() must retry if not ready until timeout"""
+        """HTTPDownload.download() must retry if not ready until timeout."""
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
@@ -1953,7 +1927,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         run()
 
     def test_plugins_download_http_retry_ok(self):
-        """HTTPDownload.download() must retry until request succeeds"""
+        """HTTPDownload.download() must retry until request succeeds."""
 
         @responses.activate(registry=responses.registries.OrderedRegistry)
         def run():
@@ -1983,7 +1957,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         run()
 
     def test_plugins_download_http_retry_short_timeout(self):
-        """HTTPDownload.download() must not retry on very short timeout"""
+        """HTTPDownload.download() must not retry on very short timeout."""
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
@@ -2004,7 +1978,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         run()
 
     def test_plugins_download_http_retry_once_timeout(self):
-        """HTTPDownload.download() must retry once if wait time is equal to timeout"""
+        """HTTPDownload.download() must retry once if wait time is equal to timeout."""
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
@@ -2025,7 +1999,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         run()
 
     def test_plugins_download_http_retry_timeout_disabled(self):
-        """HTTPDownload.download() must not retry on error if timeout is disabled"""
+        """HTTPDownload.download() must not retry on error if timeout is disabled."""
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
@@ -2044,6 +2018,8 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginAws(BaseDownloadPluginTest):
+    """Test cases for the AWS download plugin."""
+
     def setUp(self):
         super(TestDownloadPluginAws, self).setUp()
         self.product = EOProduct(
@@ -2061,8 +2037,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
 
     def test_plugins_download_aws_get_bucket_prefix(self):
-        """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location"""
-
+        """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.products["S2_MSI_L2A"]["default_bucket"] = "default_bucket"
 
@@ -2080,7 +2055,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.assertEqual((bucket, prefix), ("default_bucket", "somewhere/else"))
 
     def test_plugins_download_aws_get_commonpath(self):
-        """AwsDownload._get_commonpath() must return common chunk destination path"""
+        """AwsDownload._get_commonpath() must return common chunk destination path."""
         plugin = self.get_download_plugin(self.product)
         product_chunks = {
             mock.Mock(key="path/to/some/product/file1.tif"),
@@ -2093,9 +2068,120 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         self.assertEqual(common_path, "path/to/some/product")
 
+    def test_plugins_download_aws_ignores_directory_markers_and_sibling_files(self):
+        """AwsDownload._get_unique_products() must ignore S3 directory markers and sibling files.
+
+        Objects that should be included are only:
+        - exact object at the product prefix which does not have any child object, even if it has zero size
+        - exact object at the product prefix which has children objects, but it must have a non-zero size
+        - actual product files (child below the product folder), even if they have zero size.
+        """
+        plugin = self.get_download_plugin(self.product)
+
+        # Test the case where the S3 bucket contains a mix of directory markers, actual product files, and sibling files
+
+        # Setup mock S3 objects representing directory markers and actual files:
+        # - Exact directory marker (zero-size object at the prefix itself)
+        # - Exact directory marker with non-zero size (exact object at the prefix itself)
+        # - Slash directory marker (object with trailing slash)
+        # - Actual product file with non-zero size (child below the product folder)
+        # - Actual product file with zero size (child below the product folder)
+        # - Sibling file outside the product directory with similar prefix
+        exact_directory_marker_zero_size = mock.Mock(key="path/to/some/product", size=0)
+        exact_directory_marker_non_zero_size = mock.Mock(
+            key="path/to/some/product", size=1
+        )
+        slash_directory_marker = mock.Mock(key="path/to/some/product/", size=1)
+        product_file_zero_size = mock.Mock(key="path/to/some/product/file2.tif", size=0)
+        product_file_non_zero_size = mock.Mock(
+            key="path/to/some/product/file1.tif", size=1
+        )
+        sibling_file = mock.Mock(key="path/to/some/product.txt", size=1)
+        bucket_objects = mock.Mock()
+        bucket_objects.filter.side_effect = lambda Prefix: [
+            chunk
+            for chunk in (
+                exact_directory_marker_zero_size,
+                exact_directory_marker_non_zero_size,
+                slash_directory_marker,
+                product_file_zero_size,
+                product_file_non_zero_size,
+                sibling_file,
+            )
+            if chunk.key.startswith(Prefix)
+        ]
+
+        product_chunks = plugin._get_unique_products(
+            [("somebucket", "path/to/some/product")],
+            {"somebucket": bucket_objects},
+            None,
+            False,
+            self.product,
+        )
+
+        bucket_objects.filter.assert_called_once_with(Prefix="path/to/some/product")
+
+        # Check the files that should be included in the product chunks are:
+        # - child below the product directory (actual product files), zero size included
+        # - non-empty folder with children objects (not a directory marker)
+        self.assertSetEqual(
+            product_chunks,
+            {
+                product_file_non_zero_size,
+                product_file_zero_size,
+                exact_directory_marker_non_zero_size,
+            },
+        )
+
+        # Test the case where the exact zero-size object is the only one
+        # matching the prefix (it does not have any child object).
+        bucket_objects.reset_mock()
+        bucket_objects.filter.side_effect = lambda Prefix: (
+            []
+            if Prefix == "path/to/some/product"
+            else [exact_directory_marker_zero_size]
+        )
+
+        product_chunks = plugin._get_unique_products(
+            [("somebucket", "path/to/some/product")],
+            {"somebucket": bucket_objects},
+            None,
+            False,
+            self.product,
+        )
+
+        # Check that when an exact object does not have any child object, it is still included
+        # in the product chunks, even it is zero-size (it is not an directory marker anymore).
+        self.assertSetEqual(product_chunks, {exact_directory_marker_zero_size})
+
+    def test_plugins_download_aws_falls_back_to_slash_prefix(self):
+        """AwsDownload._get_unique_products() must support backends requiring slash prefix."""
+        plugin = self.get_download_plugin(self.product)
+        product_file = mock.Mock(key="path/to/some/product/file.tif", size=1)
+        bucket_objects = mock.Mock()
+        bucket_objects.filter.side_effect = lambda Prefix: (
+            [] if Prefix == "path/to/some/product" else [product_file]
+        )
+
+        product_chunks = plugin._get_unique_products(
+            [("somebucket", "path/to/some/product")],
+            {"somebucket": bucket_objects},
+            None,
+            False,
+            self.product,
+        )
+
+        bucket_objects.filter.assert_has_calls(
+            [
+                mock.call(Prefix="path/to/some/product"),
+                mock.call(Prefix="path/to/some/product/"),
+            ]
+        )
+        self.assertSetEqual(product_chunks, {product_file})
+
     @mock.patch("eodag.plugins.download.aws.stream_download_from_s3", autospec=True)
     def test_plugins_download_aws_stream_download(self, mock_stream_download_from_s3):
-        """AwsDownload.stream_download() must stream S3 objects with flattened paths"""
+        """AwsDownload.stream_download() must stream S3 objects with flattened paths."""
         expected_response = StreamResponse(iter([b"content"]))
         mock_stream_download_from_s3.return_value = expected_response
         plugin = self.get_download_plugin(self.product)
@@ -2210,7 +2296,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_flatten_top_directories: mock.Mock,
         mock__get_unique_products: mock.Mock,
     ):
-        """AwsDownload.download() must not call safe build methods if not needed"""
+        """AwsDownload.download() must not call safe build methods if not needed."""
         mock_aws_auth_init.return_value = None
 
         plugin = self.get_download_plugin(self.product)
@@ -2265,8 +2351,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_flatten_top_directories: mock.Mock,
         mock__get_unique_products: mock.Mock,
     ):
-        """AwsDownload.download() must not call safe build methods if not needed"""
-
+        """AwsDownload.download() must not call safe build methods if not needed."""
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -2319,7 +2404,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_s3_resource: mock.Mock,
         mock_s3_session: mock.Mock,
     ):
-        """AwsDownload.download() must handle files in zip"""
+        """AwsDownload.download() must handle files in zip."""
 
         def _open_zip(*args, **kwargs):
             return (
@@ -2400,8 +2485,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_check_manifest_file_list,
         mock_flatten_top_directories,
     ):
-        """AwsDownload.download() must call safe build methods if needed"""
-
+        """AwsDownload.download() must call safe build methods if needed."""
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -2486,8 +2570,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_check_manifest_file_list,
         mock_flatten_top_directories,
     ):
-        """AwsDownload.download() must call safe build methods if needed"""
-
+        """AwsDownload.download() must call safe build methods if needed."""
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -2567,8 +2650,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_aws_auth_init,
         mock_get_authenticated_objects: mock.Mock,
     ):
-        """AwsDownload.download() must fail if no product chunk is available"""
-
+        """AwsDownload.download() must fail if no product chunk is available."""
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -2600,8 +2682,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_s3_session: mock.Mock,
         mock_s3_client: mock.Mock,
     ):
-        """AwsDownload.get_rio_env() must return rio env dict"""
-
+        """AwsDownload.get_rio_env() must return rio env dict."""
         self.product.properties["eodag:download_link"] = "s3://some-bucket/some/prefix"
 
         plugin = self.get_download_plugin(self.product)
