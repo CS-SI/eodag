@@ -418,10 +418,24 @@ class TestProvidersDict(unittest.TestCase):
 
         # pruned provider: MisconfiguredError takes precedence over UnsupportedProvider
         providers.pruned_providers_config["provider1"] = providers["provider1"].config
+        providers.pruned_providers_reasons["provider1"] = {
+            "reason": "provider needing auth for search was pruned because no credentials could be found",
+            "reason_type": "missing_credentials",
+        }
         with self.assertRaisesRegex(
             MisconfiguredError,
             "provider1: provider needing auth for search was pruned "
             "because no credentials could be found",
+        ):
+            providers.check_supported("provider1")
+
+        providers.pruned_providers_reasons["provider1"] = {
+            "reason": "SkippedSearch plugin skipped",
+            "reason_type": "skipped_plugin",
+        }
+        with self.assertRaisesRegex(
+            UnsupportedProvider,
+            "provider1: provider is not available because SkippedSearch plugin skipped",
         ):
             providers.check_supported("provider1")
 

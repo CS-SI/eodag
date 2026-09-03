@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 import importlib_metadata
 
 from eodag.api.provider import ProvidersDict
-from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, load_config
+from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, PluginConfig, load_config
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
@@ -46,7 +46,6 @@ if TYPE_CHECKING:
 
     from eodag.api.product._product import EOProduct
     from eodag.api.provider import ProviderConfig
-    from eodag.config import PluginConfig
     from eodag.plugins.base import PluginTopic
 
 
@@ -73,10 +72,10 @@ class PluginManager:
 
     collection_to_provider_config_map: dict[str, list[ProviderConfig]]
 
-    skipped_plugins: list[str]
+    skipped_plugins: dict[str, str]
 
     def __init__(self, providers: ProvidersDict) -> None:
-        self.skipped_plugins = []
+        self.skipped_plugins = {}
         self.providers = providers
         # Load all the plugins. This will make all plugin classes of a particular
         # type to be available in the base plugin class's 'plugins' attribute.
@@ -94,12 +93,12 @@ class PluginManager:
                 try:
                     entry_point.load()
                 except ModuleNotFoundError:
-                    logger.debug(
-                        "%s plugin skipped, eodag[%s] or eodag[all] needed",
-                        entry_point.name,
-                        ",".join(entry_point.extras),
+                    msg = (
+                        f"{entry_point.name} plugin skipped, "
+                        f"eodag[{','.join(entry_point.extras)}] or eodag[all] needed"
                     )
-                    self.skipped_plugins.append(entry_point.name)
+                    logger.debug(msg)
+                    self.skipped_plugins[entry_point.name] = msg
                 except ImportError:
                     import traceback as tb
 
@@ -190,6 +189,25 @@ class PluginManager:
                 collection_providers.append(provider.config)
                 collection_providers.sort(key=attrgetter("priority"), reverse=True)
 
+    def get_skipped_plugin_messages(self, provider_config: ProviderConfig) -> list[str]:
+        """Return skipped plugin messages for plugins used by a provider config."""
+        return [
+            self.skipped_plugins[plugin_conf.type]
+            for plugin_conf in provider_config.__dict__.values()
+            if isinstance(plugin_conf, PluginConfig)
+            and getattr(plugin_conf, "type", None) in self.skipped_plugins
+        ]
+
+    def check_provider_available(
+        self, provider: str, include_groups: bool = False
+    ) -> None:
+        """Check whether a provider or provider group can be used by plugins.
+
+        Plugin availability is reflected in the provider prune reasons recorded during
+        gateway initialization. The final exception is raised by ``ProvidersDict``.
+        """
+        self.providers.check_supported(provider, include_groups=include_groups)
+
     def get_search_plugins(
         self, collection: Optional[str] = None, provider: Optional[str] = None
     ) -> Iterator[Union[Search, Api]]:
@@ -234,7 +252,7 @@ class PluginManager:
             configs = list(p.config for p in self.providers.values())
 
         if provider:
-            self.providers.check_supported(provider, include_groups=True)
+            self.check_provider_available(provider, include_groups=True)
             configs = [
                 c for c in configs if provider in [getattr(c, "group", None), c.name]
             ]
