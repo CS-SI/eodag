@@ -51,6 +51,7 @@ from tests.context import (
     CommonQueryables,
     EODataAccessGateway,
     EOProduct,
+    MisconfiguredError,
     NoMatchingCollection,
     PluginImplementationError,
     ProviderConfig,
@@ -1663,19 +1664,28 @@ class TestCore(TestCoreBase):
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
 
-        def skip_qssearch(group):
+        def skip_usgs_api(group):
             ep = mock.MagicMock()
-            if group == "eodag.plugins.search":
-                ep.name = "QueryStringSearch"
+            if group == "eodag.plugins.api":
+                ep.name = "UsgsApi"
+                ep.extras = ["usgs"]
                 ep.load = mock.MagicMock(side_effect=ModuleNotFoundError())
             return [ep]
 
-        mock_iter_ep.side_effect = skip_qssearch
+        mock_iter_ep.side_effect = skip_usgs_api
 
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-        self.assertNotIn("sara", dag.providers.names)
-        self.assertEqual(dag._plugins_manager.skipped_plugins, ["QueryStringSearch"])
-        dag._plugins_manager.skipped_plugins = []
+        self.assertNotIn("usgs", dag.providers.names)
+        self.assertEqual(
+            dag._plugins_manager.skipped_plugins,
+            {"UsgsApi": "UsgsApi plugin skipped, eodag[usgs] or eodag[all] needed"},
+        )
+        with self.assertRaisesRegex(
+            UnsupportedProvider,
+            r"usgs: provider is not available because UsgsApi plugin skipped, eodag\[usgs\] or eodag\[all\] needed",
+        ):
+            list(dag._plugins_manager.get_search_plugins(provider="usgs"))
+        dag._plugins_manager.skipped_plugins = {}
 
     def test_prune_providers_list_for_search_without_auth(self):
         """Providers needing auth for search but without auth plugin must be pruned on init"""
@@ -1756,6 +1766,27 @@ class TestCore(TestCoreBase):
         self.assertListEqual(
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )
+
+    def test_set_preferred_provider_pruned(self):
+        """set_preferred_provider must raise MisconfiguredError for a pruned provider"""
+        self.dag._providers.pruned_providers_config["creodias"] = self.dag._providers[
+            "creodias"
+        ].config
+        self.dag._providers.pruned_providers_reasons["creodias"] = {
+            "reason": "provider needing auth for search was pruned because no credentials could be found",
+            "reason_type": "missing_credentials",
+        }
+        try:
+            self.assertRaisesRegex(
+                MisconfiguredError,
+                "creodias: provider needing auth for search was pruned "
+                "because no credentials could be found",
+                self.dag.set_preferred_provider,
+                "creodias",
+            )
+        finally:
+            self.dag._providers.pruned_providers_config.pop("creodias", None)
+            self.dag._providers.pruned_providers_reasons.pop("creodias", None)
 
     def test_update_providers_config(self):
         """update_providers_config must update providers configuration"""
@@ -5121,6 +5152,36 @@ class TestCoreProviderGroup(TestCoreBase):
         )
 
         self.assertCountEqual(group_plugins, [*plugin1, *plugin2])
+
+    def test_get_search_plugins_unknown_provider(self) -> None:
+        """get_search_plugins must raise UnsupportedProvider for an unknown provider/group"""
+        with self.assertRaisesRegex(
+            UnsupportedProvider, "unknown: provider is not recognised by eodag"
+        ):
+            list(self.dag._plugins_manager.get_search_plugins(provider="unknown"))
+
+    def test_get_search_plugins_pruned_provider(self) -> None:
+        """get_search_plugins must raise MisconfiguredError for a pruned provider"""
+        manager_providers = self.dag._plugins_manager.providers
+        manager_providers.pruned_providers_config[self.group[0]] = manager_providers[
+            self.group[0]
+        ].config
+        manager_providers.pruned_providers_reasons[self.group[0]] = {
+            "reason": "provider needing auth for search was pruned because no credentials could be found",
+            "reason_type": "missing_credentials",
+        }
+        try:
+            with self.assertRaisesRegex(
+                MisconfiguredError,
+                f"{self.group[0]}: provider needing auth for search was pruned "
+                "because no credentials could be found",
+            ):
+                list(
+                    self.dag._plugins_manager.get_search_plugins(provider=self.group[0])
+                )
+        finally:
+            manager_providers.pruned_providers_config.pop(self.group[0], None)
+            manager_providers.pruned_providers_reasons.pop(self.group[0], None)
 
 
 class TestCoreStrictMode(TestCoreBase):

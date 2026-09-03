@@ -27,8 +27,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Iterator,
+    Literal,
     Mapping,
     Optional,
+    TypedDict,
     Union,
     get_type_hints,
 )
@@ -66,6 +68,18 @@ logger = logging.getLogger("eodag.provider")
 
 AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
 PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
+
+
+class PrunedProviderReason(TypedDict):
+    """Reason why a provider was removed from the active providers registry."""
+
+    reason: str
+    reason_type: Literal[
+        "skipped_plugin",
+        "missing_credentials",
+        "missing_auth_plugin",
+        "missing_search_plugin",
+    ]
 
 
 class ProviderConfig(yaml.YAMLObject):
@@ -592,6 +606,46 @@ class ProvidersDict(UserDict[str, Provider]):
 
     :param providers: Initial providers to populate the dictionary.
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # configs of providers removed from active providers list
+        self.pruned_providers_config: dict[str, ProviderConfig] = {}
+        self.pruned_providers_reasons: dict[str, PrunedProviderReason] = {}
+
+    def check_supported(
+        self,
+        provider: str,
+        include_groups: bool = False,
+    ) -> None:
+        """
+        Check that a provider or provider group is known in the provider registry.
+
+        Providers removed from the active registry are reported using their stored
+        prune reason. This method does not inspect plugin loading state directly;
+        plugin-related prune reasons must be recorded by the pruning code.
+
+        :param provider: The name of the provider (or group, if ``include_groups``) to check.
+        :param include_groups: Whether a provider group name is also accepted as known.
+        :raises MisconfiguredError: If the provider was pruned for a configuration reason.
+        :raises UnsupportedProvider: If the provider/group is unknown, or if the provider
+                                     was pruned because a required plugin was skipped.
+        """
+        if provider in self.pruned_providers_config:
+            if reason_dict := self.pruned_providers_reasons.get(provider):
+                reason = reason_dict["reason"]
+                if reason_dict["reason_type"] == "skipped_plugin":
+                    msg = f"{provider}: provider is not available because {reason}"
+                    raise UnsupportedProvider(msg)
+                msg = f"{provider}: {reason}"
+                raise MisconfiguredError(msg)
+            # Fallback for legacy/manual pruned entries missing an explicit reason.
+            msg = f"{provider}: provider has been pruned and is not available"
+            raise UnsupportedProvider(msg)
+        known = provider in self.names or (include_groups and provider in self.groups)
+        if not known:
+            msg = f"{provider}: provider is not recognised by eodag"
+            raise UnsupportedProvider(msg)
 
     def __contains__(self, item: object) -> bool:
         """
