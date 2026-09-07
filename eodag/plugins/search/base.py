@@ -32,7 +32,6 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
-from eodag.api.search_result import SearchResult
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
@@ -57,6 +56,7 @@ if TYPE_CHECKING:
     from requests.auth import AuthBase
 
     from eodag import EOProduct
+    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.base")

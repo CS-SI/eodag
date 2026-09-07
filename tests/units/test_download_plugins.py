@@ -31,6 +31,7 @@ from unittest import mock
 import responses
 from requests.structures import CaseInsensitiveDict
 
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
     DownloadError,
@@ -50,11 +51,11 @@ from tests.context import (
     HTTPDownload,
     NotAvailableError,
     PluginConfig,
-    PluginManager,
-    ProvidersDict,
     S3FileInfo,
     StreamResponse,
+    build_provider_configs,
     load_default_config,
+    make_plugins_manager,
     path_to_uri,
     uri_to_path,
 )
@@ -64,8 +65,8 @@ class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseDownloadPluginTest, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
-        cls.plugins_manager = PluginManager(providers)
+        providers = build_provider_configs(load_default_config())
+        cls.plugins_manager = make_plugins_manager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
         expanduser_mock_side_effect = (
@@ -77,12 +78,19 @@ class BaseDownloadPluginTest(unittest.TestCase):
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
         cls.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
     @classmethod
     def tearDownClass(cls):
         super(BaseDownloadPluginTest, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
+        cls.sqlite_mock.stop()
         cls.tmp_home_dir.cleanup()
 
     def setUp(self):
@@ -2427,7 +2435,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_get_authenticated_objects.return_value.filter.side_effect = (
             lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
         )
-        # # chunk dest path mock
+        # chunk dest path mock
         mock_get_chunk_dest_path.side_effect = lambda *x, **y: x[2].key
 
         # SAFE build

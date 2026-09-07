@@ -61,7 +61,7 @@ def _import_stac_item_from_eodag_server(
     """Import a STAC item from EODAG Server.
 
     :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
+    :param plugins_manager: The EODAG plugins manager instance
     :returns: An EOProduct created from the STAC item
     """
     provider = None
@@ -122,7 +122,7 @@ def _import_stac_item_from_known_provider(
     """Import a STAC item from an already-configured STAC provider.
 
     :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
+    :param plugins_manager: The EODAG plugins manager instance
     :param provider: The associated provider from which configuration should be used for mapping.
     :returns: An EOProduct created from the STAC item
     """
@@ -173,7 +173,7 @@ def _import_stac_item_from_unknown_provider(
     """Import a STAC item from an unknown STAC provider.
 
     :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
+    :param plugins_manager: The EODAG plugins manager instance
     :returns: An EOProduct created from the STAC item
     """
     try:

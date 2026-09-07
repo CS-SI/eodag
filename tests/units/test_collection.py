@@ -26,6 +26,7 @@ from unittest import mock
 import orjson
 from lxml import html
 
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils.exceptions import ValidationError
 from tests.context import (
@@ -37,16 +38,34 @@ from tests.context import (
 
 
 class TestCollection(unittest.TestCase):
-    def setUp(self):
-        super(TestCollection, self).setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = TemporaryDirectory()
-        self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        cls.tmp_home_dir = TemporaryDirectory()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
-        self.expanduser_mock.start()
+        cls.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
-        self.dag = EODataAccessGateway()
+        cls.dag = EODataAccessGateway()
+
+    @classmethod
+    def tearDownClass(cls):
+        # stop Mock and remove tmp config dir
+        cls.sqlite_mock.stop()
+        cls.expanduser_mock.stop()
+        cls.tmp_home_dir.cleanup()
+        super().tearDownClass()
+
+    def setUp(self):
+        super().setUp()
         self.collection = Collection.create_with_dag(self.dag, id="foo")
 
         # mock os.environ to empty env
@@ -54,13 +73,9 @@ class TestCollection(unittest.TestCase):
         self.mock_os_environ.start()
 
     def tearDown(self):
-        super(TestCollection, self).tearDown()
+        super().tearDown()
         # stop os.environ
         self.mock_os_environ.stop()
-
-        # stop Mock and remove tmp config dir
-        self.expanduser_mock.stop()
-        self.tmp_home_dir.cleanup()
 
     def test_collection_enable_validation(self):
         """Collection validation is enabled by an environment variable.
@@ -125,6 +140,8 @@ class TestCollection(unittest.TestCase):
                 "keywords",
                 "providers",
                 "summaries",
+                "federation_backends",
+                "sci_doi",
             ],
         )
 
@@ -190,6 +207,17 @@ class TestCollection(unittest.TestCase):
 
         # TODO: when some fields of the model will allow it, add tests of fields whose annotation is "list[str]"
 
+    def test_collection_string_fields_stay_string(self):
+        """Fields with str or Optional[str] annotation must keep their string value
+        and not be converted to a list, unlike fields with list[str] or Optional[list[str]] annotation."""
+        # verify sci_doi is an optional string field in the model
+        self.assertEqual(Collection.model_fields["sci_doi"].annotation, Optional[str])
+
+        # a string value set via alias must remain a plain string, not be split into a list
+        collection = Collection(**{"id": "foo", "sci:doi": "10.1234/test-doi"})
+        self.assertIsInstance(collection.sci_doi, str)
+        self.assertEqual(collection.sci_doi, "10.1234/test-doi")
+
     def test_collection_summaries_fields(self):
         """Check that summaries fields are fields of the model and check the list"""
         for field in Collection.summaries_fields():
@@ -202,7 +230,6 @@ class TestCollection(unittest.TestCase):
                 "instruments",
                 "platform",
                 "processing_level",
-                "sci_doi",
                 "eodag_sensor_type",
             ],
         )
@@ -385,7 +412,7 @@ class TestCollection(unittest.TestCase):
         )
 
         # "processing_level" and "eodag_sensor_type" should have been converted to a list
-        # if their field allow list of sets or of integer
+        # if their field allow list of sets or of integers
         # TODO: add a test with a "summaries" field accepting an other type
         # than string when a field will allow to deal with this case
         self.assertDictEqual(
@@ -635,6 +662,7 @@ class TestCollection(unittest.TestCase):
                 "href": "https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file",
                 "type": "application/pdf",
                 "title": "User Manual",
+                "label": None,
             }
 
             # try to create a collection with a wrong link and check that logs have been emitted
@@ -644,7 +672,7 @@ class TestCollection(unittest.TestCase):
                     links=[wrong_link, right_link],
                 )
 
-            self.assertIn("3 validation errors for collection foo", str(cm.output))
+            self.assertIn("2 validation errors for collection foo", str(cm.output))
 
             self.assertIn(
                 "links.0.href\\n  Field required",
@@ -652,7 +680,7 @@ class TestCollection(unittest.TestCase):
             )
 
             self.assertIn(
-                "links.0.type.str\\n  Input should be a valid string",
+                "links.0.type\\n  Input should be a valid string",
                 str(cm.output),
             )
 
@@ -800,7 +828,7 @@ class TestCollection(unittest.TestCase):
             str(context.exception),
         )
 
-    def test_search_result_repr_html(self):
+    def test_collection_repr_html(self):
         """Collection html repr must be correctly formatted"""
         sr_repr = html.fromstring(self.collection._repr_html_())
         self.assertIn("Collection", sr_repr.xpath("//thead/tr/td")[0].text)
@@ -813,7 +841,7 @@ class TestCollectionsDict(unittest.TestCase):
         super().setUpClass()
         cls.collections_dict = CollectionsDict([Collection(id="foo")])
 
-    def test_search_result_is_dict_like(self):
+    def test_collections_dict_is_dict_like(self):
         """CollectionsDict must provide a dict interface"""
         self.assertIsInstance(self.collections_dict, UserDict)
 
@@ -825,11 +853,16 @@ class TestCollectionsList(unittest.TestCase):
         super().setUpClass()
         cls.collections_list = CollectionsList([Collection(id="foo")])
 
-    def test_search_result_is_list_like(self):
+    def test_collections_list_is_list_like(self):
         """CollectionsList must provide a list interface"""
         self.assertIsInstance(self.collections_list, UserList)
 
-    def test_search_result_repr_html(self):
+    def test_collections_list_get(self):
+        """CollectionsList.get() must return a collection of the list if the given id exists or None"""
+        self.assertEqual(self.collections_list.get("foo"), Collection(id="foo"))
+        self.assertIsNone(self.collections_list.get("bar"))
+
+    def test_collections_list_repr_html(self):
         """CollectionsList html repr must be correctly formatted"""
         sr_repr = html.fromstring(self.collections_list._repr_html_())
         self.assertIn("CollectionsList", sr_repr.xpath("//details/summary")[0].text)

@@ -1,5 +1,4 @@
 wekeo_cmems:
-  group: wekeo
   priority: 0
   roles:
     - host

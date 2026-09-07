@@ -20,16 +20,16 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict, UserList
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, List, Literal, Optional, cast
+from urllib.parse import urljoin
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr, TypeAdapter
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr, RootModel, TypeAdapter
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Collection as StacCollection
 from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
-from stac_pydantic.links import Links
-from stac_pydantic.shared import SEMVER_REGEX
+from stac_pydantic.shared import SEMVER_REGEX, StacBaseModel
 
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
@@ -55,6 +55,50 @@ RFC3339_PATTERN = (
     r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
 )
 STAC_EXTENSIONS_ADAPTER = TypeAdapter(list[AnyUrl])
+
+
+class Link(StacBaseModel):
+    """
+    https://github.com/radiantearth/stac-spec/blob/v1.0.0/collection-spec/collection-spec.md#link-object
+    """
+
+    href: str = Field(..., alias="href", min_length=1)
+    rel: str = Field(..., alias="rel", min_length=1)
+    type: Optional[str] = None
+    title: Optional[str] = None
+
+    # Label extension
+    label: Optional[str] = Field(default=None, alias="label:assets")
+    model_config = ConfigDict(use_enum_values=True, extra="allow")
+
+    def resolve(self, base_url: str) -> None:
+        """resolve a link to the given base URL"""
+        self.href = urljoin(base_url, self.href)
+
+
+class Links(RootModel[List[Link]]):
+    """A class representing a list of :class:`~eodag.api.collection.Link` objects."""
+
+    root: List[Link]
+
+    def link_iterator(self) -> Iterator[Link]:
+        """Produce iterator to iterate through links"""
+        return iter(self.root)
+
+    def resolve(self, base_url: str) -> None:
+        """resolve all links to the given base URL"""
+        for link in self.link_iterator():
+            link.resolve(base_url)
+
+    def append(self, link: Link) -> None:
+        """Append a link to the collection links"""
+        self.root.append(link)
+
+    def __len__(self) -> int:
+        return len(self.root)
+
+    def __getitem__(self, idx: int) -> Link:
+        return self.root[idx]
 
 
 class Collection(StacCollection):
@@ -84,15 +128,21 @@ class Collection(StacCollection):
     keywords: Optional[list[str]] = None
     links: Links = Field(default=Links(root=[]))
 
+    # Fields which are not part of the StacCollection model
+    # but which can be used at the root of a STAC collection instance
+    # They must be explicitly added to the class attribute ``__stac_fields__``
+    # to be kept at the root of the collection instance
+    federation_backends: Optional[list[str]] = Field(
+        default=None, alias="federation:backends"
+    )
+    sci_doi: Optional[str] = Field(default=None, alias="sci:doi")
+
     # summaries
     constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
     instruments: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
     platform: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
     processing_level: Optional[list[str]] = Field(
         default=None, alias="processing:level", exclude=True, repr=False
-    )
-    sci_doi: Optional[list[str]] = Field(
-        default=None, alias="sci:doi", exclude=True, repr=False
     )
     eodag_sensor_type: Optional[list[str]] = Field(
         default=None, alias="eodag:sensor_type", exclude=True, repr=False
@@ -108,7 +158,7 @@ class Collection(StacCollection):
 
     # path to external collection metadata file (required by stac-fastapi-eodag)
     eodag_stac_collection: Optional[str] = Field(
-        default=None, alias="stacCollection", exclude=True, repr=False
+        default=None, alias="stacCollection", repr=False
     )
 
     # Private property to store the eodag internal id value. Not part of the model schema.
@@ -116,7 +166,10 @@ class Collection(StacCollection):
     _dag: Optional[EODataAccessGateway] = PrivateAttr(default=None)
 
     # only STAC fields
-    __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys())
+    __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys()) + [
+        "federation_backends",
+        "sci_doi",
+    ]
 
     # mandatory STAC fields which are fixed by their default value
     __static_fields__: ClassVar[list[str]] = ["type", "stac_version"]
@@ -440,9 +493,9 @@ class Collection(StacCollection):
                                 default_json is not None
                                 and error["loc"][1] in default_json
                             ):
-                                values_dict[wrong_field][error["loc"][1]] = (
-                                    default_json[error["loc"][1]]
-                                )
+                                values_dict[wrong_field][
+                                    error["loc"][1]
+                                ] = default_json[error["loc"][1]]
                         else:
                             try:
                                 values_dict[wrong_field].remove(error["input"])
@@ -659,20 +712,29 @@ class CollectionsDict(UserDict[str, Collection]):
     def __repr__(self) -> str:
         return str(self)
 
+    @classmethod
+    def from_configs(cls, config: dict[str, Any]) -> CollectionsDict:
+        """Create a CollectionsDict instance from a configuration dictionary."""
+        collections = []
+        for collection_id, collection_conf in config.items():
+            collections.append(Collection(**(collection_conf | {"id": collection_id})))
+        return cls(collections)
+
 
 class CollectionsList(UserList[Collection]):
     """An object representing a collection of :class:`~eodag.api.collection.Collection`.
 
     :param collections: A list of collections
+    :param number_matched: (optional) The total number of matching results of a collection search
 
     :cvar data: List of collections
     """
 
     def __init__(
-        self,
-        collections: list[Collection],
+        self, collections: list[Collection], number_matched: Optional[int] = None
     ) -> None:
         super().__init__(collections)
+        self.number_matched = number_matched
 
     def __str__(self) -> str:
         return f"{type(self).__name__}([{', '.join(str(col) for col in self)}])"
@@ -707,3 +769,20 @@ class CollectionsList(UserList[Collection]):
                     """ for i, col in enumerate(self)])
             + "</tbody></table></details>"
         )
+
+    @property
+    def ids(self) -> list[str]:
+        """Get the list of collection IDs."""
+        return [col.id for col in self]
+
+    def get(self, collection: str) -> Optional[Collection]:
+        """
+        Get an instance of :class:`~eodag.api.collection.Collection`.
+
+        :param collection: The collection name.
+        :return: An instance of :class:`~eodag.api.collection.Collection` if the given id is found, otherwise None.
+        """
+        for coll in self:
+            if collection in (coll.id, coll._id):
+                return coll
+        return None
