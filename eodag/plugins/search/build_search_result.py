@@ -218,7 +218,7 @@ def ecmwf_format(v: str, alias: bool = True) -> str:
 
 
 def ecmwf_temporal_to_eodag(
-    params: dict[str, Any]
+    params: dict[str, Any],
 ) -> tuple[Optional[str], Optional[str]]:
     """
     Converts ECMWF temporal parameters to EODAG temporal parameters.
@@ -428,7 +428,10 @@ class ECMWFSearch(PostJsonSearch):
             if "/to/" in _dc_qp.get("date", ""):
                 params[START], params[END] = _dc_qp["date"].split("/to/")
             elif "/" in _dc_qp.get("date", ""):
-                (params[START], params[END],) = _dc_qp[
+                (
+                    params[START],
+                    params[END],
+                ) = _dc_qp[
                     "date"
                 ].split("/")
             elif _dc_qp.get("date"):
@@ -934,7 +937,7 @@ class ECMWFSearch(PostJsonSearch):
             name: str = element["name"]
 
             # those are not parameter elements.
-            if name in ("area_group", "global", "warning", "licences"):
+            if name in ("area_group", "global", "warning", "licences", "geo_group"):
                 continue
             if "type" not in element or element["type"] == "FreeEditionWidget":
                 # FreeEditionWidget used to select the whole available region
