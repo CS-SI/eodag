@@ -715,8 +715,10 @@ class EOProduct:
             raise AddressNotFound(f"{asset_key} not found in {self} assets") from e
         headers = {**USER_AGENT}
 
-        if isinstance(auth, ServiceResource) and isinstance(
-            self.downloader_auth, AwsAuth
+        if (
+            isinstance(auth, ServiceResource)
+            and isinstance(self.downloader_auth, AwsAuth)
+            and url.startswith("s3://")
         ):
             auth_kwargs: dict[str, Any] = dict()
             # AwsAuth

@@ -881,8 +881,8 @@ class TestEOProduct(EODagTestBase):
         )
 
     @mock.patch("eodag.api.product._product.ServiceResource", new=object)
-    def test_get_storage_options_s3_credentials_endpoint(self):
-        """get_storage_options should be adapted to the provider config using s3 credentials and endpoint"""
+    def test_get_storage_options_http_url_does_not_use_s3_auth(self):
+        """HTTP products must not receive AWS/S3 storage options."""
         product = EOProduct(
             self.provider, self.eoproduct_props, collection=self.collection
         )
@@ -911,8 +911,44 @@ class TestEOProduct(EODagTestBase):
         product.register_downloader(Download("foo", PluginConfig()), auth_plugin)
         self.assertDictEqual(
             product.get_storage_options(),
+            {"path": self.download_url},
+        )
+
+    @mock.patch("eodag.api.product._product.ServiceResource", new=object)
+    def test_get_storage_options_s3_credentials_endpoint(self):
+        """get_storage_options should be adapted to the provider config using s3 credentials and endpoint"""
+        product = EOProduct(
+            self.provider,
+            {**self.eoproduct_props, "eodag:download_link": "s3://foo/bar"},
+            collection=self.collection,
+        )
+        auth_plugin = AwsAuth(
+            "foo",
+            PluginConfig.from_mapping(
+                {
+                    "type": "Authentication",
+                    "s3_endpoint": "http://foo.bar",
+                    "credentials": {
+                        "aws_access_key_id": "foo",
+                        "aws_secret_access_key": "bar",
+                        "aws_session_token": "baz",
+                    },
+                    "requester_pays": True,
+                }
+            ),
+        )
+        auth_plugin.s3_session = mock.MagicMock()
+        auth_plugin.s3_session.get_credentials.return_value = mock.Mock(
+            access_key="foo",
+            secret_key="bar",
+            token="baz",
+        )
+        auth_plugin.authenticate = mock.MagicMock(return_value=object())
+        product.register_downloader(Download("foo", PluginConfig()), auth_plugin)
+        self.assertDictEqual(
+            product.get_storage_options(),
             {
-                "path": self.download_url,
+                "path": "s3://foo/bar",
                 "key": "foo",
                 "secret": "bar",
                 "token": "baz",
@@ -925,7 +961,9 @@ class TestEOProduct(EODagTestBase):
     def test_get_storage_options_s3_credentials(self):
         """get_storage_options should be adapted to the provider config using s3 credentials"""
         product = EOProduct(
-            self.provider, self.eoproduct_props, collection=self.collection
+            self.provider,
+            {**self.eoproduct_props, "eodag:download_link": "s3://foo/bar"},
+            collection=self.collection,
         )
         auth_plugin = AwsAuth(
             "foo",
@@ -951,7 +989,7 @@ class TestEOProduct(EODagTestBase):
         self.assertDictEqual(
             product.get_storage_options(),
             {
-                "path": self.download_url,
+                "path": "s3://foo/bar",
                 "key": "foo",
                 "secret": "bar",
                 "token": "baz",
@@ -962,7 +1000,9 @@ class TestEOProduct(EODagTestBase):
     def test_get_storage_options_s3_anon(self):
         """get_storage_options should be adapted to the provider config using anonymous s3 access"""
         product = EOProduct(
-            self.provider, self.eoproduct_props, collection=self.collection
+            self.provider,
+            {**self.eoproduct_props, "eodag:download_link": "s3://foo/bar"},
+            collection=self.collection,
         )
         auth_plugin = AwsAuth(
             "foo",
@@ -977,7 +1017,7 @@ class TestEOProduct(EODagTestBase):
         self.assertDictEqual(
             product.get_storage_options(),
             {
-                "path": self.download_url,
+                "path": "s3://foo/bar",
                 "anon": True,
             },
         )
