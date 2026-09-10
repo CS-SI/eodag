@@ -43,6 +43,13 @@ Also available:
   and linting tools)
 * ``eodag[docs]``, includes dependencies required to build documentation
 
+.. note::
+
+    Providers implemented by optional plugins are available only when the corresponding extra dependencies are
+    installed. If an optional plugin cannot be loaded, providers using it are removed from the active providers list.
+    Direct use of such a provider raises an ``UnsupportedProvider`` error containing the missing extra, for example:
+    ``UsgsApi plugin skipped, eodag[usgs] or eodag[all] needed``.
+
 Conda
 """""
 

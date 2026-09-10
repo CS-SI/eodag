@@ -9,9 +9,9 @@ Featured providers
 This section introduces the featured providers that are already integrated, so you can
 easily start searching, accessing, and downloading products.
 
-Some providers are completely open, while others require an account to access their data.
-Check provider ``Registration info`` in this page to see if credentials are expected and how to get
-them.
+Some providers are completely open, while others require an account to access their data or optional
+dependencies to load their plugin. Check provider ``Registration info`` in this page to see if
+credentials are expected and how to get them.
 
 .. admonition::  EODAG is not limited to the providers listed here
    :class: note
@@ -1029,6 +1029,11 @@ No credentials are needed
 
         :fas:`external-link-alt`
 
+.. note::
+
+    This provider requires the ``ecmwf`` optional dependencies. Install them with ``eodag[ecmwf]``
+    or ``eodag[all-providers]``.
+
 .. dropdown:: Registration info
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
@@ -1213,6 +1218,11 @@ No credentials are needed
         :tooltip: USGS website
 
         :fas:`external-link-alt`
+
+.. note::
+
+    This provider requires the ``usgs`` optional dependencies. Install them with ``eodag[usgs]``
+    or ``eodag[all-providers]``.
 
 .. dropdown:: Registration info
   :color: muted
