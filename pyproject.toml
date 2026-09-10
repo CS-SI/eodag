@@ -289,4 +289,8 @@ testpaths = ["eodag/api", "eodag/types", "eodag/utils", "tests"]
 addopts = "--doctest-modules --disable-socket --allow-unix-socket"
 # logging disabled to prevent conflicts with click, see https://github.com/pallets/click/issues/824
 log_cli = false
-filterwarnings = ["ignore:Call to deprecated eodag:DeprecationWarning"]
+filterwarnings = [
+    """ignore:
+    .*(Call to deprecated eodag|locations_conf_path|user_conf_file_path|EODAG_PROVIDERS_CFG_FILE).*:
+    DeprecationWarning""",
+]

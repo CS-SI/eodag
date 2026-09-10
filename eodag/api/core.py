@@ -130,7 +130,7 @@ class EODataAccessGateway:
     ) -> None:
         if user_conf_file_path is not None:
             warnings.warn(
-                "'user_conf_file_path' is deprecated. "
+                "'user_conf_file_path' parameter is deprecated. "
                 "Use EODAGSettings(cfg_file=...) instead.",
                 DeprecationWarning,
                 stacklevel=2,
@@ -138,7 +138,7 @@ class EODataAccessGateway:
 
         if locations_conf_path is not None:
             warnings.warn(
-                "'locations_conf_path' is deprecated. "
+                "'locations_conf_path' parameter is deprecated. "
                 "Use EODAGSettings(locations_cfg_file=...) instead.",
                 DeprecationWarning,
                 stacklevel=2,

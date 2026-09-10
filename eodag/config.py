@@ -116,7 +116,9 @@ class EODAGSettings(BaseSettings):
 
     providers_cfg_file: Optional[Path] = Field(
         default=None,
-        deprecated=("Deprecated since v4.5.0. Use EODAG_PROVIDERS_CFG_DIR instead."),
+        deprecated=(
+            "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. Use EODAG_PROVIDERS_CFG_DIR instead."
+        ),
         description=("Legacy single provider configuration file."),
     )
 
