@@ -6,6 +6,13 @@ Release history
 v4.8.0 (2026-09-11)
 ===================
 
+Features
+--------
+
+* **core**: Explicit error messages and doc for not-available providers (`#2341`_, `fc3deb4`_)
+
+* **core**: Standardize global settings using pydantic (`#2337`_, `071d3a4`_)
+
 Bug Fixes
 ---------
 
@@ -19,13 +26,6 @@ Documentation
 * Fixed cop_ads tuto and updated overview schema (`#2346`_, `a8776a7`_)
 
 * Updated EODataAccessGateway docstring (`#2348`_, `758b6b4`_)
-
-Features
---------
-
-* **core**: Explicit error messages and doc for not-available providers (`#2341`_, `fc3deb4`_)
-
-* **core**: Standardize global settings using pydantic (`#2337`_, `071d3a4`_)
 
 Refactoring
 -----------
