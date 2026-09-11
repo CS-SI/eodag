@@ -3,6 +3,51 @@ Release history
 ===============
 
 
+v4.8.0 (2026-09-11)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Avoid s3 fsspec storage options for http assets (`#2345`_, `2037290`_)
+
+* **providers**: Complete removal of deprecated eocat configuration (`#2339`_, `086ad68`_)
+
+Documentation
+-------------
+
+* Fixed cop_ads tuto and updated overview schema (`#2346`_, `a8776a7`_)
+
+* Updated EODataAccessGateway docstring (`#2348`_, `758b6b4`_)
+
+Features
+--------
+
+* **core**: Explicit error messages and doc for not-available providers (`#2341`_, `fc3deb4`_)
+
+* **core**: Standardize global settings using pydantic (`#2337`_, `071d3a4`_)
+
+Refactoring
+-----------
+
+* **plugins**: Add new ecmwf property (`#2343`_, `f6267d3`_)
+
+.. _#2337: https://github.com/CS-SI/eodag/pull/2337
+.. _#2339: https://github.com/CS-SI/eodag/pull/2339
+.. _#2341: https://github.com/CS-SI/eodag/pull/2341
+.. _#2343: https://github.com/CS-SI/eodag/pull/2343
+.. _#2345: https://github.com/CS-SI/eodag/pull/2345
+.. _#2346: https://github.com/CS-SI/eodag/pull/2346
+.. _#2348: https://github.com/CS-SI/eodag/pull/2348
+.. _071d3a4: https://github.com/CS-SI/eodag/commit/071d3a46b51e3196762492b21cd8903d38e5efcc
+.. _086ad68: https://github.com/CS-SI/eodag/commit/086ad687017488420fd844617226d3ed94d9025c
+.. _2037290: https://github.com/CS-SI/eodag/commit/20372905b5f20742920f730f8099ced1137fd6ce
+.. _758b6b4: https://github.com/CS-SI/eodag/commit/758b6b480165b800ae7b2eda7e62dc9d1589df85
+.. _a8776a7: https://github.com/CS-SI/eodag/commit/a8776a780d7ec25d64c4ad346b8474cd1680d86c
+.. _f6267d3: https://github.com/CS-SI/eodag/commit/f6267d3a4c3f5b9fc951a6ad5e66b1cbc358e48b
+.. _fc3deb4: https://github.com/CS-SI/eodag/commit/fc3deb48070e5c17fd42d9302bb150bea88d7de4
+
+
 v4.7.2 (2026-08-28)
 ===================
 
