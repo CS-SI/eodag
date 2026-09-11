@@ -184,7 +184,7 @@ class EODAGSettings(BaseSettings):
                 "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. "
                 "Use EODAG_PROVIDERS_CFG_DIR instead.",
                 DeprecationWarning,
-                stacklevel=2,
+                stacklevel=5,
             )
         return self
 

@@ -2695,8 +2695,9 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             )
             with pytest.warns(
                 DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
-            ):
+            ) as warnings_record:
                 self.dag = EODataAccessGateway()
+            self.assertEqual(warnings_record[0].filename, __file__)
             # only foo_provider in conf
             self.assertEqual(self.dag.providers.names, ["foo_provider"])
             self.assertEqual(
