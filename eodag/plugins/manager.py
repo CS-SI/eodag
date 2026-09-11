@@ -20,13 +20,14 @@ from __future__ import annotations
 import logging
 import pathlib
 import re
+from collections.abc import Iterator
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import importlib_metadata
 
 from eodag.api.provider import ProvidersDict
-from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, load_config
+from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, PluginConfig, load_config
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
@@ -46,7 +47,6 @@ if TYPE_CHECKING:
 
     from eodag.api.product._product import EOProduct
     from eodag.api.provider import ProviderConfig
-    from eodag.config import PluginConfig
     from eodag.plugins.base import PluginTopic
 
 
@@ -69,14 +69,15 @@ class PluginManager:
                       supported by ``eodag``
     """
 
-    supported_topics = set(PLUGINS_TOPICS_KEYS)
-
     collection_to_provider_config_map: dict[str, list[ProviderConfig]]
 
-    skipped_plugins: list[str]
+    skipped_plugins: dict[str, str]
+
+    supported_topics: set[str]
 
     def __init__(self, providers: ProvidersDict) -> None:
-        self.skipped_plugins = []
+        self.supported_topics = set(PLUGINS_TOPICS_KEYS)
+        self.skipped_plugins = {}
         self.providers = providers
         # Load all the plugins. This will make all plugin classes of a particular
         # type to be available in the base plugin class's 'plugins' attribute.
@@ -89,17 +90,17 @@ class PluginManager:
             # 'eodag.plugins.search' for example in its setup script. See the setup
             # script of eodag for an example of how to do this.
             for entry_point in importlib_metadata.entry_points(
-                group="eodag.plugins.{}".format(topic)
+                group=f"eodag.plugins.{topic}"
             ):
                 try:
                     entry_point.load()
                 except ModuleNotFoundError:
-                    logger.debug(
-                        "%s plugin skipped, eodag[%s] or eodag[all] needed",
-                        entry_point.name,
-                        ",".join(entry_point.extras),
+                    msg = (
+                        f"{entry_point.name} plugin skipped, "
+                        f"eodag[{','.join(entry_point.extras)}] or eodag[all] needed"
                     )
-                    self.skipped_plugins.append(entry_point.name)
+                    logger.debug(msg)
+                    self.skipped_plugins[entry_point.name] = msg
                 except ImportError:
                     import traceback as tb
 
@@ -190,6 +191,25 @@ class PluginManager:
                 collection_providers.append(provider.config)
                 collection_providers.sort(key=attrgetter("priority"), reverse=True)
 
+    def get_skipped_plugin_messages(self, provider_config: ProviderConfig) -> list[str]:
+        """Return skipped plugin messages for plugins used by a provider config."""
+        return [
+            self.skipped_plugins[plugin_conf.type]
+            for plugin_conf in provider_config.__dict__.values()
+            if isinstance(plugin_conf, PluginConfig)
+            and getattr(plugin_conf, "type", None) in self.skipped_plugins
+        ]
+
+    def check_provider_available(
+        self, provider: str, include_groups: bool = False
+    ) -> None:
+        """Check whether a provider or provider group can be used by plugins.
+
+        Plugin availability is reflected in the provider prune reasons recorded during
+        gateway initialization. The final exception is raised by ``ProvidersDict``.
+        """
+        self.providers.check_supported(provider, include_groups=include_groups)
+
     def get_search_plugins(
         self, collection: Optional[str] = None, provider: Optional[str] = None
     ) -> Iterator[Union[Search, Api]]:
@@ -231,9 +251,10 @@ class PluginManager:
                 )
                 configs = self.collection_to_provider_config_map[GENERIC_COLLECTION]
         else:
-            configs = list(p.config for p in self.providers.values())
+            configs = [p.config for p in self.providers.values()]
 
         if provider:
+            self.check_provider_available(provider, include_groups=True)
             configs = [
                 c for c in configs if provider in [getattr(c, "group", None), c.name]
             ]
@@ -338,22 +359,17 @@ class PluginManager:
             matching_conf: Optional[PluginConfig],
         ) -> bool:
             plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
-            if matching_conf:
-                if (
-                    plugin_matching_conf
-                    and matching_conf.__dict__.items() >= plugin_matching_conf.items()
-                ):
-                    # conf matches
-                    return True
+            if matching_conf and (
+                plugin_matching_conf
+                and matching_conf.__dict__.items() >= plugin_matching_conf.items()
+            ):
+                # conf matches
+                return True
             plugin_matching_url = getattr(auth_conf, "matching_url", None)
-            if matching_url:
-                if plugin_matching_url and re.match(
-                    rf"{plugin_matching_url}", matching_url
-                ):
-                    # url matches
-                    return True
-            # no match
-            return False
+            if not matching_url or not plugin_matching_url:
+                return False
+
+            return bool(re.match(rf"{plugin_matching_url}", matching_url))
 
         # providers configs with given provider at first
         sorted_providers_config = deepcopy(self.providers.configs)
@@ -368,14 +384,10 @@ class PluginManager:
                 if auth_conf is None:
                     continue
                 # plugin without configured match criteria: only works for given provider
-                unconfigured_match = (
-                    True
-                    if (
-                        not getattr(auth_conf, "matching_conf", {})
-                        and not getattr(auth_conf, "matching_url", None)
-                        and provider == plugin_provider
-                    )
-                    else False
+                unconfigured_match = bool(
+                    not getattr(auth_conf, "matching_conf", {})
+                    and not getattr(auth_conf, "matching_url", None)
+                    and provider == plugin_provider
                 )
 
                 if unconfigured_match or _is_auth_plugin_matching(
@@ -410,7 +422,7 @@ class PluginManager:
                     auth = auth_plugin.authenticate()
                     return auth
                 except (AuthenticationError, MisconfiguredError) as e:
-                    logger.debug(f"Could not authenticate on {provider}: {str(e)}")
+                    logger.debug(f"Could not authenticate on {provider}: {e!s}")
                     continue
             else:
                 logger.debug(
@@ -444,10 +456,7 @@ class PluginManager:
         """
         # Update the priority in the configurations so that it is taken into account
         # when a plugin of this provider is latterly built
-        for (
-            _,
-            provider_configs,
-        ) in self.collection_to_provider_config_map.items():
+        for provider_configs in self.collection_to_provider_config_map.values():
             for config in provider_configs:
                 if config.name == provider:
                     config.priority = priority
@@ -491,7 +500,7 @@ class PluginManager:
         if cached_instance is not None:
             return cached_instance
         plugin_class = EODAGPluginMount.get_plugin_by_class_name(
-            topic_class, getattr(plugin_conf, "type")
+            topic_class, plugin_conf.type
         )
         plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
             provider, plugin_conf

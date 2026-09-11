@@ -18,6 +18,7 @@ The API Reference provides an overview of all public objects, functions and meth
    collection
    provider
    utils
+   settings
    exceptions
    types
    call_graphs
@@ -89,6 +90,14 @@ The API Reference provides an overview of all public objects, functions and meth
          :shadow: md
 
          Utility functions for logging, callbacks, text search, notebook integration, S3 operations, xarray support, and miscellaneous helpers.
+
+   .. grid-item-card:: :octicon:`gear;1.5em`  Settings
+         :link: settings
+         :link-type: doc
+         :text-align: center
+         :shadow: md
+
+         Configuration management and access to EODAG settings, including user and provider configuration files.
 
    .. grid-item-card:: :octicon:`alert;1.5em`  Exceptions
          :link: exceptions

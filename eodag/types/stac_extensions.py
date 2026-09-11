@@ -623,6 +623,7 @@ class EcmwfItemProperties(BaseModel):
     ecmwf_period: Annotated[list[str], Field(None)]
     ecmwf_altitude: Annotated[int, Field(None)]
     ecmwf_location: Annotated[dict[str, int], Field(None)]
+    ecmwf_timespan: Annotated[list[str], Field(None)]
 
 
 class ProviderStacExtension(BaseStacExtension):

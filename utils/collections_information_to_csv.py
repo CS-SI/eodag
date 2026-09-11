@@ -24,7 +24,7 @@ from typing import Any
 
 from eodag.api.collection import Collection
 from eodag.api.core import EODataAccessGateway
-from eodag.config import load_default_config
+from eodag.config import load_provider_configs
 
 DEFAULT_COLLECTIONS_CSV_FILE_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -40,7 +40,7 @@ def collections_info_to_csv(
     :param collections_csv_file_path: (optional) Path to collections information csv output file
     """
     config = {}
-    for provider_config in load_default_config().values():
+    for provider_config in load_provider_configs().values():
         config[provider_config.name] = list(provider_config.products.keys())
 
     # backup os.environ as it will be modified by the script
@@ -49,7 +49,7 @@ def collections_info_to_csv(
         k: v for k, v in os.environ.items() if eodag_env_pattern.match(k)
     }
 
-    providers = sorted(load_default_config().keys())
+    providers = sorted(load_provider_configs().keys())
     for provider in providers:
         os.environ[f"EODAG__{provider}__AUTH__CREDENTIALS__FOO"] = "bar"
 

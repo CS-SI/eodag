@@ -33,7 +33,7 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from eodag.config import PluginConfig, load_default_config
+from eodag.config import PluginConfig, load_provider_configs
 from tests.context import MisconfiguredError
 
 project_path = "./eodag"
@@ -174,7 +174,7 @@ class TestRequirements(unittest.TestCase):
         plugins_extras_dict = get_entrypoints_extras(pyproject_path)
         all_providers_extras = get_resulting_extras(pyproject_path, "all-providers")
 
-        providers_config = load_default_config()
+        providers_config = load_provider_configs()
         plugins = set()
         for provider_conf in providers_config.values():
             plugins.update(

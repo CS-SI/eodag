@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -27,8 +26,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Iterator,
+    Literal,
     Mapping,
     Optional,
+    TypedDict,
     Union,
     get_type_hints,
 )
@@ -66,6 +67,18 @@ logger = logging.getLogger("eodag.provider")
 
 AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
 PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
+
+
+class PrunedProviderReason(TypedDict):
+    """Reason why a provider was removed from the active providers registry."""
+
+    reason: str
+    reason_type: Literal[
+        "skipped_plugin",
+        "missing_credentials",
+        "missing_auth_plugin",
+        "missing_search_plugin",
+    ]
 
 
 class ProviderConfig(yaml.YAMLObject):
@@ -593,6 +606,48 @@ class ProvidersDict(UserDict[str, Provider]):
     :param providers: Initial providers to populate the dictionary.
     """
 
+    whitelist: Optional[list[str]] = None
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # configs of providers removed from active providers list
+        self.pruned_providers_config: dict[str, ProviderConfig] = {}
+        self.pruned_providers_reasons: dict[str, PrunedProviderReason] = {}
+
+    def check_supported(
+        self,
+        provider: str,
+        include_groups: bool = False,
+    ) -> None:
+        """
+        Check that a provider or provider group is known in the provider registry.
+
+        Providers removed from the active registry are reported using their stored
+        prune reason. This method does not inspect plugin loading state directly;
+        plugin-related prune reasons must be recorded by the pruning code.
+
+        :param provider: The name of the provider (or group, if ``include_groups``) to check.
+        :param include_groups: Whether a provider group name is also accepted as known.
+        :raises MisconfiguredError: If the provider was pruned for a configuration reason.
+        :raises UnsupportedProvider: If the provider/group is unknown, or if the provider
+                                     was pruned because a required plugin was skipped.
+        """
+        if provider in self.pruned_providers_config:
+            if reason_dict := self.pruned_providers_reasons.get(provider):
+                reason = reason_dict["reason"]
+                if reason_dict["reason_type"] == "skipped_plugin":
+                    msg = f"{provider}: provider is not available because {reason}"
+                    raise UnsupportedProvider(msg)
+                msg = f"{provider}: {reason}"
+                raise MisconfiguredError(msg)
+            # Fallback for legacy/manual pruned entries missing an explicit reason.
+            msg = f"{provider}: provider has been pruned and is not available"
+            raise UnsupportedProvider(msg)
+        known = provider in self.names or (include_groups and provider in self.groups)
+        if not known:
+            msg = f"{provider}: provider is not recognised by eodag"
+            raise UnsupportedProvider(msg)
+
     def __contains__(self, item: object) -> bool:
         """
         Check if a provider is in the dictionary by name or :class:`~eodag.api.provider.Provider` instance.
@@ -862,6 +917,7 @@ class ProvidersDict(UserDict[str, Provider]):
     @staticmethod
     def _get_whitelisted_configs(
         configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+        whitelist: Optional[list[str]] = None,
     ) -> Mapping[str, Union[ProviderConfig, dict[str, Any]]]:
         """
         Filter configs according to the EODAG_PROVIDERS_WHITELIST environment variable, if set.
@@ -869,8 +925,14 @@ class ProvidersDict(UserDict[str, Provider]):
         :param configs: The dictionary of provider configurations.
         :return: Filtered configurations.
         """
-        whitelist = set(os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(","))
-        if not whitelist or whitelist == {""}:
+        if whitelist is None:
+            whitelist = [
+                provider
+                for provider in os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(",")
+                if provider
+            ]
+
+        if not whitelist:
             return configs
         return {name: conf for name, conf in configs.items() if name in whitelist}
 
@@ -883,7 +945,10 @@ class ProvidersDict(UserDict[str, Provider]):
 
         :param configs: A dictionary mapping provider names to configurations.
         """
-        configs = self._get_whitelisted_configs(configs)
+        configs = self._get_whitelisted_configs(
+            configs,
+            getattr(self, "whitelist", None),
+        )
         for name, conf in configs.items():
             if isinstance(conf, dict) and conf.get("name") != name:
                 if "name" in conf:
@@ -1003,7 +1068,9 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @classmethod
     def from_configs(
-        cls, configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]]
+        cls,
+        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+        whitelist: Optional[list[str]] = None,
     ) -> Self:
         """
         Build a ProvidersDict from a configuration mapping.
@@ -1013,5 +1080,6 @@ class ProvidersDict(UserDict[str, Provider]):
         :return: An instance of :class:`~eodag.api.provider.ProvidersDict` populated with the given configurations.
         """
         providers = cls()
+        providers.whitelist = whitelist
         providers.update_from_configs(configs)
         return providers

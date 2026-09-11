@@ -20,6 +20,18 @@ for products in a provider's catalog, how to download products, etc. However, us
 to complete this configuration with additional settings, such as provider credentials. Users can
 also override pre-configured settings (e.g. the download folder).
 
+During initialization, EODAG builds its active providers registry from the bundled configuration,
+user configuration, environment overrides, and available plugin classes. Some configured providers
+may be pruned from the active registry when they cannot be used in the current environment. This can
+happen when credentials required for search are missing, when an authentication plugin is not
+configured, when no search/API plugin is configured, or when a provider depends on an optional
+plugin whose dependencies are not installed.
+
+Pruned provider configurations are kept internally with an explicit prune reason. A provider pruned
+because of missing credentials can be restored by updating the configuration with the required
+credentials. A provider pruned because a plugin was skipped requires installing the corresponding
+optional dependencies, for example with ``eodag[usgs]`` or ``eodag[all-providers]``.
+
 YAML user configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -139,7 +151,9 @@ Each configuration parameter can be set with an environment variable.
 Core configuration using environment variables
 """"""""""""""""""""""""""""""""""""""""""""""
 
-Some EODAG core settings can be overriden using environment variables:
+Some EODAG core settings are handled using `Pydantic settings <https://pydantic-docs.helpmanual.io/usage/settings/>`_
+through `EODAGSettings <../api_reference/settings.rst#eodag.config.EODAGSettings>`_ and can be overriden using
+environment variables:
 
 * ``EODAG_CFG_DIR`` customized configuration directory in place of `~/.config/eodag`.
 * ``EODAG_CFG_FILE`` for defining the desired path to the `user configuration file\

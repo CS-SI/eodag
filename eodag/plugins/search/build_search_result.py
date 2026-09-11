@@ -937,7 +937,7 @@ class ECMWFSearch(PostJsonSearch):
             name: str = element["name"]
 
             # those are not parameter elements.
-            if name in ("area_group", "global", "warning", "licences"):
+            if name in ("area_group", "global", "warning", "licences", "geo_group"):
                 continue
             if "type" not in element or element["type"] == "FreeEditionWidget":
                 # FreeEditionWidget used to select the whole available region

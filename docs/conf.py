@@ -378,8 +378,24 @@ def _html_page_context(app, pagename, templatename, context, doctree):
         context["theme_use_edit_page_button"] = False
 
 
+def _hide_base_settings_parameters(app, what, name, obj, options, lines):
+    """Hide inherited BaseSettings constructor parameters from EODAGSettings."""
+    if name != "eodag.config.EODAGSettings":
+        return
+
+    filtered_lines = []
+    skip_parameter = False
+    for line in lines:
+        if line.startswith(":param "):
+            skip_parameter = line.startswith(":param _")
+        if not skip_parameter:
+            filtered_lines.append(line)
+    lines[:] = filtered_lines
+
+
 def setup(app):
     """dummy docstring for pydocstyle"""
+    app.connect("autodoc-process-docstring", _hide_base_settings_parameters)
     app.connect("html-page-context", _html_page_context)
     app.connect("build-finished", _build_finished)
     app.set_translator("html", PatchedHTMLTranslator)
