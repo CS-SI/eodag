@@ -97,13 +97,13 @@ class EODAGSettings(BaseSettings):
 
     cfg_file: Optional[Path] = Field(
         default=None,
-        description="Path to the main EODAG user configuration file. If not set, defaults to '<cfg_dir>/eodag.yml'.",
+        description="Path to the main EODAG user configuration file. If not set, defaults to ``<cfg_dir>/eodag.yml``.",
     )
 
     locations_cfg_file: Optional[Path] = Field(
         default=None,
         validation_alias="EODAG_LOCS_CFG_FILE",
-        description="Path to the locations configuration file. If not set, defaults to '<cfg_dir>/locations.yml'.",
+        description="Path to the locations configuration file. If not set, defaults to ``<cfg_dir>/locations.yml``.",
     )
 
     collections_cfg_file: Path = Field(
@@ -116,18 +116,18 @@ class EODAGSettings(BaseSettings):
 
     providers_cfg_file: Optional[Path] = Field(
         default=None,
-        deprecated=(
-            "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. Use EODAG_PROVIDERS_CFG_DIR instead."
+        description=(
+            "Legacy single provider configuration file. Deprecated since ``v4.5.0``; "
+            "use :attr:`providers_cfg_dir` instead."
         ),
-        description=("Legacy single provider configuration file."),
     )
 
     providers_cfg_dir: Path = Field(
         default=DEFAULT_PROVIDERS_DIR,
         description=(
             "Directory containing provider configuration files. "
-            "All '*.yml' files in this directory are loaded. "
-            "Ignored if providers_cfg_file is set."
+            "All ``*.yml`` files in this directory are loaded. "
+            "Ignored if :attr:`providers_cfg_file` is set."
         ),
     )
 
@@ -136,7 +136,7 @@ class EODAGSettings(BaseSettings):
         validation_alias="EODAG_EXT_COLLECTIONS_CFG_FILE",
         description=(
             "URI of the external collections configuration. "
-            "Supports HTTP(S), file:// URIs and local filesystem paths."
+            "Supports HTTP(S), ``file://`` URIs and local filesystem paths."
         ),
     )
 
