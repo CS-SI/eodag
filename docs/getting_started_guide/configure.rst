@@ -151,7 +151,9 @@ Each configuration parameter can be set with an environment variable.
 Core configuration using environment variables
 """"""""""""""""""""""""""""""""""""""""""""""
 
-Some EODAG core settings can be overriden using environment variables:
+Some EODAG core settings are handled using `Pydantic settings <https://pydantic-docs.helpmanual.io/usage/settings/>`_
+through `EODAGSettings <../api_reference/settings.rst#eodag.config.EODAGSettings>`_ and can be overriden using
+environment variables:
 
 * ``EODAG_CFG_DIR`` customized configuration directory in place of `~/.config/eodag`.
 * ``EODAG_CFG_FILE`` for defining the desired path to the `user configuration file\

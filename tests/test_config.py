@@ -20,6 +20,7 @@ import os
 import tempfile
 import unittest
 from io import StringIO
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -259,20 +260,20 @@ class TestPluginConfig(unittest.TestCase):
 class TestConfigFunctions(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super(TestConfigFunctions, cls).setUpClass()
+        super().setUpClass()
         # mock os.environ to empty env
         cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
         cls.mock_os_environ.start()
 
     @classmethod
     def tearDownClass(cls):
-        super(TestConfigFunctions, cls).tearDownClass()
+        super().tearDownClass()
         # stop os.environ
         cls.mock_os_environ.stop()
 
     def test_load_default_config(self):
         """Default config must be successfully loaded"""
-        conf = config.load_default_config()
+        conf = config.load_provider_configs()
         self.assertIsInstance(conf, dict)
         for key, value in conf.items():
             # keys of the default conf dict are the names of the provider
@@ -285,11 +286,53 @@ class TestConfigFunctions(unittest.TestCase):
             # priority is set to 0 for all providers
             self.assertEqual(value.priority, 0)
 
+    def test_load_provider_configs_file_precedence(self):
+        """load_provider_configs must prioritize providers_cfg_file over providers_cfg_dir."""
+        providers_cfg_file_override = (
+            Path(TEST_RESOURCES_PATH) / "providers" / "file_providers_override.yml"
+        )
+        test_cases = [
+            {
+                "name": "file takes precedence",
+                "providers_cfg_file": providers_cfg_file_override,
+                "expected_provider": "foo_provider",
+            },
+            {
+                "name": "directory used without file",
+                "providers_cfg_file": None,
+                "expected_provider": "bar_provider",
+            },
+        ]
+
+        providers_cfg_dir_content = {
+            "bar_provider": {
+                "search": {
+                    "type": "StacSearch",
+                    "api_endpoint": "https://bar.example/search",
+                },
+                "products": {"GENERIC_COLLECTION": {"_collection": "{collection}"}},
+            }
+        }
+
+        for case in test_cases:
+            with self.subTest(case=case["name"]), TemporaryDirectory() as tmp_dir:
+                providers_cfg_dir = Path(tmp_dir)
+                (providers_cfg_dir / "bar_provider.yml").write_text(
+                    yaml.safe_dump(providers_cfg_dir_content),
+                    encoding="utf-8",
+                )
+                providers = config.load_provider_configs(
+                    providers_cfg_file=case["providers_cfg_file"],
+                    providers_cfg_dir=providers_cfg_dir,
+                )
+
+                self.assertEqual(set(providers.keys()), {case["expected_provider"]})
+
     def test_load_config_providers_whitelist(self):
         """Config must be loaded with only the selected whitelist of providers"""
         try:
             os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
-            providers = ProvidersDict.from_configs(config.load_default_config())
+            providers = ProvidersDict.from_configs(config.load_provider_configs())
 
             self.assertEqual({"creodias"}, set(providers.keys()))
         finally:
@@ -298,7 +341,7 @@ class TestConfigFunctions(unittest.TestCase):
     def test_override_config_from_str(self):
         """Default configuration must be overridden from a yaml conf str"""
 
-        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers = ProvidersDict.from_configs(config.load_provider_configs())
         providers.update_from_configs(yaml.safe_load("""
                 my_new_provider:
                     priority: 4
@@ -379,7 +422,7 @@ class TestConfigFunctions(unittest.TestCase):
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
         """
-        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers = ProvidersDict.from_configs(config.load_provider_configs())
         file_path_override = os.path.join(
             os.path.dirname(__file__), "resources", "file_config_override.yml"
         )
@@ -439,7 +482,7 @@ class TestConfigFunctions(unittest.TestCase):
 
     def test_override_config_from_env(self):
         """Default configuration must be overridden by environment variables"""
-        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers = ProvidersDict.from_configs(config.load_provider_configs())
         os.environ["EODAG__USGS__PRIORITY"] = "5"
         os.environ["EODAG__USGS__API__EXTRACT"] = "false"
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
@@ -527,7 +570,7 @@ class TestStacProviderConfig(unittest.TestCase):
             "eodag.api.provider.ProviderConfig._apply_defaults",
             lambda self: None,
         ):
-            providers_configs = config.load_default_config()
+            providers_configs = config.load_provider_configs()
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
@@ -557,10 +600,7 @@ class TestStacProviderConfig(unittest.TestCase):
         # check if raw_provider_search_conf is a subset of provider_search_conf
         for k, v in raw_provider_search_conf.items():
             if isinstance(v, dict):
-                assert (
-                    raw_provider_search_conf[k].items()
-                    <= provider_search_conf[k].items()
-                )
+                assert v.items() <= provider_search_conf[k].items()
             else:
                 self.assertEqual(v, provider_search_conf[k])
 
@@ -610,9 +650,6 @@ class TestStacProviderConfig(unittest.TestCase):
         # check if custom_stac_provider_conf is a subset of provider_search_conf
         for k, v in custom_stac_provider_conf.items():
             if isinstance(v, dict):
-                assert (
-                    custom_stac_provider_conf[k].items()
-                    <= provider_search_conf[k].items()
-                )
+                assert v.items() <= provider_search_conf[k].items()
             else:
                 self.assertEqual(v, provider_search_conf[k])

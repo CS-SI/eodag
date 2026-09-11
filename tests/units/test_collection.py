@@ -35,7 +35,7 @@ from tests.context import (
 
 class TestCollection(unittest.TestCase):
     def setUp(self):
-        super(TestCollection, self).setUp()
+        super().setUp()
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -51,7 +51,7 @@ class TestCollection(unittest.TestCase):
         self.mock_os_environ.start()
 
     def tearDown(self):
-        super(TestCollection, self).tearDown()
+        super().tearDown()
         # stop os.environ
         self.mock_os_environ.stop()
 
@@ -72,153 +72,121 @@ class TestCollection(unittest.TestCase):
         self.assertEqual(collection._id, "foo")
 
     def test_collection_enable_validation(self):
-        """Collection validation is enabled by an environment variable.
-        It allows to log warnings on bad formatted attributes spotted during collection initialization
-        """
-        try:
-            # ensure validation is enabled for collections
-            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
+        """Collection validation logging defaults from EODataAccessGateway settings."""
+        self.dag.settings.validate_collections = True
 
-            # try to create a collection with bad formatted attributes
-            # and check that logs have been emitted
-            with self.assertLogs(level="DEBUG") as cm:
-                collection = Collection(id="foo", platform=0, bar="bat")
+        # try to create a collection with bad formatted attributes
+        # and check that logs have been emitted
+        with self.assertLogs(level="DEBUG") as cm:
+            collection = Collection.create_with_dag(
+                self.dag, id="foo", platform=0, bar="bat"
+            )
 
-            self.assertIn("2 validation errors for collection foo", str(cm.output))
-            self.assertIn("platform\\n  Input should be a valid string", str(cm.output))
-            self.assertIn("bar\\n  Extra inputs are not permitted", str(cm.output))
+        self.assertIn("2 validation errors for collection foo", str(cm.output))
+        self.assertIn("platform\\n  Input should be a valid string", str(cm.output))
+        self.assertIn("bar\\n  Extra inputs are not permitted", str(cm.output))
 
-            # check that the collection has been created
-            # and that its incorrectly formatted attribute is set to None
-            # and its extra attribute is removed
-            self.assertIsInstance(collection, Collection)
-            self.assertEqual(collection.id, "foo")
-            self.assertIsNone(collection.platform)
-            self.assertFalse(getattr(collection, "bar", False))
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
+        # check that the collection has been created
+        # and that its incorrectly formatted attribute is set to None
+        # and its extra attribute is removed
+        self.assertIsInstance(collection, Collection)
+        self.assertEqual(collection.id, "foo")
+        self.assertIsNone(collection.platform)
+        self.assertFalse(getattr(collection, "bar", False))
 
     def test_collection_wrong_id(self):
         """Collection with a missing or wrong id must raise an error
         even if validation of collections is disabled"""
-        try:
-            # ensure validation is disabled for collections
-            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "False"
+        # try to create a collection with a missing id
+        with self.assertRaises(ValidationError) as context:
+            Collection()
 
-            # try to create a collection with a missing id
-            with self.assertRaises(ValidationError) as context:
-                Collection()
+        self.assertIn("id\n  Field required", str(context.exception))
 
-            self.assertIn("id\n  Field required", str(context.exception))
+        # try to create a collection with a wrong id
+        with self.assertRaises(ValidationError) as context:
+            Collection(id=1)
 
-            # try to create a collection with a wrong id
-            with self.assertRaises(ValidationError) as context:
-                Collection(id=1)
-
-            self.assertIn(
-                "id\n  Input should be a valid string", str(context.exception)
-            )
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
+        self.assertIn("id\n  Input should be a valid string", str(context.exception))
 
     def test_collection_wrong_spatial_extent(self):
         """Collection with a spatial extent bbox in a wrong format
         must raise the custom pydantic error from their field validator"""
-        try:
-            # ensure validation is activated for collections
-            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
-
-            # try to create a collection with wrong start and end temporal extent datetimes
-            # and check that logs have been emitted
-            with self.assertLogs(level="DEBUG") as cm:
-                Collection(
-                    id="foo",
-                    extent={
-                        "spatial": {
-                            "bbox": [
-                                [
-                                    "not-a-lonmin",
-                                    "not-a-latmin",
-                                    "not-a-lonmax",
-                                    "not-a-latmax",
-                                ]
+        # try to create a collection with wrong start and end temporal extent datetimes
+        # and check that logs have been emitted
+        with self.assertLogs(level="DEBUG") as cm:
+            Collection.create(
+                validate_collections=True,
+                id="foo",
+                extent={
+                    "spatial": {
+                        "bbox": [
+                            [
+                                "not-a-lonmin",
+                                "not-a-latmin",
+                                "not-a-lonmax",
+                                "not-a-latmax",
                             ]
-                        },
-                        "temporal": {
-                            "interval": [
-                                ["2025-01-01T00:00:00Z", "2025-01-02T00:00:00Z"]
-                            ]
-                        },
+                        ]
                     },
-                )
-
-            self.assertIn(
-                (
-                    "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                    "union[float,int]].0.float\\n  Input should be a valid number, unable to parse string as a number"
-                ),
-                str(cm.output),
-            )
-            self.assertIn(
-                (
-                    "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                    "union[float,int]].1.float\\n  Input should be a valid number, unable to parse string as a number"
-                ),
-                str(cm.output),
-            )
-            self.assertIn(
-                (
-                    "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                    "union[float,int]].2.float\\n  Input should be a valid number, unable to parse string as a number"
-                ),
-                str(cm.output),
-            )
-            self.assertIn(
-                (
-                    "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                    "union[float,int]].3.float\\n  Input should be a valid number, unable to parse string as a number"
-                ),
-                str(cm.output),
+                    "temporal": {
+                        "interval": [["2025-01-01T00:00:00Z", "2025-01-02T00:00:00Z"]]
+                    },
+                },
             )
 
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
+        self.assertIn(
+            (
+                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
+                "union[float,int]].0.float\\n  Input should be a valid number, unable to parse string as a number"
+            ),
+            str(cm.output),
+        )
+        self.assertIn(
+            (
+                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
+                "union[float,int]].1.float\\n  Input should be a valid number, unable to parse string as a number"
+            ),
+            str(cm.output),
+        )
+        self.assertIn(
+            (
+                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
+                "union[float,int]].2.float\\n  Input should be a valid number, unable to parse string as a number"
+            ),
+            str(cm.output),
+        )
+        self.assertIn(
+            (
+                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
+                "union[float,int]].3.float\\n  Input should be a valid number, unable to parse string as a number"
+            ),
+            str(cm.output),
+        )
 
     def test_collection_wrong_temporal_extent(self):
         """Collection with a start or end temporal extent date in a wrong format
         must raise the custom pydantic error from their field validator"""
-        try:
-            # ensure validation is activated for collections
-            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
-
-            # try to create a collection with wrong start and end temporal extent datetimes
-            # and check that logs have been emitted
-            with self.assertLogs(level="DEBUG") as cm:
-                Collection(
-                    id="foo",
-                    extent={
-                        "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
-                        "temporal": {
-                            "interval": [["not-a-datetime", "not-a-datetime"]]
-                        },
-                    },
-                )
-
-            self.assertIn(
-                "extent.temporal.interval.0.0\\n  Input should be a valid datetime or date, invalid character in year",
-                str(cm.output),
-            )
-            self.assertIn(
-                "extent.temporal.interval.0.1\\n  Input should be a valid datetime or date, invalid character in year",
-                str(cm.output),
+        # try to create a collection with wrong start and end temporal extent datetimes
+        # and check that logs have been emitted
+        with self.assertLogs(level="DEBUG") as cm:
+            Collection.create(
+                validate_collections=True,
+                id="foo",
+                extent={
+                    "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                    "temporal": {"interval": [["not-a-datetime", "not-a-datetime"]]},
+                },
             )
 
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
+        self.assertIn(
+            "extent.temporal.interval.0.0\\n  Input should be a valid datetime or date, invalid character in year",
+            str(cm.output),
+        )
+        self.assertIn(
+            "extent.temporal.interval.0.1\\n  Input should be a valid datetime or date, invalid character in year",
+            str(cm.output),
+        )
 
     def test_collection_missing_dag(self):
         """Collection.search must raise an error if no dag is set"""
