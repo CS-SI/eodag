@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 import boto3
@@ -66,6 +66,7 @@ from .base import Download
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.service_resource import BucketObjectsCollection, ObjectSummary
 
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
@@ -256,7 +257,6 @@ class AwsDownload(Download):
                         file or with environment variables.
         :returns: The absolute path to the downloaded product in the local filesystem
         """
-
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
@@ -430,9 +430,7 @@ class AwsDownload(Download):
         progress_callback: ProgressCallback,
         executor: ThreadPoolExecutor,
     ):
-        """
-        Download file in zip from a prefix like `foo/bar.zip!file.txt`
-        """
+        """Download file in zip from a prefix like `foo/bar.zip!file.txt`."""
         if downloader_auth.s3_resource is None:
             logger.debug("Cannot check files in s3 zip without s3 resource")
             return bucket_names_and_prefixes
@@ -504,9 +502,9 @@ class AwsDownload(Download):
         progress_callback: ProgressCallback,
         **kwargs: Unpack[DownloadConf],
     ) -> tuple[Optional[str], Optional[str]]:
-        """
-        Preparation for the download:
+        """Prepare the download.
 
+        It means:
         - check if file was already downloaded
         - get file path
         - create directories
@@ -533,8 +531,7 @@ class AwsDownload(Download):
         return product_local_path, record_filename
 
     def _configure_safe_build(self, build_safe: bool, product: EOProduct):
-        """
-        Updates the product properties with fetch metadata if safe build is enabled
+        """Update the product properties with fetch metadata if safe build is enabled.
 
         :param build_safe: if safe build is enabled
         :param product: product to be updated
@@ -579,8 +576,7 @@ class AwsDownload(Download):
         ignore_assets: bool,
         complementary_url_keys: list[str],
     ) -> list[tuple[str, Optional[str]]]:
-        """
-        Retrieves the bucket names and path prefixes for the assets
+        """Retrieve the bucket names and path prefixes for the assets.
 
         :param product: product for which the assets shall be downloaded
         :param asset_filter: text for which the assets should be filtered
@@ -635,14 +631,13 @@ class AwsDownload(Download):
     def _get_unique_products(
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
-        authenticated_objects: dict[str, Any],
+        authenticated_objects: dict[str, BucketObjectsCollection],
         asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
         raise_error: bool = True,
-    ) -> set[Any]:
-        """
-        Retrieve unique product chunks based on authenticated objects and asset filters
+    ) -> set[ObjectSummary]:
+        """Retrieve unique product chunks based on authenticated objects and asset filters.
 
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
         :param authenticated_objects: available objects per bucket
@@ -652,12 +647,52 @@ class AwsDownload(Download):
         :param raise_error: raise error if there is nothing to download
         :return: set of product chunks that can be downloaded
         """
-        product_chunks: list[Any] = []
+        product_chunks: list[ObjectSummary] = []
         for bucket_name, prefix in bucket_names_and_prefixes:
             # unauthenticated items filtered out
             if bucket_name in authenticated_objects.keys():
+                prefix = prefix if prefix is not None else ""
+                # S3 keys always use POSIX separators. Normalize independently of
+                # the host OS, but preserve an empty prefix instead of turning it
+                # into "." as str(PurePosixPath("")) would do.
+                clean_prefix = str(PurePosixPath(prefix)) if prefix else ""
+                # Query the raw prefix first so exact object assets such as
+                # "folder/file.tif" can still be found. Some S3-compatible
+                # backends only list children when the prefix ends with "/",
+                # so retry with the child prefix only if the raw query is empty.
+                descendant_prefix = f"{clean_prefix.rstrip('/')}/"
+                matching_chunks = list(
+                    authenticated_objects[bucket_name].filter(Prefix=clean_prefix)
+                )
+                if clean_prefix and not matching_chunks:
+                    matching_chunks = list(
+                        authenticated_objects[bucket_name].filter(
+                            Prefix=descendant_prefix
+                        )
+                    )
+
+                # S3 Prefix matching is lexical: "folder" also matches
+                # "folder.txt". Keep only the exact object or children below
+                # "folder/". When an exact zero-size object has children, it is
+                # a directory marker and must not be downloaded as a file.
+                has_descendants = any(
+                    not chunk.key.endswith("/")
+                    and clean_prefix
+                    and chunk.key.startswith(descendant_prefix)
+                    for chunk in matching_chunks
+                )
                 product_chunks.extend(
-                    authenticated_objects[bucket_name].filter(Prefix=prefix)
+                    chunk
+                    for chunk in matching_chunks
+                    if not chunk.key.endswith("/")
+                    and (
+                        not clean_prefix
+                        or (
+                            chunk.key == clean_prefix
+                            and not (has_descendants and chunk.size == 0)
+                        )
+                        or chunk.key.startswith(descendant_prefix)
+                    )
                 )
 
         unique_product_chunks = set(product_chunks)
@@ -691,8 +726,7 @@ class AwsDownload(Download):
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
-        """
-        Stream EO product data as a FastAPI-compatible `StreamResponse`, with support for partial downloads,
+        """Stream EO product data as a FastAPI-compatible `StreamResponse`, with support for partial downloads,
         asset filtering, and on-the-fly compression.
 
         This method streams data from one or more S3 objects that belong to a given EO product.
@@ -855,7 +889,7 @@ class AwsDownload(Download):
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None
     ) -> tuple[str, Optional[str]]:
-        """Extract bucket name and prefix from product URL
+        """Extract bucket name and prefix from product URL.
 
         :param product: The EO product to download
         :param url: (optional) URL to use as product.location
@@ -880,7 +914,7 @@ class AwsDownload(Download):
         return bucket, prefix
 
     def check_manifest_file_list(self, product_path: str) -> None:
-        """Checks if products listed in manifest.safe exist"""
+        """Check if products listed in manifest.safe exist."""
         manifest_path_list = [
             os.path.join(d, x)
             for d, _, f in os.walk(product_path)
@@ -904,7 +938,7 @@ class AwsDownload(Download):
                 logger.warning("SAFE build: %s is missing" % safe_file.get("href"))
 
     def finalize_s2_safe_product(self, product_path: str) -> None:
-        """Add missing dirs to downloaded product"""
+        """Add missing dirs to downloaded product."""
         try:
             logger.debug("Finalize SAFE product")
             manifest_path_list = [
@@ -970,7 +1004,7 @@ class AwsDownload(Download):
         dir_prefix: Optional[str] = None,
         build_safe: bool = False,
     ) -> str:
-        """Get chunk SAFE destination path"""
+        """Get chunk SAFE destination path."""
         if not build_safe:
             if dir_prefix is None:
                 dir_prefix = chunk.key
