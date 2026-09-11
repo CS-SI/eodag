@@ -118,8 +118,9 @@ class EODataAccessGateway:
     """An API for downloading a wide variety of geospatial products originating
     from different types of providers.
 
-    :param user_conf_file_path: (optional) Path to the user configuration file
-    :param locations_conf_path: (optional) Path to the locations configuration file
+    :param user_conf_file_path: (**deprecated**) Path to the user configuration file
+    :param locations_conf_path: (**deprecated**) Path to the locations configuration file
+    :param settings: EODAGSettings object containing the configuration for the EODAG instance.
     """
 
     def __init__(
