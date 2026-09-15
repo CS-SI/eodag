@@ -2361,9 +2361,10 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
 
-    @mock.patch.dict(QueryStringSearch.extract_properties, {"json": mock.MagicMock()})
-    def test_plugins_search_stacsearch_normalize_links(self):
-        """normalize_results must move STAC item links from properties to the product"""
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_normalize_links(self, mock__request):
+        """STAC item links must be mapped to the product links attribute"""
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         expected_links = [
             {
                 "rel": "self",
@@ -2375,15 +2376,33 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                 "href": "https://example.com/collections/1.json",
                 "type": "application/json",
             },
+            {
+                "rel": "root",
+                "href": "https://example.com/catalog.json",
+                "type": "application/json",
+            },
         ]
-        mock_properties_from_json = QueryStringSearch.extract_properties["json"]
-        mock_properties_from_json.return_value = {
-            "geometry": "POINT (0 0)",
-            "links": expected_links,
-        }
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "id": "foo",
+                        "geometry": geojson_geometry,
+                        "properties": {
+                            "s2:product_uri": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456.SAFE",
+                        },
+                        "links": expected_links,
+                    }
+                ],
+            },
+        ]
 
         search_plugin = self.get_search_plugin(self.collection, "earth_search")
-        products = search_plugin.normalize_results([{}])
+        products = search_plugin.query(
+            prep=PreparedSearch(page=1, limit=1),
+            **self.search_criteria_s2_msi_l1c,
+        )
 
         self.assertEqual(products[0].links, expected_links)
         self.assertNotIn("links", products[0].properties)
