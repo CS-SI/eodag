@@ -1326,6 +1326,8 @@ class QueryStringSearch(Search):
 
             # batch-update once to avoid assets sort and clean up  on every update
             product.assets.update({**additional_assets, **normalized_assets})
+            # move links from properties to product's attr
+            product.links = product.properties.pop("links", [])
             product._normalize_bands()
             products.append(product)
         return products

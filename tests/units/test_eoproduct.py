@@ -126,6 +126,28 @@ class TestEOProduct(EODagTestBase):
         product = self._dummy_product(collection=self.NOT_ASSOCIATED_COLLECTION)
         self.assertIsInstance(product.driver, DatasetDriver)
 
+    def test_eoproduct_links_from_geointerface(self):
+        """EOProduct links must be kept through serialization and deserialization"""
+        product = self._dummy_product()
+        product.links = [
+            {
+                "rel": "self",
+                "href": "https://example.com/items/1.json",
+                "type": "application/json",
+            },
+            {
+                "rel": "root",
+                "href": "https://example.com/catalog.json",
+                "type": "application/json",
+            },
+        ]
+
+        feature = geojson.loads(geojson.dumps(product))
+        self.assertEqual(feature["links"][-2:], product.links)
+
+        same_product = EOProduct.from_dict(geojson.loads(geojson.dumps(product)))
+        self.assertEqual(same_product.links, feature["links"])
+
     def test_eoproduct_geointerface(self):
         """EOProduct must provide a geo-interface with a set of specific properties"""
         product = self._dummy_product()
@@ -694,6 +716,11 @@ class TestEOProduct(EODagTestBase):
         # asset
         asset_repr = html.fromstring(product.assets._repr_html_())
         self.assertIn("Asset", asset_repr.xpath("//thead/tr/td")[0].text)
+
+        # links
+        product.links = [{"rel": "self", "href": "foo.href"}]
+        self.assertIn("foo.href", product._repr_html_())
+        self.assertIn("[0] self", product._repr_html_())
 
     def test_eoproduct_assets_get_values(self):
         """eoproduct.assets.get_values must return the expected values"""

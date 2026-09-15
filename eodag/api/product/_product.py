@@ -151,6 +151,8 @@ class EOProduct:
     remote_location: str
     #: Assets of the product
     assets: AssetsDict
+    #: STAC item links of the product
+    links: list[dict[str, str]]
     #: Driver enables additional methods to be called on the EOProduct
     driver: DatasetDriver
     #: Product data filename, stored during download
@@ -180,6 +182,7 @@ class EOProduct:
         )
         self.location = self.remote_location = properties.get("eodag:download_link", "")
         self.assets = AssetsDict(self)
+        self.links = []
         self.properties = {
             key: value
             for key, value in properties.items()
@@ -334,6 +337,7 @@ class EOProduct:
                     "href": f"{self.collection}.json",
                     "type": "application/json",
                 },
+                *self.links,
             ],
             "stac_extensions": list(stac_extensions),
             "stac_version": STAC_VERSION,
@@ -970,6 +974,14 @@ class EOProduct:
         thumbnail_style = (
             "style='padding-top: 1.5em; min-width:100px; vertical-align: top;'"
         )
+        links_html = dict_to_html_table(
+            {f"[{i}] {link.get('rel', '')}": link for i, link in enumerate(self.links)},
+            depth=1,
+        )
+        links_details = (
+            "<details><summary style='color: grey; margin-top: 10px;'>"
+            f"links:&ensp;({len(self.links)})</summary>{links_html}</details>"
+        )
 
         return f"""<table>
                 <thead><tr style='background-color: transparent;'><td style='text-align: left; color: grey;'>
@@ -994,6 +1006,7 @@ class EOProduct:
                                  dict_to_html_table(self.properties, depth=1)}</details>
                         <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({len(
                                      self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
+                        {links_details}
                     </td>
                     <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
                     <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
@@ -1061,6 +1074,7 @@ class EOProduct:
         obj = cls(provider, properties, collection=collection)
         obj.search_intersection = geometry.shape(search_intersection)
         obj.assets.update(feature.get("assets", {}))
+        obj.links = feature.get("links", [])
 
         if plugins_manager is not None:
             # register

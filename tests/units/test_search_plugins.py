@@ -2361,6 +2361,33 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
 
+    @mock.patch.dict(QueryStringSearch.extract_properties, {"json": mock.MagicMock()})
+    def test_plugins_search_stacsearch_normalize_links(self):
+        """normalize_results must move STAC item links from properties to the product"""
+        expected_links = [
+            {
+                "rel": "self",
+                "href": "https://example.com/items/1.json",
+                "type": "application/json",
+            },
+            {
+                "rel": "collection",
+                "href": "https://example.com/collections/1.json",
+                "type": "application/json",
+            },
+        ]
+        mock_properties_from_json = QueryStringSearch.extract_properties["json"]
+        mock_properties_from_json.return_value = {
+            "geometry": "POINT (0 0)",
+            "links": expected_links,
+        }
+
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
+        products = search_plugin.normalize_results([{}])
+
+        self.assertEqual(products[0].links, expected_links)
+        self.assertNotIn("links", products[0].properties)
+
     @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
     @mock.patch(
         "eodag.api.product.drivers.base.DatasetDriver.guess_asset_key_and_roles",
