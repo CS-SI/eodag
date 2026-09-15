@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.9.0 (2026-09-15)
+===================
+
+Features
+--------
+
+* **product**: Keep STAC item links in EOProduct (`#2352`_, `99473fb`_)
+
+.. _#2352: https://github.com/CS-SI/eodag/pull/2352
+.. _99473fb: https://github.com/CS-SI/eodag/commit/99473fb2756fbd3b5cef797ae157e03e3400b5d5
+
+
 v4.8.0 (2026-09-11)
 ===================
 
