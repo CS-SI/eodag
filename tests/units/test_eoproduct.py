@@ -148,6 +148,37 @@ class TestEOProduct(EODagTestBase):
         same_product = EOProduct.from_dict(geojson.loads(geojson.dumps(product)))
         self.assertEqual(same_product.links, feature["links"])
 
+    def test_eoproduct_links_collection_link_replaced(self):
+        """The serialized collection link must replace the remote one"""
+        product = self._dummy_product()
+        product.links = [
+            {
+                "rel": "self",
+                "href": "https://example.com/items/1.json",
+                "type": "application/json",
+            },
+            {
+                "rel": "collection",
+                "href": "https://example.com/collections/1.json",
+                "type": "application/json",
+            },
+            {
+                "rel": "root",
+                "href": "https://example.com/catalog.json",
+                "type": "application/json",
+            },
+        ]
+
+        links = product.as_dict()["links"]
+
+        collection_links = [link for link in links if link["rel"] == "collection"]
+        self.assertEqual(len(collection_links), 1)
+        self.assertEqual(collection_links[0]["href"], f"{product.collection}.json")
+        self.assertNotIn(
+            "https://example.com/collections/1.json",
+            [link["href"] for link in links],
+        )
+
     def test_eoproduct_geointerface(self):
         """EOProduct must provide a geo-interface with a set of specific properties"""
         product = self._dummy_product()

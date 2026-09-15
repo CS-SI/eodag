@@ -337,7 +337,8 @@ class EOProduct:
                     "href": f"{self.collection}.json",
                     "type": "application/json",
                 },
-                *self.links,
+                # replace the remote collection link with the serialized one
+                *(link for link in self.links if link.get("rel") != "collection"),
             ],
             "stac_extensions": list(stac_extensions),
             "stac_version": STAC_VERSION,
