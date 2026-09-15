@@ -115,3 +115,5 @@ search:
     order:status: '{$.null#replace_str("Not Available","succeeded")}'
     # Normalization code moves assets from properties to product's attr
     assets: '$.assets'
+    # Normalization code moves links from properties to product's attr
+    links: '$.links'
