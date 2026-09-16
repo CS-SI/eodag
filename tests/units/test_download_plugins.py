@@ -1061,6 +1061,57 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(list(response.content), [b"first_chunk", b"second_chunk"])
         self.assertEqual(response.headers, self.product.headers)
 
+    def test_stream_download_strips_hop_by_hop_headers(self):
+        """HTTPDownload.stream_download() must strip hop-by-hop headers but keep useful ones"""
+
+        plugin = self.get_download_plugin(self.product)
+        # plugin instances are cached per provider, remove any leftover mock from other tests
+        plugin.__dict__.pop("_raw_stream_download", None)
+
+        self.product.assets = mock.Mock()
+        self.product.assets.get_values.return_value = []
+        self.product.assets.__len__ = lambda self=self.product.assets: 0
+        self.product.location = self.product.remote_location = "http://somewhere"
+
+        fake_response = mock.Mock()
+        fake_response.headers = CaseInsensitiveDict(
+            {
+                # hop-by-hop headers that must be stripped
+                "Connection": "keep-alive",
+                "Content-Encoding": "br",
+                "Transfer-Encoding": "chunked",
+                "Keep-Alive": "timeout=5",
+                # useful headers that must be kept
+                "Content-Type": "application/octet-stream",
+                "Content-Disposition": 'attachment; filename="foo.zip"',
+                "ETag": '"abc123"',
+                "content-length": "12",
+            }
+        )
+        fake_response.status_code = 200
+        fake_response.url = "http://somewhere/foo.zip"
+        fake_response.raise_for_status = mock.Mock()
+        fake_response.iter_content = mock.Mock(return_value=iter([b"some_content"]))
+
+        with mock.patch(
+            "eodag.plugins.download.http.requests.Session.request",
+            return_value=fake_response,
+        ):
+            response = plugin.stream_download(self.product, output_dir=self.output_dir)
+
+        for excluded_header in (
+            "Connection",
+            "Content-Encoding",
+            "Transfer-Encoding",
+            "Keep-Alive",
+        ):
+            self.assertNotIn(excluded_header, response.headers)
+
+        self.assertEqual(response.headers["Content-Type"], "application/octet-stream")
+        self.assertEqual(response.headers["ETag"], '"abc123"')
+        # filename is derived from Content-Disposition and re-set by StreamResponse
+        self.assertIn("foo.zip", response.headers["Content-Disposition"])
+
     def test_stream_download_product_empty_raises(self):
         """HTTPDownload.stream_download() must raise NotAvailableError if no asset and no product headers"""
 

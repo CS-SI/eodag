@@ -90,6 +90,21 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.download.http")
 
+# hop-by-hop / transport-specific headers that must not be forwarded from the
+# provider's response to the eodag client
+EXCLUDED_RESPONSE_HEADERS = {
+    "connection",
+    "content-encoding",
+    "content-length",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
+}
+
 
 class HTTPDownload(Download):
     """HTTPDownload plugin. Handles product download over HTTP protocol
@@ -1073,7 +1088,13 @@ class HTTPDownload(Download):
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 
-            product.headers = product._stream.headers
+            product.headers = CaseInsensitiveDict(
+                {
+                    k: v
+                    for k, v in product._stream.headers.items()
+                    if k.lower() not in EXCLUDED_RESPONSE_HEADERS
+                }
+            )
             filename = self._check_product_filename(product)
             content_type = product.headers.get("Content-Type")
             guessed_content_type = (
