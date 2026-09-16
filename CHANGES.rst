@@ -3,6 +3,32 @@ Release history
 ===============
 
 
+v4.9.0 (2026-09-16)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: Strip undesired headers from HTTPDownload.stream_download (`#2354`_, `37042c7`_)
+
+Features
+--------
+
+* **product**: Keep STAC item links in EOProduct (`#2352`_, `99473fb`_)
+
+Testing
+-------
+
+* Add more PluginManager tests (`#2353`_, `14589c5`_)
+
+.. _#2352: https://github.com/CS-SI/eodag/pull/2352
+.. _#2353: https://github.com/CS-SI/eodag/pull/2353
+.. _#2354: https://github.com/CS-SI/eodag/pull/2354
+.. _14589c5: https://github.com/CS-SI/eodag/commit/14589c520213eb3f3990dae46c71cdd75bebe4a8
+.. _37042c7: https://github.com/CS-SI/eodag/commit/37042c7d913398fd1e0f71b2e89d1b9693247d2f
+.. _99473fb: https://github.com/CS-SI/eodag/commit/99473fb2756fbd3b5cef797ae157e03e3400b5d5
+
+
 v4.8.0 (2026-09-11)
 ===================
 
