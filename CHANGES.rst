@@ -6,15 +6,15 @@ Release history
 v4.9.0 (2026-09-16)
 ===================
 
-Bug Fixes
----------
-
-* **plugins**: Strip undesired headers from HTTPDownload.stream_download (`#2354`_, `37042c7`_)
-
 Features
 --------
 
 * **product**: Keep STAC item links in EOProduct (`#2352`_, `99473fb`_)
+
+Bug Fixes
+---------
+
+* **plugins**: Strip undesired headers from HTTPDownload.stream_download (`#2354`_, `37042c7`_)
 
 Testing
 -------
