@@ -323,10 +323,6 @@ commands:
 
 .. code-block:: python
 
-   dag.providers_config["creodias"].auth.credentials["totp"] = "PLEASE_CHANGE_ME"
-
-   # OR
-
    dag.update_providers_config(
       """
       creodias:
@@ -341,7 +337,8 @@ will be stored and used if further authentication tries fail:
 
 .. code-block:: python
 
-   dag._plugins_manager.get_auth_plugin("creodias").authenticate()
+   eoproduct: eodag.EOProduct  # EOProduct coming from a search result on creodias
+   eoproduct.downloader_auth.authenticate()
 
 Please note that authentication mechanism is already included in
 `download methods <../notebooks/api_user_guide/7_download.ipynb>`_ , so you could

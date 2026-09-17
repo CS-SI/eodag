@@ -35,7 +35,6 @@ from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
-    NoMatchingCollection,
     QuotaExceededError,
     ValidationError,
 )
@@ -487,9 +486,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload.download() must ignore assets if configured to"""
 
         plugin = self.get_download_plugin(self.product)
-        self.product.location = (
-            self.product.remote_location
-        ) = "http://somewhere/download_from_location"
+        self.product.location = self.product.remote_location = (
+            "http://somewhere/download_from_location"
+        )
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
@@ -552,9 +551,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload.download() must ignore assets if configured to"""
 
         plugin = self.get_download_plugin(self.product)
-        self.product.location = (
-            self.product.remote_location
-        ) = "http://somewhere/download_from_location"
+        self.product.location = self.product.remote_location = (
+            "http://somewhere/download_from_location"
+        )
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
@@ -911,8 +910,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         asset.filename = "myfile.txt"
         asset.headers = {}
         asset.__getitem__ = lambda self, key: "text/plain" if key == "type" else None
-        asset.get.side_effect = (
-            lambda key, default=None: "text/plain" if key == "type" else default
+        asset.get.side_effect = lambda key, default=None: (
+            "text/plain" if key == "type" else default
         )
 
         self.product.assets = mock.Mock()
@@ -1364,9 +1363,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_get(self, mock_request):
         """HTTPDownload._order() must request using eodag:order_link and GET protocol"""
         plugin = self.get_download_plugin(self.product)
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
         self.product.properties["order:status"] = OFFLINE_STATUS
 
@@ -1403,9 +1402,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_request.return_value = MockResponse(status_code=500)
 
         plugin = self.get_download_plugin(self.product)
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1430,9 +1429,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_get_raises_if_request_400(self, mock_request):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1463,9 +1462,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_post(self, mock_request):
         """HTTPDownload._order() must request using eodag:order_link and POST protocol"""
         plugin = self.get_download_plugin(self.product)
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
         self.product.properties["order:status"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
 
@@ -1500,9 +1499,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # eodag:order_link with JSON data containing a query string
         mock_request.reset_mock()
-        self.product.properties[
-            "eodag:order_link"
-        ] = 'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
+        self.product.properties["eodag:order_link"] = (
+            'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
+        )
         plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
@@ -1528,9 +1527,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "error": {"that": "failed"},
         }
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1606,9 +1605,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_request.return_value = MockResponse(status_code=500)
 
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
         self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
@@ -1637,9 +1636,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         # Set up the EOProduct and the necessary properties
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
         self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
@@ -1685,9 +1684,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1742,9 +1741,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
-        self.product.properties[
-            "eodag:download_link"
-        ] = "https://copernicus.nci.org.au/dummy"
+        self.product.properties["eodag:download_link"] = (
+            "https://copernicus.nci.org.au/dummy"
+        )
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1946,9 +1945,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             collection="S2_MSI_L2A",
         )
         self.product.properties["eodag:download_link"] = "s3://sentinel-s2-l2a/123"
-        self.product.location = (
-            self.product.remote_location
-        ) = "http://somebucket.somehost.com/path/to/some/product"
+        self.product.location = self.product.remote_location = (
+            "http://somebucket.somehost.com/path/to/some/product"
+        )
 
     def test_plugins_download_aws_get_bucket_prefix(self):
         """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location"""
@@ -2199,9 +2198,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
-        self.product.properties[
-            "eodag:product_info"
-        ] = "http://example.com/productInfo.json"
+        self.product.properties["eodag:product_info"] = (
+            "http://example.com/productInfo.json"
+        )
         execpected_output = os.path.join(
             self.output_dir, self.product.properties["title"]
         )
@@ -2285,9 +2284,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
-        self.product.properties[
-            "eodag:product_info"
-        ] = "http://example.com/productInfo.json"
+        self.product.properties["eodag:product_info"] = (
+            "http://example.com/productInfo.json"
+        )
         self.product.properties["eodag:product_path"] = "http://example.com/productPath"
         self.product.assets.clear()
         self.product.assets.update(
@@ -2371,7 +2370,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.config.products[self.product.collection]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
 
-        with self.assertRaises(NoMatchingCollection):
+        with self.assertRaises(NotAvailableError):
             plugin.download(self.product, outputs_prefix=self.output_dir)
 
     @mock.patch(
