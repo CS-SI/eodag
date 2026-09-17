@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.9.1 (2026-09-17)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: Creodias and creodias_s3 auth errors handling (`#2357`_, `4bbf5bb`_)
+
+.. _#2357: https://github.com/CS-SI/eodag/pull/2357
+.. _4bbf5bb: https://github.com/CS-SI/eodag/commit/4bbf5bbbe2eaf6b7289f144cce6da69897395201
+
+
 v4.9.0 (2026-09-16)
 ===================
 
