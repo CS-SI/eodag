@@ -55,7 +55,6 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     MisconfiguredError,
-    NoMatchingCollection,
     NotAvailableError,
     TimeOutError,
 )
@@ -672,12 +671,15 @@ class AwsDownload(Download):
                 )
             )
             if not unique_product_chunks and raise_error:
-                raise NotAvailableError(
-                    rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in {product.remote_location}"
+                msg = (
+                    rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in "
+                    f"{product.remote_location}"
                 )
+                raise NotAvailableError(msg)
 
         if not unique_product_chunks and raise_error:
-            raise NoMatchingCollection("No product found to download.")
+            msg = f"No downloadable files found for {product}."
+            raise NotAvailableError(msg)
 
         return unique_product_chunks
 

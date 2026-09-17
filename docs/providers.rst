@@ -641,6 +641,9 @@ No credentials are needed
   <getting_started_guide/configure.rst#authenticate-using-an-otp-one-time-password-two-factor-authentication>`__
   to see how to proceed.
 
+  Some collections, like CopDEM ones, require additional license agreement acceptance. Check them on your
+  `creodias personal profile / agreements  section <https://new.cloudferro.com/panel/profile/personal>`__.
+
 ----
 
 **creodias_s3**
