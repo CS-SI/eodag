@@ -809,7 +809,6 @@ class QueryStringSearch(Search):
         :param prep: Object collecting needed information for search.
         """
         count = prep.count
-        raise_errors = getattr(prep, "raise_errors", False)
         number_matched = kwargs.pop("number_matched", None)
         collection = cast(str, kwargs.get("collection", prep.collection))
         if collection == GENERIC_COLLECTION:
@@ -864,14 +863,37 @@ class QueryStringSearch(Search):
 
         prep.query_params = qp
         prep.query_string = qs
-        prep.search_urls, total_items = self.collect_search_urls(
-            prep,
-            **kwargs,
-        )
-        if not count and hasattr(prep, "total_items_nb"):
+
+        if count and self._count_needs_own_request():
+            return self._query_with_best_effort_count(prep, number_matched, **kwargs)
+
+        return self._query_prepared(prep, number_matched, **kwargs)
+
+    def _count_needs_own_request(self) -> bool:
+        """Whether the count is requested separately from the search request.
+
+        Providers either expose a dedicated count endpoint, or ask for the count with an
+        additional search parameter.
+        """
+        pagination = getattr(self.config, "pagination", {}) or {}
+        return "count_endpoint" in pagination or bool(pagination.get("count_tpl"))
+
+    def _query_prepared(
+        self, prep: PreparedSearch, number_matched: Optional[int], **kwargs: Any
+    ) -> SearchResult:
+        """Send the request(s) described by ``prep`` and build the corresponding result.
+
+        :param prep: Object collecting needed information for search.
+        :param number_matched: count propagated from a previous page, if any
+        :returns: search results, with the count if ``prep.count`` is True
+        """
+        count = prep.count
+        prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
+        if not count:
             # do not try to extract total_items from search results if count is False
-            del prep.total_items_nb
-            del prep.need_count
+            for attr in ("total_items_nb", "need_count"):
+                if hasattr(prep, attr):
+                    delattr(prep, attr)
 
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
@@ -880,14 +902,85 @@ class QueryStringSearch(Search):
             total_items = number_matched
 
         eo_products = self.normalize_results(provider_results, **kwargs)
-        formated_result = SearchResult(
-            eo_products,
+        return self._build_search_result(
+            provider_results, eo_products, total_items, prep
+        )
+
+    def _build_search_result(
+        self,
+        provider_results: RawSearchResult,
+        products: list[EOProduct],
+        total_items: Optional[int],
+        prep: PreparedSearch,
+    ) -> SearchResult:
+        """Build a :class:`~eodag.api.search_result.SearchResult` from provider results."""
+        return SearchResult(
+            products,
             total_items,
             search_params=provider_results.search_params,
             next_page_token=getattr(provider_results, "next_page_token", None),
-            raise_errors=raise_errors,
+            raise_errors=getattr(prep, "raise_errors", False),
         )
-        return formated_result
+
+    def _query_with_best_effort_count(
+        self, prep: PreparedSearch, number_matched: Optional[int], **kwargs: Any
+    ) -> SearchResult:
+        """Send the count request at the same time as the search request.
+
+        The count is best-effort: if the count request times out while the search request
+        succeeds, the search result is returned without any count. If both requests time
+        out, the timeout is raised.
+
+        :param prep: Object collecting needed information for search.
+        :param number_matched: count propagated from a previous page, if any
+        :returns: search results, with the count if it could be retrieved
+        """
+        count_prep = copy_copy(prep)
+        count_prep.count = True
+        search_prep = copy_copy(prep)
+        search_prep.count = False
+
+        # providers with a count endpoint need a request of their own, which returns the count
+        # only; otherwise the count is retrieved along with the products in the search response
+        count_url_only = "count_endpoint" in self.config.pagination
+
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=2, thread_name_prefix="eodag-search"
+        ) as executor:
+            count_future: concurrent.futures.Future[Any]
+            if count_url_only:
+                count_future = executor.submit(
+                    lambda: self.collect_search_urls(count_prep, **kwargs)[1]
+                )
+            else:
+                count_future = executor.submit(
+                    self._query_prepared,
+                    count_prep,
+                    number_matched,
+                    **copy_copy(kwargs),
+                )
+            search_future = executor.submit(
+                self._query_prepared,
+                search_prep,
+                number_matched,
+                **copy_copy(kwargs),
+            )
+
+            try:
+                count_result = count_future.result()
+            except TimeOutError:
+                # count request timed out: return the search results without any count
+                try:
+                    return search_future.result()
+                except TimeOutError:
+                    raise
+            if isinstance(count_result, SearchResult):
+                # count and products were retrieved together, return them as-is
+                return count_result
+            # count endpoint: products come from the search request
+            search_result = search_future.result()
+            search_result.number_matched = count_result
+            return search_result
 
     def build_query_string(
         self, collection: str, query_dict: dict[str, Any]
@@ -935,8 +1028,9 @@ class QueryStringSearch(Search):
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
             total_results = None
-            prep.need_count = True
-            prep.total_items_nb = None
+            if "total_items_nb_key_path" in self.config.pagination:
+                prep.need_count = True
+                prep.total_items_nb = None
 
         for provider_collection in self.get_provider_collections(prep, **kwargs) or (
             None,
@@ -1723,7 +1817,6 @@ class PostJsonSearch(QueryStringSearch):
         """Perform a search on an OpenSearch-like interface"""
         collection = kwargs.get("collection", "")
         count = prep.count
-        raise_errors = getattr(prep, "raise_errors", False)
         number_matched = kwargs.pop("number_matched", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         _, sort_by_qp = (
@@ -1834,28 +1927,27 @@ class PostJsonSearch(QueryStringSearch):
                 result.number_matched = 0
             return result
         prep.query_params = dict(qp, **sort_by_qp)
-        prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
-        if not count and getattr(prep, "need_count", False):
-            # do not try to extract total_items from search results if count is False
-            del prep.total_items_nb
-            del prep.need_count
 
-        provider_results = self.do_search(prep, **kwargs)
-        if count and total_items is None and hasattr(prep, "total_items_nb"):
-            total_items = prep.total_items_nb
-        if not count and "number_matched" in kwargs and number_matched:
-            total_items = number_matched
+        if count and self._count_needs_own_request():
+            return self._query_with_best_effort_count(prep, number_matched, **kwargs)
 
-        eo_products_normalize = self.normalize_results(provider_results, **kwargs)
-        formated_result = SearchResult(
-            eo_products_normalize,
-            total_items,
-            search_params=provider_results.search_params,
-            next_page_token=getattr(provider_results, "next_page_token", None),
-            next_page_token_key=getattr(provider_results, "next_page_token_key", None),
-            raise_errors=raise_errors,
+        return self._query_prepared(prep, number_matched, **kwargs)
+
+    def _build_search_result(
+        self,
+        provider_results: RawSearchResult,
+        products: list[EOProduct],
+        total_items: Optional[int],
+        prep: PreparedSearch,
+    ) -> SearchResult:
+        """Build a :class:`~eodag.api.search_result.SearchResult` from provider results."""
+        result = super()._build_search_result(
+            provider_results, products, total_items, prep
         )
-        return formated_result
+        result.next_page_token_key = getattr(
+            provider_results, "next_page_token_key", None
+        )
+        return result
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
@@ -1920,8 +2012,9 @@ class PostJsonSearch(QueryStringSearch):
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
             total_results = None
-            prep.need_count = True
-            prep.total_items_nb = None
+            if "total_items_nb_key_path" in self.config.pagination:
+                prep.need_count = True
+                prep.total_items_nb = None
 
         if prep.auth_plugin is not None and hasattr(prep.auth_plugin, "config"):
             auth_conf_dict = getattr(prep.auth_plugin.config, "credentials", {})
