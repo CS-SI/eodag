@@ -117,6 +117,7 @@ from eodag.utils.requests import LocalFileAdapter, fetch_json
 from eodag.utils.import_system import import_all_modules, patch_owslib_requests
 from eodag.utils.notebook import NotebookWidgets, check_ipython, check_notebook
 from eodag.utils.s3 import (
+    list_files_in_s3_prefix,
     list_files_in_s3_zipped_object,
     update_assets_from_s3,
     open_s3_zipped_object,

@@ -21,6 +21,7 @@ from tests.context import (
     _compute_file_ranges,
     _prepare_file_in_zip,
     file_position_from_s3_zip,
+    list_files_in_s3_prefix,
     list_files_in_s3_zipped_object,
     open_s3_zipped_object,
     stream_download_from_s3,
@@ -176,6 +177,23 @@ class TestUtilsS3(TestCase):
         self.assertIsInstance(zip_file, zipfile.ZipFile)
         self.assertIsInstance(cd_data, bytes)
         self.assertEqual(len(zip_file.filelist), 6)
+
+    def test_utils_s3_list_files_in_s3_prefix(self):
+        """list_files_in_s3_prefix must exclude directory markers and siblings."""
+        self.s3_client.put_object(Bucket="mybucket", Key="test-prefix", Body=b"")
+        self.s3_client.put_object(Bucket="mybucket", Key="test-prefix/", Body=b"")
+        self.s3_client.put_object(
+            Bucket="mybucket", Key="test-prefix/file.txt", Body=b"content"
+        )
+        self.s3_client.put_object(
+            Bucket="mybucket", Key="test-prefix.txt", Body=b"sibling"
+        )
+
+        objects = list_files_in_s3_prefix(
+            "test-prefix", self.auth_plugin.get_bucket_objects("mybucket")
+        )
+
+        self.assertListEqual([item.key for item in objects], ["test-prefix/file.txt"])
 
     def test_utils_s3_update_assets_from_s3_zip(self):
         """update_assets_from_s3 must update the assets of a product from a zipped object stored in S3"""
