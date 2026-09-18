@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.service_resource import BucketObjectsCollection, ObjectSummary
 
     from eodag.api.product import EOProduct  # type: ignore
 
@@ -524,6 +525,42 @@ def stream_download_from_s3(
         compress=compress,
         executor=executor,
     )
+
+
+def list_files_in_s3_prefix(
+    prefix: str,
+    objects: BucketObjectsCollection,
+) -> list[ObjectSummary]:
+    """List files matching an S3 object key or a descendant prefix.
+
+    S3 prefix matching is lexical, so sibling keys such as ``product.txt`` are
+    excluded when listing ``product``. Directory marker objects are excluded,
+    except for a standalone exact object. Some S3-compatible services require
+    a trailing slash to list descendants, which is retried when needed.
+
+    :param prefix: S3 object key prefix to list
+    :param objects: Collection of S3 objects to filter
+    :returns: List of S3 objects matching the prefix criteria
+    """
+    descendant_prefix = f"{prefix.rstrip('/')}/"
+    matching_objects = list(objects.filter(Prefix=prefix))
+    if prefix and not matching_objects:
+        matching_objects = list(objects.filter(Prefix=descendant_prefix))
+
+    has_descendants = any(
+        item.key.startswith(descendant_prefix) and not item.key.endswith("/")
+        for item in matching_objects
+    )
+    return [
+        item
+        for item in matching_objects
+        if not item.key.endswith("/")
+        and (
+            not prefix
+            or (item.key == prefix and not (has_descendants and item.size == 0))
+            or item.key.startswith(descendant_prefix)
+        )
+    ]
 
 
 def update_assets_from_s3(

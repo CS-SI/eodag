@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 import boto3
@@ -59,7 +59,12 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     TimeOutError,
 )
-from eodag.utils.s3 import S3FileInfo, open_s3_zipped_object, stream_download_from_s3
+from eodag.utils.s3 import (
+    S3FileInfo,
+    list_files_in_s3_prefix,
+    open_s3_zipped_object,
+    stream_download_from_s3,
+)
 
 from .base import Download
 
@@ -651,47 +656,10 @@ class AwsDownload(Download):
         for bucket_name, prefix in bucket_names_and_prefixes:
             # unauthenticated items filtered out
             if bucket_name in authenticated_objects.keys():
-                prefix = prefix if prefix is not None else ""
-                # S3 keys always use POSIX separators. Normalize independently of
-                # the host OS, but preserve an empty prefix instead of turning it
-                # into "." as str(PurePosixPath("")) would do.
-                clean_prefix = str(PurePosixPath(prefix)) if prefix else ""
-                # Query the raw prefix first so exact object assets such as
-                # "folder/file.tif" can still be found. Some S3-compatible
-                # backends only list children when the prefix ends with "/",
-                # so retry with the child prefix only if the raw query is empty.
-                descendant_prefix = f"{clean_prefix.rstrip('/')}/"
-                matching_chunks = list(
-                    authenticated_objects[bucket_name].filter(Prefix=clean_prefix)
-                )
-                if clean_prefix and not matching_chunks:
-                    matching_chunks = list(
-                        authenticated_objects[bucket_name].filter(
-                            Prefix=descendant_prefix
-                        )
-                    )
-
-                # S3 Prefix matching is lexical: "folder" also matches
-                # "folder.txt". Keep only the exact object or children below
-                # "folder/". When an exact zero-size object has children, it is
-                # a directory marker and must not be downloaded as a file.
-                has_descendants = any(
-                    not chunk.key.endswith("/")
-                    and clean_prefix
-                    and chunk.key.startswith(descendant_prefix)
-                    for chunk in matching_chunks
-                )
                 product_chunks.extend(
-                    chunk
-                    for chunk in matching_chunks
-                    if not chunk.key.endswith("/")
-                    and (
-                        not clean_prefix
-                        or (
-                            chunk.key == clean_prefix
-                            and not (has_descendants and chunk.size == 0)
-                        )
-                        or chunk.key.startswith(descendant_prefix)
+                    list_files_in_s3_prefix(
+                        prefix or "",
+                        authenticated_objects[bucket_name],
                     )
                 )
 
