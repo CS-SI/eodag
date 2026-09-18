@@ -615,29 +615,25 @@ def update_assets_from_s3(
                     }
         else:
             # List files in prefix
-            s3_objects = s3_client.list_objects(
-                Bucket=bucket, Prefix=prefix, MaxKeys=300
-            )
-            for item_s3 in s3_objects.get("Contents", []):
+            bucket_objects = auth.get_bucket_objects(bucket)
+            for item_s3 in list_files_in_s3_prefix(prefix, bucket_objects):
 
-                url = "s3://{bucket}/{key}".format(bucket=bucket, key=item_s3["Key"])
+                url = "s3://{bucket}/{key}".format(bucket=bucket, key=item_s3.key)
                 key, roles = product.driver.guess_asset_key_and_roles(url, product)
                 if key is not None:
                     asset_data: dict[str, Any] = {
                         "title": key,
                         "roles": roles,
                         "href": url,
-                        "type": guess_file_type(item_s3["Key"]),
+                        "type": guess_file_type(item_s3.key),
                     }
-                    etag = item_s3.get("ETag")
+                    etag = item_s3.e_tag
                     # multipart-upload ETags ("<hash>-N") are not MD5 digests
                     if isinstance(etag, str) and "-" not in etag:
                         asset_data["file:checksum"] = etag.strip('"')
-                    size = item_s3.get("Size")
-                    if size is not None:
-                        asset_data["file:size"] = size
+                    asset_data["file:size"] = item_s3.size
 
-                    if last_modified := to_iso_utc_string(item_s3.get("LastModified")):
+                    if last_modified := to_iso_utc_string(item_s3.last_modified):
                         asset_data["updated"] = last_modified
 
                     assets_data[key] = asset_data
