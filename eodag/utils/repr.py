@@ -24,7 +24,7 @@ from urllib.parse import urlparse
 
 
 def str_as_href(link: str) -> str:
-    """URL to html link
+    """URL to html link.
 
     :param link: URL to format
     :returns: HMLT formatted link
@@ -40,7 +40,7 @@ def str_as_href(link: str) -> str:
 
 
 def html_table(input: Any, depth: Optional[int] = None) -> str:
-    """Transform input object to HTML table
+    """Transform input object to HTML table.
 
     :param input: input object to represent
     :param depth: maximum depth level until which nested objects should be represented
@@ -62,7 +62,7 @@ def dict_to_html_table(
     depth: Optional[int] = None,
     brackets: bool = True,
 ) -> str:
-    """Transform input dict to HTML table
+    """Transform input dict to HTML table.
 
     :param input_dict: input dict to represent
     :param depth: maximum depth level until which nested objects should be represented
@@ -100,7 +100,7 @@ def dict_to_html_table(
 def list_to_html_table(
     input_list: collections.abc.Sequence, depth: Optional[int] = None
 ) -> str:
-    """Transform input list to HTML table
+    """Transform input list to HTML table.
 
     :param input_list: input list to represent
     :param depth: maximum depth level until which nested objects should be represented
@@ -125,19 +125,25 @@ def list_to_html_table(
 
 
 def remove_class_repr(type_repr: str) -> str:
-    """Removes class tag from type representation
+    """Remove class tag from type representation.
 
     :param type_repr: input type representation
     :returns: type without class tag
 
     >>> remove_class_repr(str(type("foo")))
     'str'
+
+    >>> remove_class_repr("<class 'eodag.types.dictionary'>")
+    'eodag.types.dictionary'
     """
-    return re.sub(r"<class '(\w+)'>", r"\1", type_repr)
+    # dotted names (e.g. dynamically created TypedDict) are also matched, so that
+    # the surrounding "<class '...'>" does not end up looking like an unclosed
+    # HTML tag once rendered (which would make it disappear in notebooks)
+    return re.sub(r"<class '([\w.]+)'>", r"\1", type_repr)
 
 
 def shorter_type_repr(long_type: str) -> str:
-    """Shorten long type representation
+    """Shorten long type representation.
 
     :param long_type: long type representation
     :returns: type reprensentation shortened

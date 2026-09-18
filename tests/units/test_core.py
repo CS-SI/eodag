@@ -2344,7 +2344,7 @@ class TestCore(TestCoreBase):
         )
 
     def test_queryables_repr(self):
-        """The HTML representation of queryables must be correct"""
+        """The HTML representation of queryables must be correct."""
         queryables = self.dag.list_queryables(
             provider="cop_dataspace", collection="S1_SAR_GRD"
         )
@@ -2359,6 +2359,37 @@ class TestCore(TestCoreBase):
                 self.assertIn("str", spans[i + 1].text)
                 break
         self.assertTrue(id_present)
+
+    def test_queryables_dict_get_model_json_schema(self):
+        """Test that the QueryablesDict can return a valid JSON schema."""
+        from typing_extensions import get_args
+
+        queryables = self.dag.list_queryables(
+            provider="cop_dataspace", collection="S1_SAR_GRD"
+        )
+        self.assertIsInstance(queryables, QueryablesDict)
+        json_schema = queryables.get_model_json_schema()
+
+        # check that a simple class is correctly represented in the JSON schema (not with a $defs entry)
+        simple_class_origin = get_args(queryables["instruments"])[0].__origin__.__name__
+        simple_class_arg = get_args(queryables["instruments"])[0].__args__[0].__name__
+        simple_class = f"{simple_class_origin}[{simple_class_arg}]"
+
+        self.assertEqual(simple_class, "list[str]")
+        self.assertNotIn("list[str]", json_schema["$defs"])
+        self.assertNotIn("list", json_schema["$defs"])
+        self.assertNotIn("str", json_schema["$defs"])
+
+        # check that a complex class is correctly represented in the JSON schema (with a $defs entry)
+        complex_class_module = (
+            get_args(queryables["providers"])[0].__args__[0].__module__
+        )
+        complex_class_name = get_args(queryables["providers"])[0].__args__[0].__name__
+        complex_class = f"{complex_class_module}.{complex_class_name}"
+
+        self.assertEqual(complex_class, "stac_pydantic.shared.Provider")
+        self.assertIn("Provider", json_schema["$defs"])
+        self.assertIsInstance(json_schema["$defs"]["Provider"]["properties"], dict)
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",

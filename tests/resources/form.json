@@ -88,5 +88,17 @@
     },
     "id": 9,
     "required": true
+  },
+  {
+    "name": "location",
+    "label": "Location",
+    "type": "GeographicLocationWidget",
+    "details": {
+      "enableMap": true,
+      "stepY": 1e-05,
+      "stepX": 1e-05
+    },
+    "id": 10,
+    "required": true
   }
 ]
