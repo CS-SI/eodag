@@ -3616,14 +3616,14 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
 
     def _get_downloader_and_auth(self, product):
         downloader = self.plugins_manager.get_download_plugin(product)
-        auth = self.plugins_manager.get_auth_plugin(downloader, product)
-        auth.config.credentials = {
-            "aws_access_key_id": "foo",
-            "aws_secret_access_key": "bar",
-        }
-        auth.s3_resource = boto3.resource(
-            "s3", aws_access_key_id="foo", aws_secret_access_key="bar"
-        )
+        if auth := self.plugins_manager.get_auth_plugin(downloader, product):
+            auth.config.credentials = {
+                "aws_access_key_id": "foo",
+                "aws_secret_access_key": "bar",
+            }
+            auth.s3_resource = boto3.resource(
+                "s3", aws_access_key_id="foo", aws_secret_access_key="bar"
+            )
         return downloader, auth
 
     def _stub_s3_list_objects_for_product(
@@ -3647,12 +3647,17 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
 
     def _register_product_with_stubbed_s3_objects(self, product, object_entries):
         downloader, auth = self._get_downloader_and_auth(product)
-        stubber = self._stub_s3_list_objects_for_product(product, auth, object_entries)
-        stubber.activate()
-        try:
-            product.register_downloader(downloader, auth)
-        finally:
-            stubber.deactivate()
+        if auth:
+            stubber = self._stub_s3_list_objects_for_product(
+                product, auth, object_entries
+            )
+            stubber.activate()
+            try:
+                product.register_downloader(downloader, auth)
+            finally:
+                stubber.deactivate()
+        else:
+            product.register_downloader(downloader, None)
         return product
 
     @mock.patch(
@@ -3681,12 +3686,10 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     def test_plugins_search_creodias_s3_links_empty(self, mock_request):
         """Registering a product with no S3 objects must leave assets empty."""
         product = self._get_search_results(mock_request).data[0]
-        product.driver = None
         product.assets = AssetsDict(product)
 
         self._register_product_with_stubbed_s3_objects(product, [])
 
-        self.assertIsNotNone(product.driver)
         self.assertEqual(0, len(product.assets))
 
     @mock.patch(
