@@ -51,7 +51,12 @@ from eodag.config import (
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
 )
-from eodag.api.provider import ProviderConfig, ProvidersDict, Provider, build_provider_configs
+from eodag.api.provider import (
+    ProviderConfig,
+    ProvidersDict,
+    Provider,
+    build_provider_configs,
+)
 from eodag.config import PluginConfig
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
@@ -110,6 +115,7 @@ from eodag.utils.dates import get_timestamp, to_iso_utc_string
 from eodag.utils.env import is_env_var_true
 from eodag.utils.requests import fetch_json
 from eodag.utils.s3 import (
+    list_files_in_s3_prefix,
     list_files_in_s3_zipped_object,
     update_assets_from_s3,
     open_s3_zipped_object,

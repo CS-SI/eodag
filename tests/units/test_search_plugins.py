@@ -543,12 +543,12 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
 
         with responses.RequestsMock(
@@ -628,16 +628,16 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
-        search_plugin.config.discover_collections[
-            "single_collection_fetch_qs"
-        ] = "foo=bar"
+        search_plugin.config.discover_collections["single_collection_fetch_qs"] = (
+            "foo=bar"
+        )
 
         with responses.RequestsMock(
             assert_all_requests_are_fired=True
@@ -697,9 +697,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin(self.collection, provider)
         discover_collections_conf = search_plugin.config.discover_collections
         search_plugin.config.discover_collections.pop("fetch_url")
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
         result = search_plugin.discover_collections_per_page()
         assert result is None
@@ -3033,109 +3033,122 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginCreodiasS3Search, self).setUp()
         self.provider = "creodias_s3"
-
-    @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
-    )
-    def test_plugins_search_creodias_s3_links(self, mock_request, mock_s3_client):
-        # s3 links should be added to products with register_downloader
-        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
-        client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
-        mock_s3_client.return_value = client
-        stubber = Stubber(client)
-        s3_response_file = (
+        with open(
             Path(TEST_RESOURCES_PATH) / "provider_responses/creodias_s3_objects.json"
-        )
-        with open(s3_response_file) as f:
-            list_objects_response = json.load(f)
-        creodias_search_result_file = (
-            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.json"
-        )
-        with open(creodias_search_result_file) as f:
-            creodias_search_result = json.load(f)
-        mock_request.return_value = MockResponse(creodias_search_result, 200)
+        ) as f:
+            self.s3_objects = json.load(f)["Contents"]
+        with open(Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.json") as f:
+            self.search_result = json.load(f)
 
-        res = search_plugin.query(collection="S1_SAR_GRD")
-        for product in res.data:
-            download_plugin = self.plugins_manager.get_download_plugin(product)
-            auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
-            stubber.add_response("list_objects", list_objects_response)
-            stubber.activate()
-            # fails if credentials are missing
-            auth_plugin.config.credentials = {
-                "aws_access_key_id": "",
-                "aws_secret_access_key": "",
-            }
-            with self.assertRaisesRegex(
-                MisconfiguredError,
-                r"^Incomplete credentials .* \['aws_access_key_id', 'aws_secret_access_key'\]$",
-            ):
-                product.register_downloader(download_plugin, auth_plugin)
-            auth_plugin.config.credentials = {
-                "aws_access_key_id": "foo",
-                "aws_secret_access_key": "bar",
-            }
-            product.register_downloader(download_plugin, auth_plugin)
-        assets = res.data[0].assets
-        self.assertEqual(3, len(assets))
-        # check if s3 links have been created correctly
-        for asset in assets.values():
-            self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
+    def _get_search_results(self, mock_request):
+        mock_request.return_value = MockResponse(self.search_result, 200)
+        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
+        return search_plugin.query(collection="S1_SAR_GRD")
 
-        # no occur should occur and assets should be empty if list_objects does not have content
-        # (this situation will occur if the product does not have assets but is a tar file)
-        stubber.add_response("list_objects", {})
-        download_plugin = self.plugins_manager.get_download_plugin(res.data[0])
-        auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, res.data[0])
-        auth_plugin.config.credentials = {
+    def _get_downloader_and_auth(self, product):
+        downloader = self.plugins_manager.get_download_plugin(product)
+        auth = self.plugins_manager.get_auth_plugin(downloader, product)
+        auth.config.credentials = {
             "aws_access_key_id": "foo",
             "aws_secret_access_key": "bar",
         }
-        res.data[0].driver = None
-        res.data[0].assets = AssetsDict(res.data[0])
-        res.data[0].register_downloader(download_plugin, auth_plugin)
-        self.assertIsNotNone(res.data[0].driver)
-        self.assertEqual(0, len(res.data[0].assets))
+        auth.s3_resource = boto3.resource(
+            "s3", aws_access_key_id="foo", aws_secret_access_key="bar"
+        )
+        return downloader, auth
 
-    @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
-    )
+    def _stub_s3_list_objects_for_product(
+        self, product, auth, object_entries
+    ) -> Stubber:
+        bucket, prefix = product.remote_location.removeprefix("s3://").split("/", 1)
+        response = {
+            "Contents": [
+                {**item, "Key": f"{prefix}/{item['Key'].rsplit('/', 1)[-1]}"}
+                for item in object_entries
+            ]
+        }
+        stubber = Stubber(auth.s3_resource.meta.client)
+        for requested_prefix in (prefix, f"{prefix}/"):
+            stubber.add_response(
+                "list_objects",
+                response if object_entries else {},
+                {"Bucket": bucket, "Prefix": requested_prefix},
+            )
+        return stubber
+
+    def _register_product_with_stubbed_s3_objects(self, product, object_entries):
+        downloader, auth = self._get_downloader_and_auth(product)
+        stubber = self._stub_s3_list_objects_for_product(product, auth, object_entries)
+        stubber.activate()
+        try:
+            product.register_downloader(downloader, auth)
+        finally:
+            stubber.deactivate()
+        return product
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_creodias_s3_client_error(
-        self, mock_request, mock_s3_client
-    ):
-        # request error should be raised when there is an error when fetching data from the s3
-        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
-        client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
-        mock_s3_client.return_value = client
-        stubber = Stubber(client)
-
-        creodias_search_result_file = (
-            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.json"
+    def test_plugins_search_creodias_s3_links(self, mock_request):
+        """Registering a product must add its S3 object links as assets."""
+        product = self._register_product_with_stubbed_s3_objects(
+            self._get_search_results(mock_request).data[0], self.s3_objects
         )
-        with open(creodias_search_result_file) as f:
-            creodias_search_result = json.load(f)
-        mock_request.return_value = MockResponse(creodias_search_result, 200)
+
+        assets = product.assets
+        self.assertEqual(3, len(assets))
+        for asset in assets.values():
+            self.assertTrue(asset["href"].startswith(product.remote_location))
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_creodias_s3_links_empty(self, mock_request):
+        """Registering a product with no S3 objects must leave assets empty."""
+        product = self._get_search_results(mock_request).data[0]
+        product.driver = None
+        product.assets = AssetsDict(product)
+
+        self._register_product_with_stubbed_s3_objects(product, [])
+
+        self.assertIsNotNone(product.driver)
+        self.assertEqual(0, len(product.assets))
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_creodias_s3_links_require_credentials(self, mock_request):
+        """Registering a Creodias S3 product requires complete AWS credentials."""
+        product = self._get_search_results(mock_request).data[0]
+        downloader = self.plugins_manager.get_download_plugin(product)
+        auth = self.plugins_manager.get_auth_plugin(downloader, product)
+        auth.config.credentials = {"aws_access_key_id": "", "aws_secret_access_key": ""}
+
+        with self.assertRaisesRegex(
+            MisconfiguredError,
+            r"^Incomplete credentials .* \['aws_access_key_id', 'aws_secret_access_key'\]$",
+        ):
+            product.register_downloader(downloader, auth)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_creodias_s3_client_error(self, mock_request):
+        # request error should be raised when there is an error when fetching data from the s3
+        product = self._get_search_results(mock_request).data[0]
+        downloader, auth = self._get_downloader_and_auth(product)
+        bucket, prefix = product.remote_location.removeprefix("s3://").split("/", 1)
+        stubber = Stubber(auth.s3_resource.meta.client)
+        stubber.add_client_error(
+            "list_objects", expected_params={"Bucket": bucket, "Prefix": prefix}
+        )
 
         with self.assertRaises(NotAvailableError):
-            res = search_plugin.query(collection="S1_SAR_GRD")
-            for product in res.data:
-                download_plugin = self.plugins_manager.get_download_plugin(product)
-                auth_plugin = self.plugins_manager.get_auth_plugin(
-                    download_plugin, product
-                )
-                auth_plugin.config.credentials = {
-                    "aws_access_key_id": "foo",
-                    "aws_secret_access_key": "bar",
-                }
-                stubber.add_client_error("list_objects")
-                stubber.activate()
-                product.register_downloader(download_plugin, auth_plugin)
+            stubber.activate()
+            try:
+                product.register_downloader(downloader, auth)
+            finally:
+                stubber.deactivate()
 
 
 class TestSearchPluginECMWFSearch(unittest.TestCase):
@@ -5334,7 +5347,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
 
     def test_plugins_search_cop_ghsl_get_available_values_from_constraints(self):
         """test if get_available_values_from_contraints returns the available values for
-        the given filters based on the given constraints and throws an error if no values are available"""
+        the given filters based on the given constraints and throws an error if no values are available
+        """
         # invalid parameter in filter
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(

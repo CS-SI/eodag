@@ -852,6 +852,29 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         "eodag.plugins.authentication.aws_auth.AwsAuth._create_s3_resource",
         autospec=True,
     )
+    def test_plugins_auth_aws_get_bucket_objects_requester_pays(
+        self, mock_create_s3_resource
+    ):
+        """get_bucket_objects must configure requester-pays collections."""
+        plugin = self.get_auth_plugin("provider_with_auth_keys")
+        plugin.config.requester_pays = True
+        plugin.s3_resource = None
+        bucket_objects = (
+            mock_create_s3_resource.return_value.Bucket.return_value.objects
+        )
+
+        objects = plugin.get_bucket_objects("requester-pays-bucket")
+
+        mock_create_s3_resource.return_value.Bucket.assert_called_once_with(
+            "requester-pays-bucket"
+        )
+        bucket_objects.filter.assert_called_once_with(RequestPayer="requester")
+        self.assertIs(objects, bucket_objects.filter.return_value)
+
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._create_s3_resource",
+        autospec=True,
+    )
     def test_plugins_download_aws_presigned_url(self, mock_s3_resource):
         """should create a presigned url to download from S3"""
         # provider with no credentials required

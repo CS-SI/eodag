@@ -165,6 +165,22 @@ class AwsAuth(Authentication):
         self.s3_resource = self._create_s3_resource()
         return self.s3_resource
 
+    def get_bucket_objects(self, bucket_name: str) -> BucketObjectsCollection:
+        """Get the object collection for an S3 bucket.
+
+        The returned collection is configured for requester-pays buckets when
+        required by the authentication configuration.
+
+        :param bucket_name: Name of the S3 bucket
+        :returns: Collection of objects in the bucket, filtered for requester-pays if necessary
+        """
+        if not self.s3_resource:
+            self.s3_resource = self._create_s3_resource()
+        objects = self.s3_resource.Bucket(bucket_name).objects
+        if self.config.requester_pays:
+            return objects.filter(RequestPayer="requester")
+        return objects
+
     def _get_authenticated_objects(
         self, bucket_name: str, prefix: str
     ) -> BucketObjectsCollection:
@@ -174,15 +190,8 @@ class AwsAuth(Authentication):
         :param prefix: Prefix used to filter objects
         :returns: The boto3 authenticated objects
         """
-        if not self.s3_resource:
-            self.s3_resource = self._create_s3_resource()
         try:
-            if self.config.requester_pays:
-                objects = self.s3_resource.Bucket(bucket_name).objects.filter(
-                    RequestPayer="requester"
-                )
-            else:
-                objects = self.s3_resource.Bucket(bucket_name).objects
+            objects = self.get_bucket_objects(bucket_name)
             list(objects.filter(Prefix=prefix).limit(1))
             if objects:
                 logger.debug(
@@ -217,7 +226,7 @@ class AwsAuth(Authentication):
         :return: authenticated objects per bucket
         """
 
-        authenticated_objects: dict[str, Any] = {}
+        authenticated_objects: dict[str, BucketObjectsCollection] = {}
         auth_error_messages: set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
 
@@ -247,9 +256,9 @@ class AwsAuth(Authentication):
                         break
                 try:
                     # connect to aws s3 and get bucket auhenticated objects
-                    authenticated_objects[
-                        bucket_name
-                    ] = self._get_authenticated_objects(bucket_name, common_prefix)
+                    authenticated_objects[bucket_name] = (
+                        self._get_authenticated_objects(bucket_name, common_prefix)
+                    )
 
                 except AuthenticationError as e:
                     logger.warning("Unexpected error: %s" % e)
