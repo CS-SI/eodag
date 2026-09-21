@@ -15,31 +15,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
 from types import MethodType
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from botocore.exceptions import BotoCoreError
 
-from eodag.api.product import EOProduct  # type: ignore
+from eodag.api.product import EOProduct
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils.exceptions import MisconfiguredError, RequestError
 from eodag.utils.s3 import update_assets_from_s3
 
+if TYPE_CHECKING:
+    from eodag.config import PluginConfig
+    from eodag.plugins.authentication.aws_auth import AwsAuth
+    from eodag.plugins.download.base import Download
+
 logger = logging.getLogger("eodag.search.creodiass3")
 
 
-def patched_register_downloader(self, downloader, authenticator):
+def patched_register_downloader(
+    self: EOProduct, downloader: Download, authenticator: Optional[AwsAuth]
+) -> None:
     """Add the download information to the product.
 
     :param self: product to which information should be added
-    :param downloader: The download method that it can use
-                      :class:`~eodag.plugins.download.base.Download` or
-                      :class:`~eodag.plugins.api.base.Api`
-    :param authenticator: The authentication method needed to perform the download
-                         :class:`~eodag.plugins.authentication.base.Authentication`
+    :param downloader: Download plugin
+    :param authenticator: Authenticaton plugin
     """
+    if authenticator is None:
+        self.register_downloader_only(downloader, None)
+        return
     # verify credentials
     required_creds = ["aws_access_key_id", "aws_secret_access_key"]
     credentials = getattr(authenticator.config, "credentials", {}) or {}
@@ -72,7 +81,7 @@ class CreodiasS3Search(ODataV4Search):
         * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``) (**mandatory**): base url of the s3
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         super(CreodiasS3Search, self).__init__(provider, config)
 
     def normalize_results(
