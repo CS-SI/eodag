@@ -129,8 +129,7 @@ def _typed_dict_to_json(python_type: type) -> dict[str, Any]:
             # TODO: handle other types like int, list, dict, etc.
             pass
 
-        assert is_typeddict(python_type)
-        if name in python_type.__required_keys__:
+        if name in getattr(python_type, "__required_keys__", set()):
             required.append(name)
 
     result = {
@@ -349,6 +348,8 @@ def python_field_definition_to_json(
             json_field_definition["type"] = json_field_definition["min"] = (
                 json_field_definition["max"]
             ) = None
+        elif isinstance(type_data, dict):
+            json_field_definition.update(type_data)
         else:
             json_field_definition["type"] = [row["type"] for row in type_data]
             json_field_definition["min"] = [
