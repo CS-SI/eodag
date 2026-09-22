@@ -44,7 +44,7 @@ def patched_register_downloader(
 
     :param self: product to which information should be added
     :param downloader: Download plugin
-    :param authenticator: Authenticaton plugin
+    :param authenticator: Authentication plugin
     """
     if authenticator is None:
         self.register_downloader_only(downloader, None)
