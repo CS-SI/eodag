@@ -300,7 +300,15 @@ class PluginManager:
         self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
     ) -> Optional[Authentication]:
         """Build and return the authentication plugin associated to the given
-        search/download plugin
+        search/download plugin.
+
+        The selection follows the provider/auth matching rules in
+        :meth:`get_auth_plugins`: auth plugins are matched first using the product
+        URL (asset href, download link or remote location) and then using the
+        download/search plugin configuration. If no auth plugin matches, the method
+        keeps the provider's own auth plugin as a last resort when the product still
+        has a remote location, so product-specific registration can succeed even when
+        the asset list is temporarily empty.
 
         .. versionchanged:: v3.0.0
             ``get_auth_plugin()`` now needs ``associated_plugin`` instead of ``provider``
@@ -318,9 +326,13 @@ class PluginManager:
             product is not None
             and product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
         ):
-            matching_url = product.properties.get("eodag:order_link")
+            matching_url = (
+                product.properties.get("eodag:order_link") or product.remote_location
+            )
         elif product is not None:
-            matching_url = product.properties.get("eodag:download_link")
+            matching_url = (
+                product.properties.get("eodag:download_link") or product.remote_location
+            )
         else:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)
@@ -335,6 +347,8 @@ class PluginManager:
             )
         except StopIteration:
             auth_plugin = None
+
+        # bind collection if supported by the auth plugin
         if auth_plugin and product is not None and product.collection:
             bind_collection = getattr(auth_plugin, "bind_collection", None)
             if bind_collection:
@@ -356,6 +370,25 @@ class PluginManager:
                         collection=product.collection
                     )
                 auth_plugin = bind_collection(provider_collection)
+
+        # Keep the provider auth as a last resort only when this product still has a
+        # remote location but no auth plugin matched the URL/config.
+        if (
+            auth_plugin is None
+            and product is not None
+            and product.remote_location
+            and associated_plugin.provider == product.provider
+        ):
+            provider_conf = self.providers.configs.get(product.provider)
+            provider_auth_conf = getattr(provider_conf, "auth", None)
+            if provider_auth_conf is not None:
+                auth_plugin = cast(
+                    Authentication,
+                    self._build_plugin(
+                        product.provider, provider_auth_conf, Authentication
+                    ),
+                )
+
         return auth_plugin
 
     def get_auth_plugins(
