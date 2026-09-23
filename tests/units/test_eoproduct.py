@@ -39,11 +39,15 @@ from tests.context import (
     USER_AGENT,
     AddressNotFound,
     AwsAuth,
+    AwsDownload,
     DatasetDriver,
     Download,
+    DownloadError,
     EOProduct,
+    HTTPDownload,
     HTTPHeaderAuth,
     HttpQueryStringAuth,
+    MisconfiguredError,
     PluginConfig,
     ProgressCallback,
     mock,
@@ -566,6 +570,168 @@ class TestEOProduct(EODagTestBase):
         self.assertTrue(os.path.isfile(filepath))
         stat = os.stat(filepath)
         self.assertEqual(stat.st_size, 2488555)
+
+    @responses.activate
+    def test_eoproduct_asset_download_guesses_download_plugin(self):
+        """asset.download must retry with a plugin guessed from the asset href on MisconfiguredError"""
+        product = self._dummy_downloadable_product(
+            assets={"foo": {"href": "s3://somebucket/foo.jp2", "type": "image/jp2"}},
+            extract=False,
+        )
+        product.downloader.config.priority = 7
+        # an auth plugin that HTTPDownload cannot use, as it does not return an AuthBase
+        product.downloader_auth = mock.MagicMock()
+        product.downloader_auth.authenticate.return_value = object()
+
+        with mock.patch.object(
+            AwsDownload, "download", return_value="/path/to/foo.jp2"
+        ) as mock_aws_download:
+            asset_path = product.assets["foo"].download(output_dir=self.output_dir)
+
+        self.assertEqual(asset_path, "/path/to/foo.jp2")
+        self.assertEqual(product.downloader.config.type, "AwsDownload")
+        # the priority of the downloader that failed is kept
+        self.assertEqual(product.downloader.config.priority, 7)
+        # the retry downloads the asset that was asked for
+        self.assertEqual(mock_aws_download.call_args.kwargs["asset"], "foo")
+
+    @responses.activate
+    def test_eoproduct_asset_download_guessed_plugin_downloads(self):
+        """asset.download must download with the guessed plugin"""
+        product = self._dummy_downloadable_product(
+            assets={
+                "foo": {
+                    "href": "http://example.com/foobar.jp2",
+                    "title": "asset title",
+                    "type": "image/jp2",
+                }
+            },
+            extract=False,
+        )
+        product.register_downloader(
+            AwsDownload(
+                provider=self.provider,
+                config=PluginConfig.from_mapping(
+                    {"type": "AwsDownload", "output_dir": self.output_dir}
+                ),
+            ),
+            None,
+        )
+
+        with mock.patch.object(
+            AwsDownload, "download", side_effect=MisconfiguredError("wrong plugin")
+        ):
+            asset_path = product.assets["foo"].download(
+                output_dir=self.output_dir, extract=False
+            )
+
+        asset_file = os.path.join(asset_path, "foobar.jp2")
+        self.assertTrue(os.path.isfile(asset_file))
+        self.assertEqual(os.stat(asset_file).st_size, 2488555)
+        self.assertEqual(product.downloader.config.type, "HTTPDownload")
+
+    @responses.activate
+    def test_eoproduct_asset_download_no_guessed_plugin(self):
+        """asset.download must re-raise the original MisconfiguredError when no plugin can be guessed"""
+        product = self._dummy_product()
+        product.assets.update(
+            {"foo": {"href": "ftp://example.com/foo.jp2", "type": "image/jp2"}}
+        )
+        product.register_downloader(
+            AwsDownload(
+                provider=self.provider,
+                config=PluginConfig.from_mapping(
+                    {"type": "AwsDownload", "output_dir": self.output_dir}
+                ),
+            ),
+            None,
+        )
+
+        with self.assertRaises(MisconfiguredError) as ctx:
+            product.assets["foo"].download(output_dir=self.output_dir)
+
+        self.assertIn(
+            "Authentication plugin (AwsAuth) has to be configured",
+            str(ctx.exception),
+        )
+        self.assertEqual(product.downloader.config.type, "AwsDownload")
+
+    @responses.activate
+    def test_eoproduct_asset_download_does_not_retry_other_errors(self):
+        """asset.download must not guess a plugin when the download fails for another reason"""
+        product = self._dummy_downloadable_product(
+            assets={"foo": {"href": "s3://somebucket/foo.jp2", "type": "image/jp2"}},
+            extract=False,
+        )
+
+        with (
+            mock.patch.object(
+                HTTPDownload, "download", side_effect=DownloadError("download failed")
+            ),
+            mock.patch("eodag.api.product._assets.guess_download_plugin") as mock_guess,
+        ):
+            with self.assertRaises(DownloadError):
+                product.assets["foo"].download(output_dir=self.output_dir)
+
+        mock_guess.assert_not_called()
+        self.assertEqual(product.downloader.config.type, "HTTPDownload")
+
+    @responses.activate
+    def test_eoproduct_asset_download_guessed_plugin_failure_is_not_retried(self):
+        """asset.download must retry only once with the guessed plugin"""
+        product = self._dummy_downloadable_product(
+            assets={"foo": {"href": "s3://somebucket/foo.jp2", "type": "image/jp2"}},
+            extract=False,
+        )
+
+        with (
+            mock.patch.object(
+                HTTPDownload, "download", side_effect=MisconfiguredError("wrong plugin")
+            ),
+            mock.patch.object(
+                AwsDownload, "download", side_effect=MisconfiguredError("still wrong")
+            ) as mock_aws_download,
+        ):
+            with self.assertRaises(MisconfiguredError):
+                product.assets["foo"].download(output_dir=self.output_dir)
+
+        mock_aws_download.assert_called_once()
+        self.assertEqual(product.downloader.config.type, "AwsDownload")
+
+    @responses.activate
+    def test_eoproduct_asset_download_records_guessed_plugin(self):
+        """a guessed plugin must be kept on the product for the next downloads"""
+        product = self._dummy_downloadable_product(
+            assets={
+                "foo": {
+                    "href": "http://example.com/foobar.jp2",
+                    "title": "asset title",
+                    "type": "image/jp2",
+                }
+            },
+            extract=False,
+        )
+        product.register_downloader(
+            AwsDownload(
+                provider=self.provider,
+                config=PluginConfig.from_mapping(
+                    {"type": "AwsDownload", "output_dir": self.output_dir}
+                ),
+            ),
+            None,
+        )
+
+        with mock.patch.object(
+            AwsDownload, "download", side_effect=MisconfiguredError("wrong plugin")
+        ):
+            product.assets["foo"].download(output_dir=self.output_dir, extract=False)
+
+        self.assertEqual(product.downloader.config.type, "HTTPDownload")
+        with mock.patch(
+            "eodag.api.product._assets.guess_download_plugin"
+        ) as mock_guess:
+            product.assets["foo"].download(output_dir=self.output_dir, extract=False)
+        mock_guess.assert_not_called()
 
     # TODO: add a test on tarfiles extraction
 
