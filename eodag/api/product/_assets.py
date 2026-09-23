@@ -23,13 +23,49 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
-from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.exceptions import MisconfiguredError, NotAvailableError
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
+    from eodag.plugins.download.base import Download
     from eodag.types.download_args import DownloadConf
     from eodag.utils import StreamResponse, Unpack
+
+
+def guess_download_plugin(asset: Asset) -> Optional[Download]:
+    """Guess the download plugin to use from an asset href.
+
+    :param asset: The asset to guess a download plugin for
+    :returns: A download plugin matching the asset href, or ``None`` if no guess could be made
+    """
+    from eodag.config import PluginConfig
+    from eodag.plugins.download.aws import AwsDownload
+    from eodag.plugins.download.http import HTTPDownload
+
+    href = asset.get("href", "")
+    downloader = asset.product.downloader
+    if downloader is None:
+        return None
+    downloader_config = downloader.config
+
+    plugin_class: type[Download]
+    if href.startswith("s3://") and downloader_config.type != "AwsDownload":
+        plugin_class = AwsDownload
+    elif href.startswith("http") and downloader_config.type != "HTTPDownload":
+        plugin_class = HTTPDownload
+    else:
+        return None
+
+    return plugin_class(
+        provider=asset.product.provider,
+        config=PluginConfig.from_mapping(
+            {
+                "type": plugin_class.__name__,
+                "priority": getattr(downloader_config, "priority", 0),
+            }
+        ),
+    )
 
 
 class AssetsDict(UserDict):
@@ -225,11 +261,21 @@ class Asset(UserDict):
     def download(self, **kwargs: Unpack[DownloadConf]) -> str:
         """Downloads a single asset
 
+        If the product download plugin cannot download the asset, a plugin matching the asset
+        href is guessed and used for a single new attempt.
+
         :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
         :returns: The absolute path to the downloaded product on the local filesystem
         """
         kwargs["asset"] = self.key
-        return self.product.download(**kwargs)
+        try:
+            return self.product.download(**kwargs)
+        except MisconfiguredError:
+            guessed_downloader = guess_download_plugin(self)
+            if guessed_downloader is None:
+                raise
+            self.product.downloader = guessed_downloader
+            return self.product.download(**kwargs)
 
     def stream_download(self, **kwargs: Unpack[DownloadConf]) -> StreamResponse:
         """Downloads a single asset as StreamResponse
