@@ -291,6 +291,7 @@ addopts = "--doctest-modules --disable-socket --allow-unix-socket"
 log_cli = false
 filterwarnings = [
     """ignore:
-    .*(Call to deprecated eodag|locations_conf_path|user_conf_file_path|EODAG_PROVIDERS_CFG_FILE).*:
+    .*(Call to deprecated eodag|locations_conf_path|user_conf_file_path|EODAG_PROVIDERS_CFG_FILE|\
+        EODAG_EXT_COLLECTIONS_CFG_FILE).*:
     DeprecationWarning""",
 ]
