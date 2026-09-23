@@ -31,7 +31,13 @@ import yaml
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
-from pydantic import BeforeValidator, Field, computed_field, model_validator
+from pydantic import (
+    AliasChoices,
+    BeforeValidator,
+    Field,
+    computed_field,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import TypedDict
 
@@ -133,7 +139,10 @@ class EODAGSettings(BaseSettings):
 
     ext_collections_cfg_uri: str = Field(
         default=EXT_COLLECTIONS_CONF_URI,
-        validation_alias="EODAG_EXT_COLLECTIONS_CFG_FILE",
+        validation_alias=AliasChoices(
+            "EODAG_EXT_COLLECTIONS_CFG_URI",
+            "EODAG_EXT_COLLECTIONS_CFG_FILE",
+        ),
         description=(
             "URI of the external collections configuration. "
             "Supports HTTP(S), ``file://`` URIs and local filesystem paths."
@@ -183,6 +192,13 @@ class EODAGSettings(BaseSettings):
             warnings.warn(
                 "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. "
                 "Use EODAG_PROVIDERS_CFG_DIR instead.",
+                DeprecationWarning,
+                stacklevel=5,
+            )
+        if "EODAG_EXT_COLLECTIONS_CFG_FILE" in os.environ:
+            warnings.warn(
+                "EODAG_EXT_COLLECTIONS_CFG_FILE is deprecated. "
+                "Use EODAG_EXT_COLLECTIONS_CFG_URI instead.",
                 DeprecationWarning,
                 stacklevel=5,
             )

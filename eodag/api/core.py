@@ -40,6 +40,7 @@ from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypa
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
+    EXT_COLLECTIONS_CONF_URI,
     PLUGINS_TOPICS_KEYS,
     EODAGSettings,
     PluginConfig,
@@ -554,13 +555,17 @@ class EODataAccessGateway:
                     already_fetched = False
 
         if not already_fetched:
+            is_conf_customized = (
+                self.settings.ext_collections_cfg_uri != EXT_COLLECTIONS_CONF_URI
+            )
+
             # get ext_collections conf
             ext_collections_conf = get_ext_collections_conf(
                 self.settings.ext_collections_cfg_uri
             )
 
-            if not ext_collections_conf:
-                # empty ext_collections conf
+            if not is_conf_customized and not ext_collections_conf:
+                # empty ext_collections conf and URI untouched by the user
                 ext_collections_conf = (
                     self.discover_collections(provider=provider) or {}
                 )

@@ -1558,11 +1558,11 @@ class TestCore(TestCoreBase):
 
             mock_get_ext_collections_conf.return_value = {}
 
-            # an empty configured URI still falls back to discovery
+            # disabled collections discovery
             self.dag.settings.ext_collections_cfg_uri = ""
             self.dag.fetch_collections_list()
             mock_get_ext_collections_conf.assert_called_with("")
-            mock_discover_collections.assert_called_once_with(self.dag, provider=None)
+            mock_discover_collections.assert_not_called()
 
             mock_discover_collections.reset_mock()
 
@@ -1589,7 +1589,7 @@ class TestCore(TestCoreBase):
 
         # default settings still fall back to discover_collections
         self.dag.fetch_collections_list()
-        mock_discover_collections.assert_called_once_with(self.dag, provider=None)
+        mock_discover_collections.assert_not_called()
 
         mock_discover_collections.reset_mock()
 
@@ -1611,7 +1611,6 @@ class TestCore(TestCoreBase):
         self.assertEqual(
             mock_discover_collections.call_args_list,
             [
-                mock.call(self.dag, provider=None),
                 mock.call(self.dag, provider="earth_search"),
                 mock.call(self.dag, provider="foo_provider"),
             ],

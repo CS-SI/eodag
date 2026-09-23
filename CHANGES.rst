@@ -3,6 +3,26 @@ Release history
 ===============
 
 
+v4.9.1 (2026-09-23)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Ext collections fetch env var (`#2362`_, `cc50938`_)
+
+* **plugins**: Aws prefix filtering for siblings and dir markers (`#2342`_, `7ab8858`_)
+
+* **plugins**: Creodias and creodias_s3 auth errors handling (`#2357`_, `4bbf5bb`_)
+
+.. _#2342: https://github.com/CS-SI/eodag/pull/2342
+.. _#2357: https://github.com/CS-SI/eodag/pull/2357
+.. _#2362: https://github.com/CS-SI/eodag/pull/2362
+.. _4bbf5bb: https://github.com/CS-SI/eodag/commit/4bbf5bbbe2eaf6b7289f144cce6da69897395201
+.. _7ab8858: https://github.com/CS-SI/eodag/commit/7ab885874059f560e819a37d636b7dcdeb90ca95
+.. _cc50938: https://github.com/CS-SI/eodag/commit/cc509387abb1f8baa4c99f1039a76d3d0b827d17
+
+
 v4.9.0 (2026-09-16)
 ===================
 

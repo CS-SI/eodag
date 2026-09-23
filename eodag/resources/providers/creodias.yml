@@ -246,6 +246,7 @@ creodias:
     type: HTTPDownload
     extract: true
     order_enabled: false
+    auth_error_code: [401, 403]
     archive_depth: 2
     ssl_verify: true
   auth:
