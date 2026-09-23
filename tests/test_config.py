@@ -286,6 +286,28 @@ class TestConfigFunctions(unittest.TestCase):
             # priority is set to 0 for all providers
             self.assertEqual(value.priority, 0)
 
+    def test_ext_collections_config_uri_environment_variables(self):
+        """Both current and deprecated environment variable names are supported."""
+        try:
+            os.environ["EODAG_EXT_COLLECTIONS_CFG_URI"] = "new-uri"
+            self.assertEqual(config.EODAGSettings().ext_collections_cfg_uri, "new-uri")
+
+            os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_URI")
+            os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = "deprecated-uri"
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                "EODAG_EXT_COLLECTIONS_CFG_FILE is deprecated",
+            ):
+                self.assertEqual(
+                    config.EODAGSettings().ext_collections_cfg_uri, "deprecated-uri"
+                )
+
+            os.environ["EODAG_EXT_COLLECTIONS_CFG_URI"] = "new-uri"
+            self.assertEqual(config.EODAGSettings().ext_collections_cfg_uri, "new-uri")
+        finally:
+            os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_URI", None)
+            os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE", None)
+
     def test_load_provider_configs_file_precedence(self):
         """load_provider_configs must prioritize providers_cfg_file over providers_cfg_dir."""
         providers_cfg_file_override = (
