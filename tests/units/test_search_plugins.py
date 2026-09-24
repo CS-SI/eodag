@@ -21,6 +21,7 @@ import json
 import os
 import re
 import ssl
+import threading
 import unittest
 from copy import deepcopy as copy_deepcopy
 from importlib import import_module
@@ -1288,6 +1289,122 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         )
 
 
+class TestSearchPluginQueryStringSearchBestEffortCount(BaseSearchPluginTest):
+    """Best-effort count for providers requesting the count with the search request"""
+
+    def setUp(self):
+        super().setUp()
+        provider = "sara"
+        self.search_plugin = self.get_search_plugin(self.collection, provider)
+        self.auth_plugin = self.get_auth_plugin(self.search_plugin)
+        self.initial_pagination = copy_deepcopy(self.search_plugin.config.pagination)
+        # sara returns its count within the search response, emulate a provider asking for the
+        # count with an extra query parameter (as cop_dataspace and creodias do)
+        self.search_plugin.config.pagination["count_tpl"] = "&$count=True"
+        with open(self.provider_resp_dir / "sara_search.json") as f:
+            self.resp_search = json.load(f)
+        self.products_count = self.resp_search["properties"]["totalResults"]
+
+    def tearDown(self):
+        self.search_plugin.config.pagination = self.initial_pagination
+        super().tearDown()
+
+    def _query(self, count=True):
+        return self.search_plugin.query(
+            prep=PreparedSearch(
+                page=1, limit=2, count=count, auth_plugin=self.auth_plugin
+            ),
+            **self.search_criteria_s2_msi_l1c,
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringsearch_count_and_search_at_the_same_time(
+        self, mock__request
+    ):
+        """count and search requests must be sent at the same time"""
+        barrier = threading.Barrier(2, timeout=10)
+
+        def side_effect(plugin, prep):
+            barrier.wait()
+            response = mock.Mock()
+            response.json.return_value = self.resp_search
+            return response
+
+        mock__request.side_effect = side_effect
+
+        products = self._query()
+
+        self.assertEqual(products.number_matched, self.products_count)
+        self.assertEqual(len(products.data), 2)
+        self.assertEqual(mock__request.call_count, 2)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringsearch_count_success(self, mock__request):
+        """the count must be returned when the count request succeeds"""
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = self.resp_search
+
+        products = self._query()
+
+        urls = [call_args.args[1].url for call_args in mock__request.call_args_list]
+        self.assertEqual(len(urls), 2)
+        self.assertTrue(any("$count=True" in url for url in urls))
+        self.assertTrue(any("$count=True" not in url for url in urls))
+        self.assertEqual(products.number_matched, self.products_count)
+        self.assertEqual(len(products.data), 2)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringsearch_count_timeout_returns_search_results(
+        self, mock__request
+    ):
+        """search results must be returned without count when the count request times out"""
+
+        def side_effect(plugin, prep):
+            if "$count=True" in prep.url:
+                raise TimeOutError()
+            response = mock.Mock()
+            response.json.return_value = self.resp_search
+            return response
+
+        mock__request.side_effect = side_effect
+
+        products = self._query()
+
+        self.assertIsNone(products.number_matched)
+        self.assertEqual(len(products.data), 2)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringsearch_count_both_timeout(self, mock__request):
+        """the timeout must be raised when both count and search requests time out"""
+        mock__request.side_effect = TimeOutError()
+
+        with self.assertRaises(TimeOutError):
+            self._query()
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringsearch_count_disabled(self, mock__request):
+        """no count request must be sent when count is disabled"""
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = self.resp_search
+
+        products = self._query(count=False)
+
+        mock__request.assert_called_once()
+        self.assertNotIn("$count=True", mock__request.call_args.args[1].url)
+        self.assertIsNone(products.number_matched)
+        self.assertEqual(len(products.data), 2)
+
+
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginPostJsonSearch, self).setUp()
@@ -1887,6 +2004,8 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         # Some expected results
         with open(self.provider_resp_dir / "onda_count.json") as f:
             self.onda_resp_count = json.load(f)
+        with open(self.provider_resp_dir / "onda_search.json") as f:
+            self.onda_resp_search = json.load(f)
         self.onda_url_count = (
             'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?$search="footprint:"'
             "Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, "
@@ -1894,6 +2013,15 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"'
         )
         self.onda_products_count = 47
+
+    def _onda_request_side_effect(self, plugin, prep):
+        """Return the count or the search response depending on the requested URL"""
+        response = mock.Mock()
+        if "/$count" in prep.url:
+            response.json.return_value = self.onda_resp_count
+        else:
+            response.json.return_value = self.onda_resp_search
+        return response
 
     def test_plugins_search_odatav4search_normalize_results_onda(self):
         """ODataV4Search.normalize_results must use metada pre-mapping if configured"""
@@ -1934,13 +2062,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         if per_product_metadata_query:
             self.onda_search_plugin.config.per_product_metadata_query = False
 
-        with open(self.provider_resp_dir / "onda_search.json") as f:
-            onda_resp_search = json.load(f)
-        mock__request.return_value = mock.Mock()
-        mock__request.return_value.json.side_effect = [
-            self.onda_resp_count,
-            onda_resp_search,
-        ]
+        mock__request.side_effect = self._onda_request_side_effect
         mock_requests_get.return_value = mock.Mock()
         # Mock requests.get in ODataV4Search.do_search that sends a request per product
         # obtained by QueryStringSearch.do_search to retrieve its metadata.
@@ -1977,16 +2099,83 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             'AND foo:bar"&$orderby=beginPosition asc&$top=2&$skip=0&$expand=Metadata'
         )
 
-        self.assertEqual(
-            mock__request.call_args_list[0].args[1].url, self.onda_url_count
-        )
-        self.assertEqual(mock__request.call_args_list[1].args[1].url, onda_url_search)
+        requested_urls = {
+            call_args.args[1].url for call_args in mock__request.call_args_list
+        }
+        self.assertEqual(requested_urls, {self.onda_url_count, onda_url_search})
 
         self.assertEqual(products.number_matched, self.onda_products_count)
         self.assertEqual(len(products.data), number_of_products)
         self.assertIsInstance(products.data[0], EOProduct)
         # products count non extracted from search results as count endpoint is specified
         self.assertFalse(hasattr(self.onda_search_plugin, "total_items_nb"))
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_count_endpoint_success(
+        self, mock__request, mock_count_hits
+    ):
+        """ODataV4Search must return the count endpoint value"""
+        self.onda_search_plugin.config.per_product_metadata_query = False
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = self.onda_resp_search
+        mock_count_hits.return_value = self.onda_products_count
+
+        products = self.onda_search_plugin.query(
+            prep=PreparedSearch(page=1, limit=2, auth=self.onda_auth_plugin),
+            **self.search_criteria_s2_msi_l1c,
+        )
+
+        mock_count_hits.assert_called_once()
+        self.assertEqual(products.number_matched, self.onda_products_count)
+        self.assertEqual(len(products.data), 2)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_count_endpoint_timeout_returns_search_results(
+        self, mock__request, mock_count_hits
+    ):
+        """ODataV4Search must return search results without count when the count endpoint times out"""
+        self.onda_search_plugin.config.per_product_metadata_query = False
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = self.onda_resp_search
+        mock_count_hits.side_effect = TimeOutError()
+
+        products = self.onda_search_plugin.query(
+            prep=PreparedSearch(page=1, limit=2, auth=self.onda_auth_plugin),
+            **self.search_criteria_s2_msi_l1c,
+        )
+
+        self.assertIsNone(products.number_matched)
+        self.assertEqual(len(products.data), 2)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_odatav4search_count_endpoint_both_timeout(
+        self, mock__request, mock_count_hits
+    ):
+        """ODataV4Search must raise the timeout when both count and search requests time out"""
+        self.onda_search_plugin.config.per_product_metadata_query = False
+        mock__request.side_effect = TimeOutError()
+        mock_count_hits.side_effect = TimeOutError()
+
+        with self.assertRaises(TimeOutError):
+            self.onda_search_plugin.query(
+                prep=PreparedSearch(page=1, limit=2, auth=self.onda_auth_plugin),
+                **self.search_criteria_s2_msi_l1c,
+            )
 
     @mock.patch("eodag.plugins.search.qssearch.get_ssl_context", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.Request", autospec=True)
@@ -2046,13 +2235,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         if not per_product_metadata_query:
             self.onda_search_plugin.config.per_product_metadata_query = True
 
-        with open(self.provider_resp_dir / "onda_search.json") as f:
-            onda_resp_search = json.load(f)
-        mock__request.return_value = mock.Mock()
-        mock__request.return_value.json.side_effect = [
-            self.onda_resp_count,
-            onda_resp_search,
-        ]
+        mock__request.side_effect = self._onda_request_side_effect
         mock_requests_get.return_value = mock.Mock()
         # Mock requests.get in ODataV4Search.do_search that sends a request per product
         # obtained by QueryStringSearch.do_search to retrieve its metadata.
@@ -2100,10 +2283,10 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             'AND foo:bar"&$orderby=beginPosition asc&$top=2&$skip=0&$expand=Metadata'
         )
 
-        self.assertEqual(
-            mock__request.call_args_list[0].args[1].url, self.onda_url_count
-        )
-        self.assertEqual(mock__request.call_args_list[1].args[1].url, onda_url_search)
+        requested_urls = {
+            call_args.args[1].url for call_args in mock__request.call_args_list
+        }
+        self.assertEqual(requested_urls, {self.onda_url_count, onda_url_search})
 
         self.assertEqual(products.number_matched, self.onda_products_count)
         self.assertEqual(len(products.data), number_of_products)
@@ -2140,13 +2323,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
         if not per_product_metadata_query:
             self.onda_search_plugin.config.per_product_metadata_query = True
-        with open(self.provider_resp_dir / "onda_search.json") as f:
-            onda_resp_search = json.load(f)
-        mock__request.return_value = mock.Mock()
-        mock__request.return_value.json.side_effect = [
-            self.onda_resp_count,
-            onda_resp_search,
-        ]
+        mock__request.side_effect = self._onda_request_side_effect
         mock_requests_get.return_value = mock.Mock()
         # Mock requests.get in ODataV4Search.do_search that sends a request per product
         # obtained by QueryStringSearch.do_search to retrieve its metadata.

@@ -3985,13 +3985,31 @@ class TestCoreSearch(TestCoreBase):
         mock_do_search.assert_called_once_with(
             self.dag,
             search_plugin,
-            count=False,
+            count=True,
             raise_errors=False,
             validate=False,
             collection="S2_MSI_L1C",
             page=2,
             limit=3,
         )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    def test_search_requests_count_by_default(
+        self, mock_prepare_search, mock_do_search
+    ):
+        """search must request the count by default"""
+        search_plugin = mock.Mock(provider="cop_dataspace")
+        search_plugin.config.pagination = {}
+        mock_prepare_search.return_value = (
+            [search_plugin],
+            {"collection": "S2_MSI_L1C"},
+        )
+        mock_do_search.return_value = self.search_results
+
+        self.dag.search(collection="S2_MSI_L1C", validate=False)
+
+        self.assertTrue(mock_do_search.call_args.kwargs["count"])
 
     @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page_plugin")
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search")
@@ -4040,6 +4058,7 @@ class TestCoreSearch(TestCoreBase):
             end=None,
             geom=None,
             locations=None,
+            count=False,
             collection="S2_MSI_L1C",
         )
 
