@@ -218,17 +218,6 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                     fs_path, str(Path(output_dir) / "title_to_sanitize-id_also")
                 )
 
-    def test_plugins_download_base_prepare_download_no_url(self):
-        """Download._prepare_download must return None when no download url."""
-        self.assertEqual(self.product.remote_location, "")
-
-        plugin = self.get_download_plugin(self.product)
-
-        fs_path, record_filename = plugin._prepare_download(self.product)
-
-        self.assertIsNone(fs_path)
-        self.assertIsNone(record_filename)
-
     def test_plugins_download_base_prepare_download_collision_avoidance(self):
         """Download._prepare_download must use collision avoidance suffix."""
         self.product.properties["title"] = "needs sanitïze"
@@ -766,11 +755,49 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
-        self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.output_dir, "dummy_product", "somethingelse")
-            )
+        asset_local_path = os.path.join(
+            self.output_dir, "dummy_product", "somethingelse"
         )
+        self.assertTrue(os.path.isfile(asset_local_path))
+
+        statements = plugin.check_cache(
+            self.product.assets["foo"], output_dir=self.output_dir
+        )
+        self.assertIsNotNone(statements)
+        self.assertEqual(statements["href"], "http://somewhere/something")
+        self.assertEqual(statements["file:local_path"], asset_local_path)
+
+    @mock.patch("eodag.plugins.download.http.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._raw_stream_download_assets",
+        autospec=True,
+    )
+    def test_plugins_download_http_updates_asset_path_after_flatten(
+        self, mock_raw_stream_download_assets, mock_flatten_top_directories
+    ):
+        """HTTPDownload._download_assets() must update cached paths after flattening"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/nested/file"}})
+        fs_dir_path = os.path.join(self.output_dir, "dummy_product")
+        old_dir = os.path.join(fs_dir_path, "nested")
+        mock_flatten_top_directories.return_value = old_dir, fs_dir_path
+        mock_raw_stream_download_assets.return_value = [
+            StreamResponse(content=iter([b"some content"]), arcname="nested/file")
+        ]
+
+        result = plugin._download_assets(
+            self.product,
+            fs_dir_path,
+            None,
+            progress_callback=ProgressCallback(disable=True),
+        )
+
+        asset = self.product.assets["foo"]
+        self.assertEqual(result, fs_dir_path)
+        self.assertEqual(asset["file:local_path"], os.path.join(fs_dir_path, "file"))
+        mock_flatten_top_directories.assert_called_once_with(fs_dir_path)
 
     @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -1162,7 +1189,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         """HTTPDownload.download() must create an outputfile."""
         plugin = self.get_download_plugin(self.product)
-        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.collection = "FOO"
+        self.product.location = self.product.remote_location = "http://foo"
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update(
@@ -1180,20 +1208,90 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.return_value.headers = CaseInsensitiveDict(
             {"Content-Disposition": ""}
         )
+        expected_hashes = {
+            "somewhere": hashlib.md5(
+                "FOO-someproduct-somewhere".encode("utf-8")
+            ).hexdigest(),
+            "elsewhere": hashlib.md5(
+                "FOO-someproduct-elsewhere".encode("utf-8")
+            ).hexdigest(),
+        }
+        cache_dir = Path(self.output_dir) / ".downloaded"
+        product_output_dir = Path(self.output_dir) / "dummy_product"
 
+        # Call download() with asset specified using pattern -----------------------------------------------------------
         path = plugin.download(self.product, output_dir=self.output_dir, asset="else.*")
 
-        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
-        self.assertTrue(os.path.isdir(path))
+        # 2 requests.get calls for 'elsewhere' asset:
+        # 1. fetch_asset_size / 2. _raw_stream_download_assets
+        self.assertEqual(2, mock_requests_get.call_count)
         self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.output_dir, "dummy_product", "somethingelse")
+            all(
+                mock_call.args == ("http://elsewhere/anything",)
+                for mock_call in mock_requests_get.call_args_list
             )
         )
-        self.assertEqual(2, mock_requests_get.call_count)
-        self.product.location = self.product.remote_location = "http://elsewhere"
+        # statements for the asset should be stored in the cache
+        self.assertFalse(
+            os.path.isfile(cache_dir / f"{expected_hashes['somewhere']}.json")
+        )
+        self.assertTrue(
+            os.path.isfile(cache_dir / f"{expected_hashes['elsewhere']}.json")
+        )
+        somewhere_statements = plugin.check_cache(
+            self.product.assets["somewhere"], output_dir=self.output_dir
+        )
+        self.assertIsNone(somewhere_statements)
+        elsewhere_statements = plugin.check_cache(
+            self.product.assets["elsewhere"], output_dir=self.output_dir
+        )
+        self.assertEqual(elsewhere_statements["href"], "http://elsewhere/anything")
+        self.assertEqual(
+            elsewhere_statements["file:local_path"],
+            str(product_output_dir / "somethingelse"),
+        )
+
+        # output file and dir created
+        self.assertEqual(path, str(product_output_dir))
+        self.assertTrue(os.path.isdir(path))
+        self.assertTrue(os.path.isfile(product_output_dir / "somethingelse"))
+
+        # Another download() call without asset specified: should only download remaining asset ------------------------
+        self.product.location = self.product.remote_location = "http://foo"
         plugin.download(self.product, output_dir=self.output_dir)
-        self.assertEqual(6, mock_requests_get.call_count)
+
+        # 2 more requests.get calls for 'somewhere' asset:
+        # 1. fetch_asset_size / 2. _raw_stream_download_assets
+        self.assertEqual(4, mock_requests_get.call_count)
+        self.assertTrue(
+            all(
+                mock_call.args == ("http://somewhere/something",)
+                for mock_call in mock_requests_get.call_args_list[2:]
+            )
+        )
+        # statements for the asset should be stored in the cache
+        self.assertTrue(
+            os.path.isfile(cache_dir / f"{expected_hashes['somewhere']}.json")
+        )
+        self.assertTrue(
+            os.path.isfile(cache_dir / f"{expected_hashes['elsewhere']}.json")
+        )
+        somewhere_statements = plugin.check_cache(
+            self.product.assets["somewhere"], output_dir=self.output_dir
+        )
+        self.assertEqual(somewhere_statements["href"], "http://somewhere/something")
+        self.assertEqual(
+            somewhere_statements["file:local_path"],
+            str(product_output_dir / "somethingelse"),
+        )
+        elsewhere_statements = plugin.check_cache(
+            self.product.assets["elsewhere"], output_dir=self.output_dir
+        )
+        self.assertEqual(elsewhere_statements["href"], "http://elsewhere/anything")
+        self.assertEqual(
+            elsewhere_statements["file:local_path"],
+            str(product_output_dir / "somethingelse"),
+        )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
