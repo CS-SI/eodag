@@ -341,23 +341,7 @@ class Download(PluginTopic):
                             self.set_statements(asset, statements, **kwargs)
                             break
 
-        # If an old cache exists and way to generate path changed, move cached file (file only)
-        if (
-            statement_local_path != ""
-            and os.path.isfile(statement_local_path)
-            and statement_local_path != local_path
-        ):
-            os.rename(statement_local_path, local_path)
-            logger.debug(
-                "Asset {} local_path moved from {} to {}",
-                asset.key,
-                statement_local_path,
-                local_path,
-            )
-            statements["file:local_path"] = local_path
-            self.set_statements(asset, statements, **kwargs)
-        else:
-            statements["file:local_path"] = local_path
+        statements["file:local_path"] = local_path
 
         return statements
 
