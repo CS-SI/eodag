@@ -575,6 +575,10 @@ Examples:
     help="Download only quicklooks of products instead full set of files",
 )
 @click.option(
+    "--asset",
+    help="Regex filter to identify assets to download instead of the full product",
+)
+@click.option(
     "--output-dir",
     type=click.Path(dir_okay=True, file_okay=False),
     help="Products or quicklooks download directory [default: local temporary directory]",
@@ -600,6 +604,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     from eodag.api.core import EODataAccessGateway
     from eodag.api.search_result import SearchResult
+    from eodag.utils.exceptions import NotAvailableError
     from eodag.utils.logging import setup_logging
 
     setup_logging(verbose=ctx.obj["verbosity"])
@@ -616,6 +621,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
         search_results.extend(satim_api.import_stac_items(list(stac_items)))
 
     output_dir = kwargs.pop("output_dir")
+    asset = kwargs.pop("asset")
     get_quicklooks = kwargs.pop("quicklooks")
 
     if get_quicklooks:
@@ -636,9 +642,21 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     else:
         # Download products
+        if asset is not None:
+            # download_all retries products for which the asset filter raises
+            # NotAvailableError until its timeout is reached, so a pattern matching
+            # nothing would keep the CLI waiting for minutes. Check it first.
+            for product in search_results:
+                try:
+                    product.assets.get_values(asset)
+                except NotAvailableError as e:
+                    click.echo(f"Error: {e}")
+                    sys.exit(1)
+
         executor = ThreadPoolExecutor(max_workers=kwargs.pop("max_workers"))
+        download_kwargs = {"asset": asset} if asset is not None else {}
         downloaded_files = satim_api.download_all(
-            search_results, output_dir=output_dir, executor=executor
+            search_results, output_dir=output_dir, executor=executor, **download_kwargs
         )
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
