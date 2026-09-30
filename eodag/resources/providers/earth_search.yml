@@ -55,6 +55,14 @@ earth_search:
         - '{{"query":{{"grid:code":{{"eq":"{grid:code}"}}}}}}'
         - '$.properties.grid:code'
       assets: '{$.assets#dict_filter($[?(href=~"^s3.*")])}'
+  assets_mapping:
+    download_link:
+      title: "downloadlink"
+      href: '$.links[?(@.rel="self")].href'
+      roles: '["archive", "data"]'
+      type: 'aplication/json'
+      # order:status set to succeeded for consistency between providers
+      order:status: 'succeeded'
   products:
     S1_SAR_GRD:
       _collection: sentinel-1-grd
@@ -75,7 +83,7 @@ earth_search:
       _collection: sentinel-2-l2a
       metadata_mapping:
         <<: *mgrs
-        assets: '{$.assets#dict_filter_and_sub("$[?(@.href =~ \"^https://sentinel-cogs.*/\")]","https\u003A//[a-z0-9-\.]+/","s3\u003A//sentinel-cogs/")}'
+        assets: '{$.assets#dict_filter_and_sub("$[?(@.href =~ \"^https://sentinel-cogs.*/\")]","https\u003A//[a-z0-9-.]+/","s3\u003A//sentinel-cogs/")}'
     LANDSAT_C2L2:
       _collection: landsat-c2-l2
     NAIP:

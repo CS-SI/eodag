@@ -23,6 +23,18 @@ planetary_computer:
       grid:code:
         - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code#replace_str("MGRS-","")}"}}}}}}'
         - '{$.properties."s2:mgrs_tile"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+      assets: '$.assets'
+    assets_mapping:
+      quicklook:
+        href: '$.assets[?(@.rel == "preview")].href'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: '$.assets[?(@.rel == "preview")].type'
+      thumbnail:
+        href: '$.assets[?(@.rel == "preview")].href'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: '$.assets[?(@.rel == "preview")].type'
   products:
     S1_SAR_GRD:
       _collection: sentinel-1-grd

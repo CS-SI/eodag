@@ -26,9 +26,7 @@ meteoblue:
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       collection: '$.queries[0].domain'
-      order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       qs: $.qs
-      eodag:download_link: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
       # Meteoblue specific parameters
       datapoints: '$.datapoints'
       requiresJobQueue: '$.requiresJobQueue'
@@ -45,7 +43,14 @@ meteoblue:
       timeIntervalsAlignment:
         - '{{"timeIntervalsAlignment": {timeIntervalsAlignment#to_geojson} }}'
         - '$.timeIntervalsAlignment'
-      eodag:order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
+    assets_mapping:
+      download_link:
+        qs: '$.qs'
+        href: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
+        order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
   products:
     NEMSGLOBAL_TCDC:
       product:type: NEMSGLOBAL

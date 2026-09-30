@@ -21,7 +21,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
 import boto3
 import requests
@@ -220,6 +220,7 @@ class AwsDownload(Download):
 
           * **default_bucket** (``str``): bucket where the collection can be found
           * **complementary_url_key** (``str``): properties keys pointing to additional urls of content to download
+          * **ignore_assets** (``bool``): override provider-level ignore_assets for this collection
           * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
             be created; used for Sentinel products; default: False
           * **fetch_metadata** (``dict[str, Any]``): config for metadata to be fetched for the SAFE product
@@ -228,6 +229,13 @@ class AwsDownload(Download):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsDownload, self).__init__(provider, config)
+
+    def _should_ignore_assets(self, product: EOProduct) -> bool:
+        """Get ignore_assets value with product-level override support."""
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
+        return product_conf.get(
+            "ignore_assets", getattr(self.config, "ignore_assets", False)
+        )
 
     def download(
         self,
@@ -283,22 +291,44 @@ class AwsDownload(Download):
             ignore_assets = False
         else:
             build_safe = product_conf.get("build_safe", False)
-            ignore_assets = getattr(self.config, "ignore_assets", False)
+            ignore_assets = self._should_ignore_assets(product)
 
         # product conf overrides provider conf for "flatten_top_dirs"
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
 
+        per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
+
         # xtra metadata needed for SAFE product
         self._configure_safe_build(build_safe, product)
+
+        assets_values_to_download: Optional[list[Any]] = None
+        # only keep assets that need to be downloaded (not cached)
+        if len(product.assets) > 0 and not ignore_assets:
+            all_assets_values = product.assets.get_values(asset_filter or "")
+            assets_values_to_download = []
+            for asset in all_assets_values:
+                if statements := self.check_cache(asset, **per_asset_kwargs):
+                    # update asset with cached statements
+                    asset.update(statements)
+                else:
+                    assets_values_to_download.append(asset)
+
         # bucket names and prefixes
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
             product,
             asset_filter,
             ignore_assets,
             product_conf.get("complementary_url_key", []),
+            assets_values_to_download,
         )
+
+        # nothing to download (e.g. all selected assets are already cached)
+        if not bucket_names_and_prefixes and assets_values_to_download == []:
+            if asset_filter is None:
+                product.location = path_to_uri(product_local_path)
+            return product_local_path
 
         # authenticate
         if product.downloader_auth and isinstance(product.downloader_auth, AwsAuth):
@@ -317,12 +347,29 @@ class AwsDownload(Download):
         self._config_executor(executor)
 
         # files in zip
+        completed_asset_ids: set[int] = set()
+
+        def set_zip_asset_statement(
+            pack: tuple[str, Optional[str]], asset_local_path: str
+        ) -> None:
+            for asset in assets_values_to_download or []:
+                if (
+                    self.get_product_bucket_name_and_prefix(
+                        product, asset.get("href", "")
+                    )
+                    == pack
+                ):
+                    self._set_asset_statement(asset, asset_local_path, per_asset_kwargs)
+                    completed_asset_ids.add(id(asset))
+                    break
+
         updated_bucket_names_and_prefixes = self._download_file_in_zip(
             product.downloader_auth,
             bucket_names_and_prefixes,
             product_local_path,
             progress_callback,
             executor,
+            asset_callback=set_zip_asset_statement,
         )
         # prevent nothing-to-download errors if download was performed in zip
         raise_error = (
@@ -348,7 +395,7 @@ class AwsDownload(Download):
             progress_callback.reset(total=total_size)
         try:
 
-            def download_chunk(product_chunk: Any) -> None:
+            def download_chunk(product_chunk: Any) -> Optional[str]:
                 try:
                     chunk_rel_path = self.get_chunk_dest_path(
                         product,
@@ -358,7 +405,7 @@ class AwsDownload(Download):
                 except NotAvailableError as e:
                     # out of SAFE format chunk
                     logger.warning(e)
-                    return
+                    return None
 
                 chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
                 chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
@@ -379,7 +426,51 @@ class AwsDownload(Download):
                         Callback=progress_callback,
                         Config=transfer_config,
                     )
-                return
+                return chunk_abs_path
+
+            asset_chunks: list[tuple[Any, list[Any]]] = []
+            for asset in assets_values_to_download or []:
+                bucket_name, prefix = self.get_product_bucket_name_and_prefix(
+                    product, asset.get("href", "")
+                )
+                chunks = [
+                    chunk
+                    for chunk in unique_product_chunks
+                    if chunk.bucket_name == bucket_name
+                    and prefix
+                    and (
+                        chunk.key == prefix
+                        or chunk.key.startswith(prefix.rstrip("/") + "/")
+                    )
+                ]
+                if chunks:
+                    asset_chunks.append((asset, chunks))
+
+            assets_by_chunk = {
+                id(chunk): asset for asset, chunks in asset_chunks for chunk in chunks
+            }
+            remaining_chunks = {
+                id(asset): len(chunks) for asset, chunks in asset_chunks
+            }
+
+            asset_local_paths: dict[int, str] = {}
+
+            def asset_downloaded(
+                product_chunk: Any, chunk_local_path: Optional[str]
+            ) -> None:
+                asset = assets_by_chunk.get(id(product_chunk))
+                if asset is not None:
+                    if chunk_local_path:
+                        asset_local_paths.setdefault(id(asset), chunk_local_path)
+                    remaining_chunks[id(asset)] -= 1
+                    if (
+                        remaining_chunks[id(asset)] == 0
+                        and id(asset) in asset_local_paths
+                    ):
+                        self._set_asset_statement(
+                            asset, asset_local_paths[id(asset)], per_asset_kwargs
+                        )
+                        completed_asset_ids.add(id(asset))
 
             # use parallelization if possible.
             # when products are already downloaded in parallel but the executor has only one worker,
@@ -389,13 +480,29 @@ class AwsDownload(Download):
                 and executor._max_workers == 1
             ):
                 for product_chunk in unique_product_chunks:
-                    download_chunk(product_chunk)
+                    chunk_local_path = download_chunk(product_chunk)
+                    asset_downloaded(product_chunk, chunk_local_path)
             else:
-                futures = (
-                    executor.submit(download_chunk, product_chunk)
+                futures = {
+                    executor.submit(download_chunk, product_chunk): product_chunk
                     for product_chunk in unique_product_chunks
-                )
-                [f.result() for f in as_completed(futures)]
+                }
+                for future in as_completed(futures):
+                    chunk_local_path = future.result()
+                    asset_downloaded(futures[future], chunk_local_path)
+
+            # Keep the existing behavior for assets whose listing returned no chunks.
+            for asset in assets_values_to_download or []:
+                if id(asset) not in completed_asset_ids and id(asset) not in {
+                    id(chunk_asset) for chunk_asset, _ in asset_chunks
+                }:
+                    self._set_asset_statement(
+                        asset,
+                        self.get_statements(asset, **per_asset_kwargs)[
+                            "file:local_path"
+                        ],
+                        per_asset_kwargs,
+                    )
 
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
@@ -411,7 +518,21 @@ class AwsDownload(Download):
             self.finalize_s2_safe_product(product_local_path)
         # flatten directory structure
         elif flatten_top_dirs:
-            flatten_top_directories(product_local_path)
+            old_dir, new_dir = flatten_top_directories(product_local_path)
+            old_dir = os.path.normpath(old_dir)
+            new_dir = os.path.normpath(new_dir)
+            for asset in product.assets.values():
+                asset_local_path = os.path.normpath(asset.get("file:local_path", ""))
+                new_asset_path = asset_local_path.replace(old_dir, new_dir, 1)
+                if new_asset_path != asset_local_path:
+                    self.set_statements(
+                        asset,
+                        {
+                            **asset.as_dict(),
+                            "file:local_path": new_asset_path,
+                        },
+                        **per_asset_kwargs,
+                    )
 
         if build_safe:
             self.check_manifest_file_list(product_local_path)
@@ -426,6 +547,23 @@ class AwsDownload(Download):
 
         return product_local_path
 
+    def _set_asset_statement(
+        self,
+        asset: Any,
+        asset_local_path: str,
+        per_asset_kwargs: dict[str, Any],
+    ) -> None:
+        """Persist the cache statement once an asset has finished downloading."""
+        if not asset.get("href", "").startswith("file:"):
+            self.set_statements(
+                asset,
+                {
+                    **asset.as_dict(),
+                    "file:local_path": asset_local_path,
+                },
+                **per_asset_kwargs,
+            )
+
     def _download_file_in_zip(
         self,
         downloader_auth: AwsAuth,
@@ -433,6 +571,9 @@ class AwsDownload(Download):
         product_local_path: str,
         progress_callback: ProgressCallback,
         executor: ThreadPoolExecutor,
+        asset_callback: Optional[
+            Callable[[tuple[str, Optional[str]], str], None]
+        ] = None,
     ):
         """Download file in zip from a prefix like `foo/bar.zip!file.txt`."""
         if downloader_auth.s3_resource is None:
@@ -469,6 +610,8 @@ class AwsDownload(Download):
                             output_file.write(zchunk)
                             progress_callback(len(zchunk))
 
+                if asset_callback:
+                    asset_callback(pack, dest_file)
                 return i
             return None
 
@@ -579,6 +722,7 @@ class AwsDownload(Download):
         asset_filter: Optional[str],
         ignore_assets: bool,
         complementary_url_keys: list[str],
+        assets_values: Optional[list[Any]] = None,
     ) -> list[tuple[str, Optional[str]]]:
         """Retrieve the bucket names and path prefixes for the assets.
 
@@ -589,21 +733,22 @@ class AwsDownload(Download):
         """
         # if assets are defined, use them instead of scanning product.location
         if len(product.assets) > 0 and not ignore_assets:
-            if asset_filter:
-                filter_regex = re.compile(asset_filter)
-                assets_keys = getattr(product, "assets", {}).keys()
-                assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
-                filtered_assets = {
-                    a_key: getattr(product, "assets", {})[a_key]
-                    for a_key in assets_keys
-                }
-                assets_values = [a for a in filtered_assets.values() if "href" in a]
-                if not assets_values:
-                    raise NotAvailableError(
-                        rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
-                    )
-            else:
-                assets_values = list(product.assets.values())
+            if assets_values is None:
+                if asset_filter:
+                    filter_regex = re.compile(asset_filter)
+                    assets_keys = getattr(product, "assets", {}).keys()
+                    assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+                    filtered_assets = {
+                        a_key: getattr(product, "assets", {})[a_key]
+                        for a_key in assets_keys
+                    }
+                    assets_values = [a for a in filtered_assets.values() if "href" in a]
+                    if not assets_values:
+                        raise NotAvailableError(
+                            rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
+                        )
+                else:
+                    assets_values = list(product.assets.values())
 
             bucket_names_and_prefixes = []
             for complementary_url in assets_values:
@@ -747,7 +892,9 @@ class AwsDownload(Download):
         build_safe = (
             False if asset_regex is not None else product_conf.get("build_safe", False)
         )
-        ignore_assets = getattr(self.config, "ignore_assets", False)
+        ignore_assets = (
+            False if asset_regex is not None else self._should_ignore_assets(product)
+        )
 
         self._configure_safe_build(build_safe, product)
 

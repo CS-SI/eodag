@@ -29,7 +29,14 @@ dedt_mn5:
         - dataset
         - $.dataset
       qs: $.qs
-      eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ''
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+        order:status: 'orderable'
   products:
     DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
       discover_queryables:

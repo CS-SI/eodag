@@ -21,6 +21,17 @@ usgs_satapi_aws:
     # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
       assets: '{$.assets#from_alternate(s3)}'
+    assets_mapping:
+      quicklook:
+        href: '$.assets.reduced_resolution_browse.alternate.s3.href'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: '$.assets.reduced_resolution_browse.type'
+      thumbnail:
+        href: '$.assets.thumbnail.alternate.s3.href'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: '$.assets.thumbnail.type'
   products:
     LANDSAT_C2L1:
       _collection: landsat-c2l1

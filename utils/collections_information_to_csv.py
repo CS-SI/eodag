@@ -63,11 +63,12 @@ def collections_info_to_csv(
 
     collections = dag.list_collections(fetch_providers=False)
     collections_names: list[str] = [collection.id for collection in collections]
-    metadata_params = list(
-        k
-        for k in collections[0].model_dump().keys()
-        if k in ["constellation", "processing:level"]
-    )
+    metadata_params = [
+        alias
+        for k in Collection.model_fields
+        if (alias := Collection.get_collection_alias_from_field(k))
+        in ["constellation", "processing:level"]
+    ]
 
     # csv fieldnames
     fieldnames = ["collection"] + metadata_params + providers
@@ -82,15 +83,17 @@ def collections_info_to_csv(
         for collection_name in collections_names:
             collections_rows[collection_name] = {"collection": collection_name}
             for metadata_param in metadata_params:
-                metadata_string = [
+                metadata_string = None
+                metadata_list = [
                     getattr(
                         collection,
-                        Collection.get_collection_mtd_from_alias(metadata_param),
+                        Collection.get_collection_field_from_alias(metadata_param),
                     )
                     for collection in collections
                     if collection.id == collection_name
                 ][0]
-                if metadata_string is not None:
+                if metadata_list is not None:
+                    metadata_string = ",".join(metadata_list)
                     metadata_string = str(metadata_string).replace("\n", " ")
                 collections_rows[collection_name][metadata_param] = metadata_string
             for provider in providers:
