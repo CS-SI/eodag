@@ -1554,7 +1554,7 @@ def get_bucket_name_and_prefix(
 
 def flatten_top_directories(
     nested_dir_root: str, common_subdirs_path: Optional[str] = None
-) -> None:
+) -> tuple[str, str]:
     """Flatten directory structure, removing common empty sub-directories
 
     :param nested_dir_root: Absolute path of the directory structure to flatten
@@ -1573,6 +1573,8 @@ def flatten_top_directories(
         shutil.copytree(common_subdirs_path, tmp_path, dirs_exist_ok=True)
         shutil.rmtree(nested_dir_root)
         shutil.move(tmp_path, nested_dir_root)
+
+    return common_subdirs_path, nested_dir_root
 
 
 def deepcopy(sth: Any) -> Any:
