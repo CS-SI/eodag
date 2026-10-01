@@ -20,6 +20,7 @@ import datetime as dt
 import pickle
 import unittest
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
 from types import SimpleNamespace
 from unittest import mock
 
@@ -31,6 +32,8 @@ from pystac.utils import now_in_utc
 from requests import Request, Response, Timeout
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
+from urllib3.exceptions import ConnectTimeoutError, NewConnectionError, ReadTimeoutError
+from urllib3.response import HTTPResponse
 
 from eodag.api.product._product import EOProduct
 from eodag.api.provider import ProvidersDict
@@ -1734,6 +1737,142 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         )
         cls.plugins_manager = PluginManager(providers)
 
+    @mock.patch("urllib3.util.retry.time.sleep", autospec=True)
+    @mock.patch(
+        "urllib3.connectionpool.HTTPConnectionPool._make_request", autospec=True
+    )
+    def test_plugins_auth_sasauth_retry_after(self, mock_request, mock_sleep):
+        """SAS signing must respect Retry-After, back off, and cache a successful URL."""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        signed_url = "https://storage.example/asset.tif?sig=test"
+        mock_request.side_effect = [
+            HTTPResponse(
+                body=BytesIO(b"Too Many Requests"),
+                status=429,
+                headers={"Retry-After": "7"},
+                preload_content=False,
+            ),
+            HTTPResponse(
+                body=BytesIO(b"Too Many Requests"), status=429, preload_content=False
+            ),
+            HTTPResponse(
+                body=BytesIO(b'{"href": "' + signed_url.encode() + b'"}'),
+                status=200,
+                preload_content=False,
+            ),
+        ]
+        with mock.patch.object(
+            auth_plugin.config, "auth_uri", "https://foo.bar?href={url}"
+        ):
+            auth = auth_plugin.authenticate()
+
+        for _ in range(2):
+            request = Request("GET", "https://storage.example/asset.tif").prepare()
+            self.assertEqual(auth(request).url, signed_url)
+
+        self.assertEqual(mock_request.call_count, 3)
+        self.assertEqual(mock_sleep.call_args_list, [mock.call(7), mock.call(4)])
+
+    def test_plugins_auth_sasauth_retry_limit(self):
+        """Signing retries must be bounded and leave failed URLs out of the cache."""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        url = "https://storage.example/asset.tif"
+        signing_url = auth_plugin.config.auth_uri.format(url=url)
+
+        for status, retry_total, expected_calls in [
+            (429, 0, 1),
+            (429, 2, 3),
+            (403, 2, 1),
+        ]:
+            with self.subTest(status=status, retry_total=retry_total):
+                with (
+                    mock.patch.multiple(
+                        auth_plugin.config,
+                        create=True,
+                        retry_total=retry_total,
+                        retry_backoff_factor=0,
+                    ),
+                    responses.RequestsMock() as mocked_responses,
+                ):
+                    mocked_responses.get(signing_url, status=status)
+                    auth = auth_plugin.authenticate()
+                    request = Request("GET", url).prepare()
+
+                    with self.assertRaises(AuthenticationError):
+                        auth(request)
+
+                    self.assertEqual(len(mocked_responses.calls), expected_calls)
+                    self.assertEqual(auth.signed_urls, {})
+                    self.assertEqual(request.url, url)
+
+    def test_plugins_auth_sasauth_retry_transport_errors(self):
+        """Retry exhaustion must preserve timeout and connection error classifications."""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        url = "https://storage.example/asset.tif"
+        signing_url = auth_plugin.config.auth_uri.format(url=url)
+
+        for retry_total in (0, 3):
+            for error, expected_error in [
+                (ReadTimeoutError(None, signing_url, "Read timed out"), TimeOutError),
+                (ConnectTimeoutError("Connection timed out"), TimeOutError),
+                (NewConnectionError(None, "Connection failed"), AuthenticationError),
+            ]:
+                with self.subTest(retry_total=retry_total, error=type(error).__name__):
+                    with (
+                        mock.patch.multiple(
+                            auth_plugin.config,
+                            create=True,
+                            retry_total=retry_total,
+                            retry_backoff_factor=0,
+                        ),
+                        mock.patch(
+                            "urllib3.connectionpool.HTTPConnectionPool._make_request",
+                            autospec=True,
+                            side_effect=error,
+                        ) as mock_request,
+                    ):
+                        auth = auth_plugin.authenticate()
+                        request = Request("GET", url).prepare()
+
+                        with self.assertRaises(expected_error):
+                            auth(request)
+
+                        self.assertEqual(mock_request.call_count, retry_total + 1)
+                        self.assertEqual(auth.signed_urls, {})
+                        self.assertEqual(request.url, url)
+
+    @mock.patch("urllib3.util.retry.time.sleep", autospec=True)
+    @mock.patch(
+        "urllib3.connectionpool.HTTPConnectionPool._make_request", autospec=True
+    )
+    def test_plugins_auth_sasauth_retry_config(self, mock_request, mock_sleep):
+        """SAS signing must use the configured status codes and backoff factor."""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        mock_request.side_effect = [
+            HTTPResponse(body=BytesIO(b"Try again"), status=418, preload_content=False),
+            HTTPResponse(body=BytesIO(b"Try again"), status=418, preload_content=False),
+            HTTPResponse(
+                body=BytesIO(b'{"href": "https://storage.example/asset.tif?sig=test"}'),
+                status=200,
+                preload_content=False,
+            ),
+        ]
+        with mock.patch.multiple(
+            auth_plugin.config,
+            create=True,
+            retry_total=2,
+            retry_backoff_factor=3,
+            retry_status_forcelist=[418],
+        ):
+            auth = auth_plugin.authenticate()
+            request = Request("GET", "https://storage.example/asset.tif").prepare()
+            self.assertEqual(
+                auth(request).url, "https://storage.example/asset.tif?sig=test"
+            )
+
+        self.assertEqual(mock_request.call_count, 3)
+        mock_sleep.assert_called_once_with(6)
+
     def test_plugins_auth_sasauth_validate_credentials_ok(self):
         """SASAuth.validate_credentials must be ok on empty or non-empty credentials"""
         auth_plugin = self.get_auth_plugin("foo_provider")
@@ -1743,7 +1882,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"apikey": "foo"}
         auth_plugin.validate_config_credentials()
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_text_token_authenticate_with_credentials(
         self, mock_requests_get
     ):
@@ -1774,11 +1915,15 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
+        self.assertEqual(args[1], auth_plugin.config.auth_uri.format(url=url))
         auth_plugin_headers = {"Ocp-Apim-Subscription-Key": "foo"}
         self.assertDictEqual(kwargs["headers"], dict(auth_plugin_headers, **USER_AGENT))
+        self.assertEqual(kwargs["timeout"], HTTP_REQ_TIMEOUT)
+        self.assertTrue(kwargs["verify"])
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_text_token_authenticate_without_credentials(
         self, mock_requests_get
     ):
@@ -1808,27 +1953,33 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
+        self.assertEqual(args[1], auth_plugin.config.auth_uri.format(url=url))
         # check if headers only has the user agent as a request call argument
         self.assertEqual(kwargs["headers"], USER_AGENT)
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_request_error(self, mock_requests_get):
         """SASAuth.authenticate must raise an AuthenticationError if an error occurs"""
         auth_plugin = self.get_auth_plugin("foo_provider")
 
         auth_plugin.config.credentials = {"apikey": "foo"}
 
-        # mock SAS get request response
-        mock_requests_get.side_effect = RequestException()
-
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
         self.assertIsInstance(auth, AuthBase)
 
-        req = mock.Mock(headers={}, url="url")
-        with self.assertRaises(AuthenticationError):
-            auth(req)
+        for error, expected_error in [
+            (RequestException(), AuthenticationError),
+            (Timeout(), TimeOutError),
+        ]:
+            with self.subTest(error=type(error).__name__):
+                mock_requests_get.side_effect = error
+                req = mock.Mock(headers={}, url="url")
+                with self.assertRaises(expected_error):
+                    auth(req)
+                self.assertEqual(auth.signed_urls, {})
 
     def test_plugins_download_http_presign_url(self):
         """should create a presigned url to download via HTTP"""
