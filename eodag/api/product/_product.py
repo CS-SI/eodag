@@ -65,7 +65,6 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
     OFFLINE_STATUS,
-    ONLINE_STATUS,
     normalize_bands,
 )
 from eodag.utils import (
@@ -484,25 +483,7 @@ class EOProduct:
                                 the download and authentication plugins.
         """
         download_plugin = plugins_manager.get_download_plugin(self)
-        if len(self.assets) > 0:
-            matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("order:status") != ONLINE_STATUS:
-            matching_url = self.properties.get(
-                "eodag:order_link"
-            ) or self.properties.get("eodag:download_link")
-        else:
-            matching_url = self.properties.get("eodag:download_link")
-
-        try:
-            auth_plugin = next(
-                plugins_manager.get_auth_plugins(
-                    self.provider,
-                    matching_url=matching_url,
-                    matching_conf=download_plugin.config,
-                )
-            )
-        except StopIteration:
-            auth_plugin = None
+        auth_plugin = plugins_manager.get_auth_plugin(download_plugin, self)
         self.register_downloader(download_plugin, auth_plugin)
 
     def register_downloader(

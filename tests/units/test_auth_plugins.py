@@ -18,6 +18,7 @@
 
 import datetime as dt
 import pickle
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -26,6 +27,7 @@ from unittest import mock
 import boto3
 import requests
 import responses
+from concurrent.futures import ThreadPoolExecutor
 from mypy_boto3_s3.service_resource import BucketObjectsCollection
 from pystac.utils import now_in_utc
 from requests import Request, Response, Timeout
@@ -34,6 +36,7 @@ from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
 from eodag.api.provider import ProvidersDict
+from eodag.plugins.authentication import sas_auth
 from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
 from eodag.utils import MockResponse
 from tests.context import (
@@ -1720,7 +1723,10 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         providers = ProvidersDict.from_configs(
             {
                 "foo_provider": {
-                    "products": {"foo_product": {}},
+                    "products": {
+                        "foo_product": {"_collection": "landsat-c2-l2"},
+                    },
+                    "download": {"type": "HTTPDownload"},
                     "auth": {
                         "type": "SASAuth",
                         "auth_uri": "http://foo.bar?href={url}",
@@ -1733,6 +1739,11 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
             }
         )
         cls.plugins_manager = PluginManager(providers)
+
+    def setUp(self):
+        super().setUp()
+        sas_auth._SAS_TOKENS.clear()
+        self.addCleanup(sas_auth._SAS_TOKENS.clear)
 
     def test_plugins_auth_sasauth_validate_credentials_ok(self):
         """SASAuth.validate_credentials must be ok on empty or non-empty credentials"""
@@ -1811,6 +1822,162 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
         # check if headers only has the user agent as a request call argument
         self.assertEqual(kwargs["headers"], USER_AGENT)
+
+    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    def test_plugins_auth_sasauth_reuses_token_for_blobs_in_container(
+        self, mock_requests_get
+    ):
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.json.return_value = {
+            "href": "https://account.blob.core.windows.net/container/blob1?sig=token"
+        }
+
+        auth = auth_plugin.authenticate()
+        first_request = mock.Mock(
+            headers={},
+            url="https://account.blob.core.windows.net/container/blob1",
+        )
+        second_request = mock.Mock(
+            headers={},
+            url="https://account.blob.core.windows.net/container/blob2",
+        )
+
+        auth(first_request)
+        auth(second_request)
+
+        self.assertEqual(
+            first_request.url,
+            "https://account.blob.core.windows.net/container/blob1?sig=token",
+        )
+        self.assertEqual(
+            second_request.url,
+            "https://account.blob.core.windows.net/container/blob2?sig=token",
+        )
+        mock_requests_get.assert_called_once()
+
+    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    def test_plugins_auth_sasauth_shares_token_between_auth_instances(
+        self, mock_requests_get
+    ):
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.json.return_value = {
+            "href": "https://account.blob.core.windows.net/container/blob1?sig=token"
+        }
+        url = "https://account.blob.core.windows.net/container/blob{}"
+
+        for i in range(3):
+            req = mock.Mock(headers={}, url=url.format(i))
+            auth_plugin.authenticate()(req)
+            self.assertEqual(req.url, url.format(i) + "?sig=token")
+
+        mock_requests_get.assert_called_once()
+
+    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    def test_plugins_auth_sasauth_concurrent_requests_fetch_token_once(
+        self, mock_requests_get
+    ):
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        mock_requests_get.side_effect = lambda *a, **k: (
+            time.sleep(0.05)
+            or mock.Mock(
+                json=lambda: {
+                    "href": "https://account.blob.core.windows.net/container/b?sig=t"
+                }
+            )
+        )
+        url = "https://account.blob.core.windows.net/container/blob{}"
+
+        def call_auth(i):
+            req = mock.Mock(headers={}, url=url.format(i))
+            auth_plugin.authenticate()(req)
+            return req.url
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            urls = list(executor.map(call_auth, range(8)))
+
+        self.assertEqual(urls, [url.format(i) + "?sig=t" for i in range(8)])
+        mock_requests_get.assert_called_once()
+
+    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    def test_plugins_auth_sasauth_refreshes_expired_token(self, mock_requests_get):
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        expired = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.json.return_value = {
+            "href": "https://account.blob.core.windows.net/container/b?sig=t",
+            "msft:expiry": expired,
+        }
+        url = "https://account.blob.core.windows.net/container/blob"
+
+        auth_plugin.authenticate()(mock.Mock(headers={}, url=url))
+        auth_plugin.authenticate()(mock.Mock(headers={}, url=url))
+
+        self.assertEqual(mock_requests_get.call_count, 2)
+
+    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    def test_plugins_auth_sasauth_requests_collection_token(self, mock_requests_get):
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.json.return_value = {"token": "sig=token"}
+        product = EOProduct(
+            "foo_provider",
+            {"id": "test-item"},
+            collection="foo_product",
+        )
+        product.assets["data"] = {
+            "href": "https://account.blob.core.windows.net/landsat-c2/asset.tif"
+        }
+        download_plugin = self.plugins_manager.get_download_plugin(product)
+        auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
+        self.assertIsNotNone(auth_plugin)
+        req = mock.Mock(
+            headers={},
+            url="https://account.blob.core.windows.net/landsat-c2/asset.tif",
+        )
+
+        with (
+            mock.patch.object(
+                auth_plugin.config,
+                "auth_uri",
+                "https://auth.example/token/{_collection}",
+            ),
+            mock.patch.object(auth_plugin.config, "signed_url_key", "token"),
+        ):
+            auth_plugin.authenticate()(req)
+
+        self.assertEqual(
+            mock_requests_get.call_args.args[0],
+            "https://auth.example/token/landsat-c2-l2",
+        )
+        self.assertEqual(
+            req.url,
+            "https://account.blob.core.windows.net/landsat-c2/asset.tif?sig=token",
+        )
+
+    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    def test_plugins_auth_sasauth_skips_unmatched_url(self, mock_requests_get):
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        with mock.patch.object(
+            auth_plugin.config,
+            "matching_url",
+            r"https://[-\w\.]+.blob.core.windows.net",
+            create=True,
+        ):
+            auth = auth_plugin.authenticate()
+
+        req = mock.Mock(
+            headers={},
+            url="https://planetarycomputer.microsoft.com/api/data/v1/item/preview.png",
+        )
+        auth(req)
+
+        self.assertEqual(
+            req.url,
+            "https://planetarycomputer.microsoft.com/api/data/v1/item/preview.png",
+        )
+        self.assertEqual(req.headers, {})
+        mock_requests_get.assert_not_called()
 
     @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
     def test_plugins_auth_sasauth_request_error(self, mock_requests_get):
