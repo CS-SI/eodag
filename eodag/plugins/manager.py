@@ -264,9 +264,11 @@ class PluginManager:
                     associated_plugin.provider,
                     matching_url=matching_url,
                     matching_conf=associated_plugin.config,
+                    product=product,
                 )
             )
         except StopIteration:
+
             return None
 
     def _get_or_create_auth_plugin(
@@ -275,6 +277,7 @@ class PluginManager:
         auth_conf: dict[str, Any],
         auth_key: str,
         priority: int,
+        product: Optional[EOProduct] = None,
     ) -> Authentication:
         conf_hash = dict_md5sum(auth_conf)
 
@@ -288,6 +291,29 @@ class PluginManager:
         plugin = Authentication.get_plugin_by_class_name(auth_conf["type"])(
             provider, plugin_conf
         )
+        if plugin and product is not None and product.collection:
+            bind_collection = getattr(plugin, "bind_collection", None)
+            if bind_collection:
+                provider_config = self._db.get_fb_config(
+                    provider, collections={product.collection}
+                )
+                collection_def_config = (
+                    provider_config.get("products").get(product.collection, {})
+                    if provider_config
+                    else {}
+                )
+                if not collection_def_config and provider_config:
+                    collection_def_config = provider_config.get("products").get(
+                        GENERIC_COLLECTION, {}
+                    )
+                provider_collection = collection_def_config.get(
+                    "_collection", product.collection
+                )
+                if isinstance(provider_collection, str):
+                    provider_collection = provider_collection.format(
+                        collection=product.collection
+                    )
+                plugin = bind_collection(provider_collection)
         self._auth_plugins_cache[cache_key] = plugin
         return plugin
 
@@ -296,6 +322,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
+        product: Optional[EOProduct] = None,
     ) -> Iterator[Authentication]:
         """Build and return the authentication plugin for the given collection and
         provider
@@ -357,7 +384,7 @@ class PluginManager:
                     auth_conf, matching_url, matching_conf
                 ):
                     yield self._get_or_create_auth_plugin(
-                        p, auth_conf, key, provider_conf["priority"]
+                        p, auth_conf, key, provider_conf["priority"], product
                     )
 
     def get_auth(

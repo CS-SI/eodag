@@ -2854,8 +2854,8 @@
   auth: !plugin
     type: SASAuth
     matching_url: https://[-\w\.]+.blob.core.windows.net
-    auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
-    signed_url_key: href
+    auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/token/{_collection}'
+    signed_url_key: token
     ssl_verify: true
     headers:
       Ocp-Apim-Subscription-Key: "{apikey}"
