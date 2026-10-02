@@ -27,11 +27,21 @@ from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
+from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
+from urllib3 import Retry
 
 from eodag.api.product._assets import Asset
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, format_dict_items
+from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
+    REQ_RETRY_BACKOFF_FACTOR,
+    REQ_RETRY_STATUS_FORCELIST,
+    REQ_RETRY_TOTAL,
+    USER_AGENT,
+    deepcopy,
+    format_dict_items,
+)
 from eodag.utils.exceptions import AuthenticationError, TimeOutError
 
 if TYPE_CHECKING:
@@ -80,6 +90,9 @@ class RequestsSASAuth(AuthBase):
         ssl_verify: bool = True,
         matching_url: Optional[Pattern[str]] = None,
         provider_collection: Optional[str] = None,
+        retry_total: int = REQ_RETRY_TOTAL,
+        retry_backoff_factor: int = REQ_RETRY_BACKOFF_FACTOR,
+        retry_status_forcelist: Optional[list[int]] = None,
     ) -> None:
         self.auth_uri = auth_uri
         self.signed_url_key = signed_url_key
@@ -87,6 +100,13 @@ class RequestsSASAuth(AuthBase):
         self.ssl_verify = ssl_verify
         self.matching_url = matching_url
         self.provider_collection = provider_collection
+        self.retry_total = retry_total
+        self.retry_backoff_factor = retry_backoff_factor
+        self.retry_status_forcelist = (
+            REQ_RETRY_STATUS_FORCELIST
+            if retry_status_forcelist is None
+            else retry_status_forcelist
+        )
 
     @staticmethod
     def _get_container_url(url: str) -> Optional[str]:
@@ -184,7 +204,14 @@ class RequestsSASAuth(AuthBase):
         """Request a signed url / token and store it in the shared cache"""
         logger.debug(f"Signed URL request: {req_signed_url}")
         try:
-            response = requests.get(
+            session = requests.Session()
+            retries = Retry(
+                total=self.retry_total,
+                backoff_factor=self.retry_backoff_factor,
+                status_forcelist=self.retry_status_forcelist,
+            )
+            session.mount(req_signed_url, HTTPAdapter(max_retries=retries))
+            response = session.get(
                 req_signed_url,
                 headers=self.headers,
                 timeout=HTTP_REQ_TIMEOUT,
@@ -226,6 +253,10 @@ class SASAuth(Authentication):
           apiKey is used**): headers to be added to the requests
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be
           verified in the requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): total number of retries; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): retry backoff factor; default: ``2``
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): HTTP status codes to retry;
+          default: ``[401, 429, 500, 502, 503, 504]``
 
     """
 
@@ -268,6 +299,15 @@ class SASAuth(Authentication):
             ssl_verify=ssl_verify,
             matching_url=matching_url,
             provider_collection=provider_collection,
+            retry_total=getattr(self.config, "retry_total", REQ_RETRY_TOTAL),
+            retry_backoff_factor=getattr(
+                self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+            ),
+            retry_status_forcelist=getattr(
+                self.config,
+                "retry_status_forcelist",
+                REQ_RETRY_STATUS_FORCELIST,
+            ),
         )
 
     def presign_url(

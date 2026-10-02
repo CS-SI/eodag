@@ -1754,7 +1754,32 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"apikey": "foo"}
         auth_plugin.validate_config_credentials()
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
+    def test_plugins_auth_sasauth_uses_configured_retries(self, mock_requests_get):
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.retry_total = 5
+        auth_plugin.config.retry_backoff_factor = 3
+        auth_plugin.config.retry_status_forcelist = [429, 503]
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.json.return_value = {
+            "href": "https://example.com/blob?sig=token"
+        }
+
+        with mock.patch(
+            "eodag.plugins.authentication.sas_auth.HTTPAdapter"
+        ) as mock_http_adapter:
+            auth_plugin.authenticate()(mock.Mock(headers={}, url="url"))
+
+        retries = mock_http_adapter.call_args.kwargs["max_retries"]
+        self.assertEqual(retries.total, 5)
+        self.assertEqual(retries.backoff_factor, 3)
+        self.assertEqual(retries.status_forcelist, [429, 503])
+
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_text_token_authenticate_with_credentials(
         self, mock_requests_get
     ):
@@ -1785,11 +1810,13 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
+        self.assertEqual(args[1], auth_plugin.config.auth_uri.format(url=url))
         auth_plugin_headers = {"Ocp-Apim-Subscription-Key": "foo"}
         self.assertDictEqual(kwargs["headers"], dict(auth_plugin_headers, **USER_AGENT))
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_text_token_authenticate_without_credentials(
         self, mock_requests_get
     ):
@@ -1819,11 +1846,13 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
+        self.assertEqual(args[1], auth_plugin.config.auth_uri.format(url=url))
         # check if headers only has the user agent as a request call argument
         self.assertEqual(kwargs["headers"], USER_AGENT)
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_reuses_token_for_blobs_in_container(
         self, mock_requests_get
     ):
@@ -1856,7 +1885,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         )
         mock_requests_get.assert_called_once()
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_shares_token_between_auth_instances(
         self, mock_requests_get
     ):
@@ -1874,7 +1905,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         mock_requests_get.assert_called_once()
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_concurrent_requests_fetch_token_once(
         self, mock_requests_get
     ):
@@ -1900,7 +1933,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         self.assertEqual(urls, [url.format(i) + "?sig=t" for i in range(8)])
         mock_requests_get.assert_called_once()
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_refreshes_expired_token(self, mock_requests_get):
         auth_plugin = self.get_auth_plugin("foo_provider")
         expired = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
@@ -1916,7 +1951,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         self.assertEqual(mock_requests_get.call_count, 2)
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_requests_collection_token(self, mock_requests_get):
         mock_requests_get.return_value = mock.Mock()
         mock_requests_get.return_value.json.return_value = {"token": "sig=token"}
@@ -1947,7 +1984,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
             auth_plugin.authenticate()(req)
 
         self.assertEqual(
-            mock_requests_get.call_args.args[0],
+            mock_requests_get.call_args.args[1],
             "https://auth.example/token/landsat-c2-l2",
         )
         self.assertEqual(
@@ -1955,7 +1992,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
             "https://account.blob.core.windows.net/landsat-c2/asset.tif?sig=token",
         )
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_skips_unmatched_url(self, mock_requests_get):
         auth_plugin = self.get_auth_plugin("foo_provider")
         with mock.patch.object(
@@ -1979,7 +2018,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         self.assertEqual(req.headers, {})
         mock_requests_get.assert_not_called()
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_auth_sasauth_request_error(self, mock_requests_get):
         """SASAuth.authenticate must raise an AuthenticationError if an error occurs"""
         auth_plugin = self.get_auth_plugin("foo_provider")
@@ -1997,7 +2038,9 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         with self.assertRaises(AuthenticationError):
             auth(req)
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.sas_auth.requests.Session.get", autospec=True
+    )
     def test_plugins_download_http_presign_url(self, mock_requests_get):
         """should create a presigned url to download via HTTP"""
         mock_requests_get.return_value = mock.Mock()
@@ -2022,7 +2065,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         url = auth_plugin.presign_url(product.assets["a1"])
         self.assertEqual("http://foo.bar.com/b1/a1/a1.json?sig=t", url)
         self.assertEqual(
-            mock_requests_get.call_args.args[0],
+            mock_requests_get.call_args.args[1],
             "http://foo.bar?href=http://foo.bar.com/b1/a1/a1.json",
         )
 
