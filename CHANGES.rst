@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.9.2 (2026-10-02)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: SASAuth per collection cached token (`#2374`_, `8530060`_)
+
+.. _#2374: https://github.com/CS-SI/eodag/pull/2374
+.. _8530060: https://github.com/CS-SI/eodag/commit/853006005031d4de3e22f83e87da4fb1177a87b5
+
+
 v4.9.1 (2026-09-23)
 ===================
 
