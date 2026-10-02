@@ -145,14 +145,20 @@ class RequestsSASAuth(AuthBase):
             for k, v in self.headers.items():
                 request.headers[k] = v
 
+        request.url = self.sign_url(request.url or "")
+
+        return request
+
+    def sign_url(self, url: str) -> str:
+        """Return ``url`` signed with a (cached or freshly requested) SAS token"""
         # Azure SAS tokens are scoped to a container, not an individual blob.
-        container_key = self._get_container_url(request.url or "")
+        container_key = self._get_container_url(url)
         if "{_collection}" in self.auth_uri and not self.provider_collection:
             raise AuthenticationError(
                 "A provider collection is required to request a SAS token"
             )
         req_signed_url = self.auth_uri.format(
-            url=request.url, _collection=self.provider_collection or ""
+            url=url, _collection=self.provider_collection or ""
         )
 
         cache_keys = [k for k in (container_key, req_signed_url) if k]
@@ -167,12 +173,10 @@ class RequestsSASAuth(AuthBase):
                 signed_url = _get_cached_token(cache_keys)
                 if signed_url is None:
                     signed_url = self._fetch_signed_url(
-                        request.url or "", req_signed_url, container_key
+                        url, req_signed_url, container_key
                     )
 
-        request.url = self._apply_sas_token(request.url or "", signed_url) or signed_url
-
-        return request
+        return self._apply_sas_token(url, signed_url) or signed_url
 
     def _fetch_signed_url(
         self, url: str, req_signed_url: str, container_key: Optional[str]
@@ -238,7 +242,7 @@ class SASAuth(Authentication):
         auth_plugin.provider_collection = provider_collection
         return auth_plugin
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> RequestsSASAuth:
         """Authenticate"""
         self.validate_config_credentials()
 
@@ -274,15 +278,7 @@ class SASAuth(Authentication):
         """This method is used to presign a url to download an asset.
 
         :param asset: asset for which the url shall be presigned
-        :param expires_in: expiration time of the presigned url in seconds
+        :param expires_in: ignored, the token lifetime is set by the provider
         :returns: presigned url
         """
-        url = asset["href"]
-        provider_collection = getattr(self, "provider_collection", None)
-        if "{_collection}" in self.config.auth_uri and not provider_collection:
-            raise AuthenticationError(
-                "A provider collection is required to request a SAS token"
-            )
-        return self.config.auth_uri.format(
-            url=url, _collection=provider_collection or ""
-        )
+        return self.authenticate().sign_url(asset["href"])

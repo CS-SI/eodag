@@ -1997,8 +1997,13 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         with self.assertRaises(AuthenticationError):
             auth(req)
 
-    def test_plugins_download_http_presign_url(self):
+    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    def test_plugins_download_http_presign_url(self, mock_requests_get):
         """should create a presigned url to download via HTTP"""
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.json.return_value = {
+            "href": "http://foo.bar.com/b1/a1/a1.json?sig=t"
+        }
         provider = "foo_provider"
         collection = "LANDSAT_C2_L1"
         product = EOProduct(
@@ -2015,10 +2020,11 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         auth_plugin = self.get_auth_plugin("foo_provider")
         url = auth_plugin.presign_url(product.assets["a1"])
-        expected_url = "http://foo.bar?href={url}".format(
-            url="http://foo.bar.com/b1/a1/a1.json"
+        self.assertEqual("http://foo.bar.com/b1/a1/a1.json?sig=t", url)
+        self.assertEqual(
+            mock_requests_get.call_args.args[0],
+            "http://foo.bar?href=http://foo.bar.com/b1/a1/a1.json",
         )
-        self.assertEqual(expected_url, url)
 
 
 class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
