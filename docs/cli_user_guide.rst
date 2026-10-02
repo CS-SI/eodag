@@ -108,6 +108,16 @@ Download
 
         eodag download --stac-item https://foo/collections/bar/items/item-1-id --stac-item /path/to/item2.json
 
+* To download only the assets of the products whose asset key matches a regular expression, instead of the full
+  products:
+
+.. code-block:: console
+
+        eodag download --conf my_conf.yml --search-results my_search.geojson --asset ".*B04.*"
+
+If the pattern does not match any asset of a product, ``download`` stops with an error instead of downloading the full
+product.
+
 * Using commands chaining, ``download`` can also directly be executed after a ``search`` in a single command:
 
 .. code-block:: console
