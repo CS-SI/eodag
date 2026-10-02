@@ -1883,7 +1883,7 @@ def get_queryable_from_provider(
     metadata_mapping: dict[str, Union[str, list[Optional[str]]]],
     provider: Optional[str] = None,
 ) -> Optional[str]:
-    """Get EODAG configured queryable parameter from provider queryable parameter
+    """Get EODAG configured queryable parameter from provider queryable parameter.
 
     :param provider_queryable: provider queryable parameter
     :param metadata_mapping: metadata-mapping configuration

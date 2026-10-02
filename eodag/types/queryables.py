@@ -210,7 +210,7 @@ class Queryables(CommonQueryables):
 
 
 class QueryablesDict(UserDict[str, Any]):
-    """Class inheriting from UserDict which contains queryables with their annotated type;
+    """Class inheriting from UserDict which contains queryables with their annotated type.
 
     :param additional_properties: if additional properties (properties not given in EODAG config)
                                   are allowed
@@ -317,10 +317,20 @@ class QueryablesDict(UserDict[str, Any]):
 
     def get_model(self, model_name: str = "Queryables") -> BaseModel:
         """
-        Converts object from :class:`eodag.api.product.QueryablesDict` to :class:`pydantic.BaseModel`
+        Convert object from :class:`eodag.api.product.QueryablesDict` to :class:`pydantic.BaseModel`
         so that validation can be performed
 
         :param model_name: name used for :class:`pydantic.BaseModel` creation
         :return: pydantic BaseModel of the queryables dict
         """
         return annotated_dict_to_model(model_name, self.data, Queryables)
+
+    def get_model_json_schema(self) -> dict[str, Any]:
+        """Convert object from :class:`eodag.api.product.QueryablesDict` to JSON schema of :class:`pydantic.BaseModel`.
+
+        It allows seeing complex structures and constraints of the queryables in a standardized JSON schema format.
+
+        :return: JSON schema of the pydantic BaseModel of the queryables dict
+        """
+        model = self.get_model()
+        return model.model_json_schema()
