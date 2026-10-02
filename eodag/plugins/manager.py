@@ -332,6 +332,27 @@ class PluginManager:
             )
         except StopIteration:
             auth_plugin = None
+        if auth_plugin and product is not None and product.collection:
+            bind_collection = getattr(auth_plugin, "bind_collection", None)
+            if bind_collection:
+                provider_config = self.providers.get_config(product.provider)
+                collection_def_config = (
+                    provider_config.products.get(product.collection, {})
+                    if provider_config
+                    else {}
+                )
+                if not collection_def_config and provider_config:
+                    collection_def_config = provider_config.products.get(
+                        GENERIC_COLLECTION, {}
+                    )
+                provider_collection = collection_def_config.get(
+                    "_collection", product.collection
+                )
+                if isinstance(provider_collection, str):
+                    provider_collection = provider_collection.format(
+                        collection=product.collection
+                    )
+                auth_plugin = bind_collection(provider_collection)
         return auth_plugin
 
     def get_auth_plugins(
