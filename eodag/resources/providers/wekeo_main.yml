@@ -8,14 +8,12 @@ wekeo_main:
   # anchors to avoid duplications
   anchor_s1_sar: &s1_sar_params
     processing:level:
-      - '{{"processingLevel": "{processing:level}"}}'
-      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, LEVEL\\4)`'
+      - '{{"processingLevel": "{processing:level#replace_str("L", "LEVEL")}"}}'
+      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, L\\4)`'
     platform:
-      - '{{"platformSerialIdentifier": "{platform}"}}'
+      - '{{"platformSerialIdentifier": "{platform#replace_str_tuple(("sentinel-1a", "A"), ("sentinel-1b", "B"), ("sentinel-1c", "C"))}"}}'
       - '{$.properties.metadata.platformSerialIdentifier#replace_str_tuple(("A", "sentinel-1a"), ("B", "sentinel-1b"), ("C", "sentinel-1c"))}'
-    instruments:
-      - '{{"instrumentShortName": "{instruments#csv_list}"}}'
-      - '{$.properties.metadata.instrumentShortName#split(,)}'
+    instruments: '{$.properties.metadata.instrumentShortName#split(,)}'
     order:status:
       - '{{"online": "{order:status#get_group_name((?P<true>succeeded)|(?P<false>orderable))}"}}'
       - 'orderable'
@@ -97,7 +95,7 @@ wekeo_main:
         - '{{"timeliness": "{product:timeliness}"}}'
         - '$.properties.metadata.timeliness'
       sat:orbit_state:
-        - '{{"orbitDirection": "{sat:orbit_state}"}}'
+        - '{{"orbitDirection": "{sat:orbit_state#to_upper}"}}'
         - '{$.properties.metadata.orbitDirection#to_lower}'
       variable:
         - '{{"variable": "{variable}"}}'
@@ -173,10 +171,10 @@ wekeo_main:
             }}
           - '{$.id#remove_extension}'
         processing:level:
-          - '{{"processingLevel": "{processing:level}"}}'
+          - '{{"processingLevel": "{processing:level#replace_str_tuple(("L1", "S2MSI1C"), ("L2", "S2MSI2A"))}"}}'
           - '{$.properties.metadata.processingLevel#replace_str_tuple(("S2MSI1C", "L1"), ("S2MSI2A", "L2"))}'
         platform:
-          - '{{"platformSerialIdentifier": "{platform}"}}'
+          - '{{"platformSerialIdentifier": "{platform#replace_str_tuple(("sentinel-2a", "A"), ("sentinel-2b", "B"), ("sentinel-2c", "C"))}"}}'
           - '{$.properties.metadata.platformSerialIdentifier#replace_str_tuple(("A", "sentinel-2a"), ("B", "sentinel-2b"), ("C", "sentinel-2c"))}'
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
@@ -207,10 +205,10 @@ wekeo_main:
               }}
             - '{$.id#remove_extension}'
         processing:level:
-          - '{{"processingLevel": "{processing:level}"}}'
+          - '{{"processingLevel": "{processing:level#replace_str("L", "")}"}}'
           - 'L2'
         platform:
-          - '{{"platformSerialIdentifier": "{platform}"}}'
+          - '{{"platformSerialIdentifier": "{platform#replace_str_tuple(("sentinel-3a", "A"), ("sentinel-3b", "B"), ("sentinel-3c", "C"))}"}}'
           - '{$.properties.metadata.platformSerialIdentifier#replace_str_tuple(("A", "sentinel-3a"), ("B", "sentinel-3b"), ("C", "sentinel-3c"))}'
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
@@ -322,7 +320,7 @@ wekeo_main:
               }}
             - '{$.id#remove_extension}'
         processing:level:
-          - '{{"processingLevel": "{processing:level}"}}'
+          - '{{"processingLevel": "{processing:level#replace_str("L1", "L1b")}"}}'
           - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_.*/, \\3)`'
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
