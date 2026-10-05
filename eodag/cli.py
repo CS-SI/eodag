@@ -642,22 +642,19 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     else:
         # Download products
-        if asset is not None:
-            # download_all retries products for which the asset filter raises
-            # NotAvailableError until its timeout is reached, so a pattern matching
-            # nothing would keep the CLI waiting for minutes. Check it first.
-            for product in search_results:
-                try:
-                    product.assets.get_values(asset)
-                except NotAvailableError as e:
-                    click.echo(f"Error: {e}")
-                    sys.exit(1)
-
         executor = ThreadPoolExecutor(max_workers=kwargs.pop("max_workers"))
         download_kwargs = {"asset": asset} if asset is not None else {}
-        downloaded_files = satim_api.download_all(
-            search_results, output_dir=output_dir, executor=executor, **download_kwargs
-        )
+        try:
+            downloaded_files = satim_api.download_all(
+                search_results,
+                output_dir=output_dir,
+                executor=executor,
+                **download_kwargs,
+            )
+        except NotAvailableError as e:
+            # download_all checks the asset filter before attempting any download
+            click.echo(f"Error: {e}")
+            sys.exit(1)
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
                 if downloaded_file is None:

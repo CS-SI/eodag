@@ -46,6 +46,7 @@ from tests.context import (
     EOProduct,
     MisconfiguredError,
     NoMatchingCollection,
+    NotAvailableError,
     download,
     eodag_cli,
     mock,
@@ -1085,6 +1086,12 @@ class TestEodagCli(unittest.TestCase):
         dag.return_value.deserialize_and_register.return_value = SearchResult(
             [self._product_with_assets()], 1
         )
+        # the asset filter is now checked by download_all, which raises
+        # NotAvailableError before any download is attempted
+        dag.return_value.download_all.side_effect = NotAvailableError(
+            "No asset key matching re.fullmatch(r'nomatch') was found in "
+            "EOProduct(id=dummy, provider=sara)"
+        )
 
         exit_code, output, error = self.eodag_command(
             [
@@ -1099,12 +1106,14 @@ class TestEodagCli(unittest.TestCase):
         )
         self.assertEqual(exit_code, 1)
         self.assertIsInstance(error, SystemExit)
-        self.assertIn(
-            "No asset key matching re.fullmatch(r'nomatch') was found in "
-            "EOProduct(id=dummy, provider=sara)",
+        self.assertEqual(
+            "Error: No asset key matching re.fullmatch(r'nomatch') was found in "
+            "EOProduct(id=dummy, provider=sara)\n",
             output,
         )
-        dag.return_value.download_all.assert_not_called()
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY, output_dir=None, executor=mock.ANY, asset="nomatch"
+        )
 
     def test_eodag_download_asset_selection(self):
         """Calling eodag download with --asset must only download the matching assets"""
