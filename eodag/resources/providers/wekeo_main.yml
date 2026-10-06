@@ -161,7 +161,7 @@ wekeo_main:
     S2_MSI_L1C:
       _collection: EO:ESA:DAT:SENTINEL-2
       product:type: S2MSI1C
-      processing:level: S2MSI1C
+      processing:level: L1
       metadata_mapping:
         id:
           - |
@@ -190,12 +190,12 @@ wekeo_main:
     S2_MSI_L2A:
       _collection: EO:ESA:DAT:SENTINEL-2
       product:type: S2MSI2A
-      processing:level: S2MSI2A
+      processing:level: L2
       metadata_mapping_from_product: S2_MSI_L1C
     S3_LAN_HY:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_HY
-      processing:level: "2"
+      processing:level: L2
       metadata_mapping:
         id:
             - |
@@ -224,27 +224,27 @@ wekeo_main:
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_SI
-      processing:level: "2"
+      processing:level: L2
       metadata_mapping_from_product: S3_LAN_HY
     S3_LAN_LI:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_LI
-      processing:level: "2"
+      processing:level: L2
       metadata_mapping_from_product: S3_LAN_HY
     S3_OLCI_L2LFR:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: OL_2_LFR___
-      processing:level: "2"
+      processing:level: L2
       metadata_mapping_from_product: S3_LAN_HY
     S3_OLCI_L2LRR:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: OL_2_LRR___
-      processing:level: "2"
+      processing:level: L2
       metadata_mapping_from_product: S3_LAN_HY
     S3_SLSTR_L2:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SL_2_LST___
-      processing:level: "2"
+      processing:level: L2
       metadata_mapping_from_product: S3_LAN_HY
     S3_EFR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
@@ -310,7 +310,7 @@ wekeo_main:
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
-      processing:level: L1b
+      processing:level: L1
       metadata_mapping:
         id:
             - |
