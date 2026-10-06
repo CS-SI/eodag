@@ -1885,21 +1885,6 @@ class PostJsonSearch(QueryStringSearch):
                     )
                     product.properties["_dc_qs"] = quote_plus(_dc_qs)
 
-            # workaround to add collection to wekeo cmems order links
-            if (
-                "eodag:order_link" in product.properties
-                and "collection" in product.properties["eodag:order_link"]
-                and "order" not in product.properties["eodag:order_link"]
-            ):
-                if product.collection is None:
-                    msg = (
-                        f"Cannot build order link for "
-                        f"{product}: collection is undefined"
-                    )
-                    raise MisconfiguredError(msg)
-                product.properties["eodag:order_link"] = product.properties[
-                    "eodag:order_link"
-                ].replace("collection", product.collection)
         return normalized
 
     def collect_search_urls(
