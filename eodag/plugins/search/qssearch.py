@@ -390,10 +390,10 @@ class QueryStringSearch(Search):
             # metadata_mapping from current product
             if "metadata_mapping" in self.config.products[collection].keys():
                 # parse mapping to apply
-                self.config.products[collection][
-                    "metadata_mapping"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.products[collection]["metadata_mapping"]
+                self.config.products[collection]["metadata_mapping"] = (
+                    mtd_cfg_as_conversion_and_querypath(
+                        self.config.products[collection]["metadata_mapping"]
+                    )
                 )
 
                 # from current product, updated mapping at the end
@@ -580,14 +580,14 @@ class QueryStringSearch(Search):
                             ].items():
                                 merged_metadata_mapping.pop(metadata, None)
                                 merged_metadata_mapping[metadata] = mapping
-                            unparsable_properties[
-                                "metadata_mapping"
-                            ] = merged_metadata_mapping
-                        conf_update_dict["providers_config"][
-                            generic_collection_id
-                        ] = dict(
-                            extracted_mapping,
-                            **unparsable_properties,
+                            unparsable_properties["metadata_mapping"] = (
+                                merged_metadata_mapping
+                            )
+                        conf_update_dict["providers_config"][generic_collection_id] = (
+                            dict(
+                                extracted_mapping,
+                                **unparsable_properties,
+                            )
                         )
                         # collections_config extraction
                         collection_properties = properties_from_json(
@@ -1731,12 +1731,12 @@ class PostJsonSearch(QueryStringSearch):
                 plugin_config_backup = yaml.dump(self.config)
 
                 self.config.api_endpoint = query_value
-                self.config.products[collection][
-                    "metadata_mapping"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.products[collection]["specific_qssearch"][
-                        "metadata_mapping"
-                    ]
+                self.config.products[collection]["metadata_mapping"] = (
+                    mtd_cfg_as_conversion_and_querypath(
+                        self.config.products[collection]["specific_qssearch"][
+                            "metadata_mapping"
+                        ]
+                    )
                 )
                 self.config.results_entry = self.config.products[collection][
                     "specific_qssearch"
@@ -1829,15 +1829,6 @@ class PostJsonSearch(QueryStringSearch):
                     )
                     product.properties["_dc_qs"] = quote_plus(_dc_qs)
 
-            # workaround to add collection to wekeo cmems order links
-            if (
-                "eodag:order_link" in product.properties
-                and "collection" in product.properties["eodag:order_link"]
-                and "order" not in product.properties["eodag:order_link"]
-            ):
-                product.properties["eodag:order_link"] = product.properties[
-                    "eodag:order_link"
-                ].replace("collection", product.collection)
         return normalized
 
     def collect_search_urls(
