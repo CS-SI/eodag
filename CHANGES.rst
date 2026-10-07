@@ -3,6 +3,46 @@ Release history
 ===============
 
 
+v4.9.2 (2026-10-07)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: SASAuth per collection cached token (`#2374`_, `8530060`_)
+
+Build System
+------------
+
+* Jsonpath-ng update (`#2380`_, `f3d4ae9`_)
+
+Documentation
+-------------
+
+* Update registration info for dedl provider (`#2379`_, `66d2d05`_)
+
+Refactoring
+-----------
+
+* **providers**: Update wekeo_main metadata mapping (`#2361`_, `f89e751`_)
+
+Testing
+-------
+
+* Adapt to shapely 2.2.0 (`#2378`_, `d0e0c5b`_)
+
+.. _#2361: https://github.com/CS-SI/eodag/pull/2361
+.. _#2374: https://github.com/CS-SI/eodag/pull/2374
+.. _#2378: https://github.com/CS-SI/eodag/pull/2378
+.. _#2379: https://github.com/CS-SI/eodag/pull/2379
+.. _#2380: https://github.com/CS-SI/eodag/pull/2380
+.. _66d2d05: https://github.com/CS-SI/eodag/commit/66d2d05b9a92bdfcc11645d7bf10bcf55aba1a0d
+.. _8530060: https://github.com/CS-SI/eodag/commit/853006005031d4de3e22f83e87da4fb1177a87b5
+.. _d0e0c5b: https://github.com/CS-SI/eodag/commit/d0e0c5b8f5dfdc1ecb65d49c3d8a39c89209a1fd
+.. _f3d4ae9: https://github.com/CS-SI/eodag/commit/f3d4ae9ef654454b3f7084b2091deeb26e1d0793
+.. _f89e751: https://github.com/CS-SI/eodag/commit/f89e7510ecb16a855a0beaa6136bbe2a6995d766
+
+
 v4.9.1 (2026-09-23)
 ===================
 

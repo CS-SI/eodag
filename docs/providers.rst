@@ -890,7 +890,7 @@ No credentials are needed
       :columns: 2
       :class: sd-text-right
 
-      .. button-link:: https://hda.data.destination-earth.eu/ui
+      .. button-link:: https://platform.destine.eu
         :color: primary
         :outline:
         :tooltip: DEDL website
@@ -905,8 +905,8 @@ No credentials are needed
   You need a `DESP OpenID` account in order to authenticate.
 
   To create one go `here
-  <https://hda.data.destination-earth.eu/ui>`__, then click on `Sign In`, select the identity provider `DESP OpenID` and
-  then click `Authenticate`. Finally click on `Register` to create a new account.
+  <https://platform.destine.eu>`__, then click on `Sign In`, and then `Register` to create a new account.
+  Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
