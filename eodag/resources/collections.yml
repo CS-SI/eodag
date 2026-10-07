@@ -9610,6 +9610,21 @@ GHS_UCDB_REGION:
   title: Stats in the City - the GHS Urban Centre Database UCDB R2024A by Region
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
+# DEDL Data Cubes -----------------------------------------------------------------------
+# temp collection for testing
+S3_OLCI_WFR_DC:
+  description: |
+    Sentinel-3 OLCI Level 2 Water Full Resolution ocean-colour products (operational Collection-4 NTC granules, EO.EUM.DAT.0407)
+  instruments: [OLCI]
+  constellation: Sentinel-3
+  platform: Sentinel-3
+  processing:level: L2
+  keywords: ["Sentinel-3", "OLCI", "Water Quality", "Data Cube"]
+  eodag:sensor_type: OPTICAL
+  license: other
+  title: Sentinel-3 OLCI Water Quality Data Cube
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
   description:

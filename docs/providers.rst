@@ -910,6 +910,38 @@ No credentials are needed
 
 ----
 
+**DEDL Cube**
+--------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Destination Earth Data Lake (DEDL)- Data Cubes.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://platform.destine.eu
+        :color: primary
+        :outline:
+        :tooltip: DEDL website
+
+        :fas:`external-link-alt`
+
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  You need a `DESP OpenID` account in order to authenticate.
+
+----
+
 **DEDT Lumi**
 -------------
 

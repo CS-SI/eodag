@@ -908,6 +908,7 @@ class TestCore(TestCoreBase):
             "hydroweb_next",
             "creodias_s3",
             "dedl",
+            "dedl_cube",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -922,6 +923,7 @@ class TestCore(TestCoreBase):
         "creodias",
         "creodias_s3",
         "dedl",
+        "dedl_cube",
         "dedt_leonardo",
         "dedt_lumi",
         "dedt_mn5",

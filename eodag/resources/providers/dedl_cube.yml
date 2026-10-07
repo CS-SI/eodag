@@ -1,0 +1,44 @@
+dedl_cube:
+  priority: 0
+  roles:
+    - host
+  description: DEDL Data Cubes
+  url: https://stac.datalakecube.eumetsat.data.destination-earth.eu
+  search:
+    type: StacSearch
+    api_endpoint: https://stac.datalakecube.eumetsat.data.destination-earth.eu/search
+    need_auth: false
+    timeout: 60
+    asset_key_from_href: false
+    metadata_mapping:
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+    discover_collections:
+      fetch_url: 'https://stac.datalakecube.eumetsat.data.destination-earth.eu/collections'
+      result_type: json
+      results_entry: '$.collections[*]'
+      generic_collection_id: '$.id'
+      generic_collection_parsable_metadata:
+        links: '$.links'
+        providers: '$.providers'
+    pagination:
+      max_limit: 100
+      next_page_token_key: token
+    sort:
+      sort_param_mapping:
+        id: id
+        start_datetime: datetime
+  # temporary configuration - has to be updated as soon as information from EODC is available
+  products:
+    S3_OLCI_WFR_DC:
+      _collection: sentinel3-olci-wfr-datacube
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download:
+    type: AwsDownload
+    requester_pays: false
+    ssl_verify: false
+    s3_endpoint: https://s3.eumetsat.data.destination-earth.eu
+  auth:
+    type: AwsAuth
+    ssl_verify: false
+    s3_endpoint: https://s3.eumetsat.data.destination-earth.eu
