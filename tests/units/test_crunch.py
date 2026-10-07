@@ -20,9 +20,9 @@ from collections import UserList
 from typing import Any
 from unittest import mock
 
-import shapely
 from shapely import Polygon, geometry
 from shapely.errors import ShapelyError
+from shapely.geometry.base import BaseGeometry
 
 from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
@@ -575,16 +575,15 @@ class TestPluginCrunch(unittest.TestCase):
         self.assertEqual(len(filtered_result), 1)
 
         # Force fail search_geom intersection
-        def shapely_intersect_forced_exception(a, b, grid_size=None, **kwargs):
-            print("Mocked: no shapely.intersection allowed")
-            raise ShapelyError("No intersection allowed")
-
         with mock.patch.object(
-            shapely, "intersection", new=shapely_intersect_forced_exception
-        ):
+            BaseGeometry,
+            "intersection",
+            side_effect=ShapelyError("No intersection allowed"),
+        ) as mocked_intersection:
             filtered_result = search_results.crunch(
                 filter, geometry=geometry.box(10, 30, 20, 40)
             )
+            mocked_intersection.assert_called_once()
             self.assertEqual(len(filtered_result), 0)
 
     def test_crunch_property(self):
