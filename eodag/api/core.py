@@ -1070,7 +1070,7 @@ class EODataAccessGateway:
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
-        count: bool = False,
+        count: bool = True,
         validate: Optional[bool] = True,
         **kwargs: Any,
     ) -> SearchResult:
@@ -1115,7 +1115,10 @@ class EODataAccessGateway:
         :param provider: (optional) the provider to be used. If set, search fallback will be disabled.
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
-        :param count: (optional) Whether to run a query with a count request or not
+        :param count: (optional) Whether to run a query with a count request or not.
+                      Count is requested by default, but is best-effort: if the count request
+                      times out while the search request succeeds, results are returned with
+                      ``number_matched`` set to ``None``
         :param validate: (optional) Set to True to validate search parameters
                          before sending the query to the provider
         :param kwargs: Some other criteria that will be used to do the search,
@@ -1442,6 +1445,7 @@ class EODataAccessGateway:
             end=end,
             geom=geom,
             locations=locations,
+            count=False,
             **kwargs,
         )
         if len(search_results) == 0:
