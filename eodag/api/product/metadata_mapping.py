@@ -754,7 +754,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_dict_filter(
             input_dict: dict[Any, Any], jsonpath_filter_str: str
         ) -> dict[Any, Any]:
-            """Fitlers dict items using jsonpath"""
+            """Filters dict items using jsonpath"""
 
             jsonpath_filter = string_to_jsonpath(jsonpath_filter_str, force=True)
             if isinstance(jsonpath_filter, str) or not isinstance(input_dict, dict):
@@ -765,9 +765,17 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             result = {}
             for match in matches:
                 # extract key index from matched jsonpath
-                matched_jsonpath_str = str(match.full_path)
-                matched_index = int(matched_jsonpath_str.split(".")[-1][1:-1])
-                key = keys_list[matched_index]
+                if not hasattr(match.path, "index") and not hasattr(
+                    match.path, "fields"
+                ):
+                    continue
+                key = (
+                    # jsonpath-ng <= 1.7.0
+                    keys_list[match.path.index]
+                    if hasattr(match.path, "index")
+                    # jsonpath-ng >= 1.9.0
+                    else match.path.fields[0]
+                )
                 result[key] = match.value
             return result
 
@@ -775,7 +783,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_dict_filter_and_sub(
             input_dict: dict[Any, Any], args: str
         ) -> Union[dict[Any, Any], list[Any]]:
-            """Fitlers dict items using jsonpath and then apply recursive_sub_str"""
+            """Filters dict items using jsonpath and then apply recursive_sub_str"""
             jsonpath_filter_str, old, new = ast.literal_eval(args)
             filtered = MetadataFormatter.convert_dict_filter(
                 input_dict, jsonpath_filter_str
