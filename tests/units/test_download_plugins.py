@@ -52,6 +52,7 @@ from tests.context import (
     PluginManager,
     ProvidersDict,
     S3FileInfo,
+    SearchResult,
     StreamResponse,
     load_provider_configs,
     path_to_uri,
@@ -115,6 +116,14 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
     """Test cases for the base download plugin."""
+
+    def test_plugins_download_all_asset_not_available(self):
+        """Download.download_all must fail fast if the asset filter matches no asset."""
+        self.product.assets.update({"foo": {"href": "http://foo/x"}})
+        plugin = self.get_download_plugin(self.product)
+
+        with self.assertRaises(NotAvailableError):
+            plugin.download_all(SearchResult([self.product], 1), asset="nomatch")
 
     def test_plugins_download_base_prepare_download_existing(self):
         """Download._prepare_download must detect if product destination already exists."""

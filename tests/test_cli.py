@@ -42,8 +42,11 @@ from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_LIMIT,
     AuthenticationError,
+    EODataAccessGateway,
+    EOProduct,
     MisconfiguredError,
     NoMatchingCollection,
+    NotAvailableError,
     download,
     eodag_cli,
     mock,
@@ -1027,6 +1030,141 @@ class TestEodagCli(unittest.TestCase):
             "Error during download, a file may have been downloaded but we cannot locate it\n",
             output,
         )
+
+    @staticmethod
+    def _product_with_assets():
+        """Build a product with a couple of assets"""
+        product = EOProduct(
+            "sara",
+            dict(geometry="POINT (0 0)", title="dummy_product", id="dummy"),
+        )
+        product.assets.update(
+            {
+                "foo": {"href": "http://foo/x"},
+                "bar": {"href": "http://bar/y"},
+            }
+        )
+        return product
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_asset(self, dag):
+        """Calling eodag download with --asset must forward the filter to download_all"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult(
+            [self._product_with_assets()], 1
+        )
+        dag.return_value.download_all.return_value = ["/fake_path"]
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--asset",
+                "foo",
+            ],
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertEqual("Downloaded /fake_path\n", output)
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY, output_dir=None, executor=mock.ANY, asset="foo"
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_asset_not_found(self, dag):
+        """Calling eodag download with an --asset filter matching nothing must fail clearly"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult(
+            [self._product_with_assets()], 1
+        )
+        # the asset filter is now checked by download_all, which raises
+        # NotAvailableError before any download is attempted
+        dag.return_value.download_all.side_effect = NotAvailableError(
+            "No asset key matching re.fullmatch(r'nomatch') was found in "
+            "EOProduct(id=dummy, provider=sara)"
+        )
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--asset",
+                "nomatch",
+            ],
+        )
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, SystemExit)
+        self.assertEqual(
+            "Error: No asset key matching re.fullmatch(r'nomatch') was found in "
+            "EOProduct(id=dummy, provider=sara)\n",
+            output,
+        )
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY, output_dir=None, executor=mock.ANY, asset="nomatch"
+        )
+
+    def test_eodag_download_asset_selection(self):
+        """Calling eodag download with --asset must only download the matching assets"""
+        dag = EODataAccessGateway()
+        product = self._product_with_assets()
+        product.register_downloader(
+            dag._plugins_manager.get_download_plugin(product), None
+        )
+        product.location = product.remote_location = "http://somewhere"
+        search_result = SearchResult([product], 1)
+
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
+
+        with (
+            mock.patch.object(
+                EODataAccessGateway,
+                "deserialize_and_register",
+                return_value=search_result,
+            ),
+            mock.patch(
+                "eodag.plugins.download.http.requests.get", autospec=True
+            ) as mock_get,
+            mock.patch(
+                "eodag.plugins.download.http.requests.head", autospec=True
+            ) as mock_head,
+        ):
+            mock_get.return_value.__enter__.return_value.iter_content.return_value = (
+                iter([b"data"])
+            )
+            mock_get.return_value.__enter__.return_value.headers = {}
+            mock_head.return_value.headers = {"Content-Length": "4"}
+
+            exit_code, output, error = self.eodag_command(
+                [
+                    "download",
+                    "--search-results",
+                    search_results_path,
+                    "--asset",
+                    "foo",
+                    "--output-dir",
+                    output_dir,
+                ],
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertTrue(os.path.isfile(os.path.join(output_dir, "dummy_product", "x")))
+        self.assertFalse(os.path.exists(os.path.join(output_dir, "dummy_product", "y")))
 
     @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_download_stac_items(self, dag):
