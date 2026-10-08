@@ -309,21 +309,11 @@ class Collection(StacCollection):
             and "summaries" in data
             and isinstance(data["summaries"], dict)
         ):
-            errors: list[InitErrorDetails] = []
 
             for prop, v in data["summaries"].copy().items():
                 prop_from_alias = cls.get_collection_field_from_alias(prop)
-                # raise an error for each unknown "summaries" property
+                # ignore unknown "summaries" property
                 if prop_from_alias not in cls.summaries_fields():
-                    msg = (
-                        'Extra inputs are not permitted in collection field "summaries"'
-                    )
-                    error = InitErrorDetails(
-                        type=PydanticCustomError("extra_forbidden", msg),
-                        loc=("summaries", prop),
-                        input=data["summaries"][prop],
-                    )
-                    errors.append(error)
                     continue
 
                 # remove null values and empty values ({}, [] or "") when there are not the default values
@@ -351,11 +341,6 @@ class Collection(StacCollection):
 
                 if add_prop:
                     data[prop] = v
-
-            if errors:
-                raise PydanticValidationError.from_exception_data(
-                    title="Summaries field check", line_errors=errors
-                )
 
         return data
 
@@ -416,7 +401,8 @@ class Collection(StacCollection):
         """Update field ``summaries`` after all summaries fields have been validated"""
         # reset summaries to later have only validated values and
         # remove not-STAC-formatted values that "summaries" may contain
-        self.summaries = {}
+        if not self.summaries:
+            self.summaries = {}
 
         # add "summaries" fields which are not null
         for field in Collection.summaries_fields():
@@ -495,9 +481,9 @@ class Collection(StacCollection):
                                 default_json is not None
                                 and error["loc"][1] in default_json
                             ):
-                                values_dict[wrong_field][
-                                    error["loc"][1]
-                                ] = default_json[error["loc"][1]]
+                                values_dict[wrong_field][error["loc"][1]] = (
+                                    default_json[error["loc"][1]]
+                                )
                         else:
                             try:
                                 values_dict[wrong_field].remove(error["input"])
@@ -756,9 +742,7 @@ class CollectionsList(UserList[Collection]):
 
         return (
             f"{mock_thead}<table><tbody>"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
                         <details>
                         <summary style='color: grey; font-family: monospace;'>
                         {i}&ensp;
@@ -767,10 +751,7 @@ class CollectionsList(UserList[Collection]):
                     {re.sub(r"(<thead>.*|.*</thead>)", "", col._repr_html_())}
                     </details>
                     </td></tr>
-                    """
-                    for i, col in enumerate(self)
-                ]
-            )
+                    """ for i, col in enumerate(self)])
             + "</tbody></table></details>"
         )
 
