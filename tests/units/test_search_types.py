@@ -371,9 +371,8 @@ class TestFieldDefinition(unittest.TestCase):
         )
         args = get_args(python_field_def)
         # cannot use isinstance with TypedDict
-        self.assertEqual(args[0].__name__, "dictionary")
+        self.assertEqual(args[0].__name__, "location-object")
         self.assertEqual(args[1].title, "Location")
-        self.assertIsInstance
         # required and no default value provided
         self.assertEqual(args[1].get_default(), PydanticUndefined)
         self.assertEqual(args[1].is_required(), True)

@@ -285,7 +285,9 @@ def json_field_definition_to_python(
                 )
                 for k, v in properties.items()
             }
-            python_type = TypedDict("dictionary", fields_type)  # type: ignore
+            dict_name = (serialization_alias or "custom").rsplit(":", 1)[-1] + "-object"
+            typed_dict_type = TypedDict(dict_name, fields_type)  # type: ignore[misc]
+            python_type = typed_dict_type
 
     if enum:
         literal = Literal[tuple(sorted(enum))]  # type: ignore
