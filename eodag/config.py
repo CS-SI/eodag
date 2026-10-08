@@ -25,7 +25,17 @@ import warnings
 from importlib.resources import files as res_files
 from inspect import isclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Mapping, Optional, Union, cast, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    Mapping,
+    Optional,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 import orjson
 import requests
@@ -297,8 +307,7 @@ def ensure_locations_config_exists(
 
 
 class SimpleYamlProxyConfig:
-    """A simple configuration class acting as a proxy to an underlying dict object
-    as returned by yaml.load"""
+    """A simple configuration class acting as a proxy to an underlying dict object as returned by yaml.load."""
 
     def __init__(self, conf_file_path: str) -> None:
         try:
@@ -1577,7 +1586,9 @@ def load_provider_configs(
         merge_provider_configs(providers, cfg, whitelist)
 
     if user_cfg_file:
-        logger.info("Loading user configuration from: %s", os.path.abspath(user_cfg_file))
+        logger.info(
+            "Loading user configuration from: %s", os.path.abspath(user_cfg_file)
+        )
         try:
             with open(os.path.abspath(os.path.realpath(user_cfg_file)), "r") as fh:
                 config_in_file = yaml.safe_load(fh)
@@ -1600,8 +1611,7 @@ def _has_matching_external_auth(
     conf: ProviderConfig,
     configs: dict[str, ProviderConfig],
 ) -> bool:
-    """Check whether another provider exposes an auth plugin that can authenticate
-    *conf*'s search/api requests.
+    """Check whether another provider exposes an auth plugin that can authenticate *conf*'s search/api requests.
 
     A provider needing authentication for search but having no auth plugin of its own
     can still be used if another provider declares an auth plugin whose
@@ -1668,14 +1678,13 @@ def disable_providers(
     for name, conf in configs.items():
         # Disable providers that depend on a plugin that could not be imported
         if any(
-            isinstance(v, PluginConfig) and getattr(v, "type", None) in plugins_manager.skipped_plugins
+            isinstance(v, PluginConfig)
+            and getattr(v, "type", None) in plugins_manager.skipped_plugins
             for v in conf.__dict__.values()
         ):
             conf.enabled = False
-            plugins_manager.pruned_providers_reasons[name] = {
-                "reason": "; ".join(
-                    plugins_manager.get_skipped_plugin_messages(conf)
-                ),
+            plugins_manager.disabled_providers_reasons[name] = {
+                "reason": "; ".join(plugins_manager.get_skipped_plugin_messages(conf)),
                 "reason_type": "skipped_plugin",
             }
             logger.debug(
@@ -1694,12 +1703,8 @@ def disable_providers(
                 name, conf, configs
             ):
                 conf.enabled = False
-                logger.info(
-                    "%s: provider needing auth for search has been disabled because no credentials could be found",
-                    name,
-                )
-                reason = "provider needing auth for search was disabled because no credentials could be found"
-                plugins_manager.pruned_providers_reasons[name] = {
+                reason = "provider needing auth for search has been disabled because no credentials could be found"
+                plugins_manager.disabled_providers_reasons[name] = {
                     "reason": reason,
                     "reason_type": "missing_credentials",
                 }
@@ -1719,8 +1724,8 @@ def disable_providers(
                 if _has_matching_external_auth(name, conf, configs):
                     continue
                 conf.enabled = False
-                reason = "provider needing auth for search was disabled because no auth plugin could be found"
-                plugins_manager.pruned_providers_reasons[name] = {
+                reason = "provider needing auth for search has been disabled because no auth plugin could be found"
+                plugins_manager.disabled_providers_reasons[name] = {
                     "reason": reason,
                     "reason_type": "missing_auth_plugin",
                 }
@@ -1741,8 +1746,8 @@ def disable_providers(
             )
             if not credentials_exist:
                 conf.enabled = False
-                reason = "provider needing auth for search was disabled because no credentials could be found"
-                plugins_manager.pruned_providers_reasons[name] = {
+                reason = "provider needing auth for search has been disabled because no credentials could be found"
+                plugins_manager.disabled_providers_reasons[name] = {
                     "reason": reason,
                     "reason_type": "missing_credentials",
                 }
@@ -1755,7 +1760,8 @@ def disable_providers(
         # Disable providers with no functional search/api plugin
         elif not hasattr(conf, "api") and not hasattr(conf, "search"):
             conf.enabled = False
-            plugins_manager.pruned_providers_reasons[name] = {
+            reason = "provider has been disabled because no api or search plugin could be found"
+            plugins_manager.disabled_providers_reasons[name] = {
                 "reason": reason,
                 "reason_type": "missing_search_plugin",
             }

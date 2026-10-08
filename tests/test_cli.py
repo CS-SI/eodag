@@ -46,7 +46,6 @@ from tests.context import (
     DEFAULT_LIMIT,
     AuthenticationError,
     MisconfiguredError,
-    NoMatchingCollection,
     download,
     eodag_cli,
     mock,

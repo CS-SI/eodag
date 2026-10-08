@@ -429,18 +429,38 @@ class SQLiteDatabase(Database):
             self._upsert_collections_federation_backends(coll_fb_configs)
             self._refresh_collections_denorm(sorted(changed_fbs))
 
-    def restore_fbs(self) -> None:
-        """Restore federation backends which have been disabled."""
+    def restore_fbs(self, names: Optional[set[str]] = None) -> None:
+        """Restore federation backends which have been disabled.
+
+        This method will re-enable federation backends that have been previously disabled.
+        If a set of names is provided, only those federation backends will be restored.
+
+        :param names: Optional set of federation backend names to restore.
+                      If None, all disabled federation backends will be restored.
+        """
+        where_clauses: list[str] = ["enabled = 0"]
+        params: dict[str, Any] = {}
+        if names:
+            placeholders = ",".join(f":{name}" for name in names)
+            where_clauses.append(f"name IN ({placeholders})")
+            params = {name: name for name in names}
+
         with self._con:
+            sql = f"SELECT name FROM federation_backends WHERE {' AND '.join(where_clauses)}"
             restored = [
                 row["name"]
                 for row in self._execute(
-                    "SELECT name FROM federation_backends WHERE enabled = 0"
+                    sql,
+                    params,
                 ).fetchall()
             ]
+
+            sql = f"UPDATE federation_backends SET enabled = 1 WHERE {' AND '.join(where_clauses)}"
             self._execute(
-                "UPDATE federation_backends SET enabled = 1 WHERE enabled = 0",
+                sql,
+                params,
             )
+
             self._refresh_collections_denorm(restored)
 
     def set_priority(self, name: str, priority: int) -> None:
@@ -644,7 +664,11 @@ class SQLiteDatabase(Database):
         params = (name, *cfb_params, name)
 
         rows = self._execute(sql, params).fetchall()
-        if not rows or not rows[0]["provider_plugins_config"] and not isinstance(rows[0]["provider_plugins_config"], dict):
+        if (
+            not rows
+            or not rows[0]["provider_plugins_config"]
+            and not isinstance(rows[0]["provider_plugins_config"], dict)
+        ):
             msg = f"Provider '{name}' not found"
             raise KeyError(msg)
         base: dict[str, Any] = (
@@ -667,7 +691,7 @@ class SQLiteDatabase(Database):
             blob = r["collection_plugins_config"] or {}
             base["products"][cid] = blob.get("search", {}) or blob.get("api", {})
             if isinstance(base.get("download"), dict):
-                base["download"]["products"][cid] = blob.get("download", {})
+                base["download"]["products"][cid] = blob.get("download", None)
 
         return base
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import os
 import re
 import warnings
 from collections import deque
@@ -81,7 +82,6 @@ from eodag.utils.exceptions import (
     NoMatchingCollection,
     PluginImplementationError,
     RequestError,
-    UnsupportedProvider,
     ValidationError,
 )
 
@@ -104,7 +104,6 @@ def ensure_config_files(
     settings: EODAGSettings,
 ) -> EODAGSettings:
     """Ensure EODAG configuration files and directories exist."""
-
     settings.cfg_dir = ensure_cfg_dir_exists(settings.cfg_dir)
 
     ensure_user_config_exists(settings.resolved_cfg_file)
@@ -174,7 +173,7 @@ class EODataAccessGateway:
         self.db = (
             db
             if db is not None
-            else SQLiteDatabase(os.path.join(settings.cfg_dir, "eodag.db"))
+            else SQLiteDatabase(os.path.join(self.settings.cfg_dir, "eodag.db"))
         )
 
         collections_config_dict = SimpleYamlProxyConfig(
@@ -183,8 +182,6 @@ class EODataAccessGateway:
 
         collections_dict = CollectionsDict.from_configs(collections_config_dict)
         self.db.upsert_collections(collections_dict)
-
-        self._plugins_manager = PluginManager(db=self.db, creds_store=self._creds_store)
 
         self._plugins_manager = PluginManager(db=self.db)
 
@@ -197,10 +194,10 @@ class EODataAccessGateway:
                 if self._plugins_manager.external_providers_config
                 else []
             ),
-            user_conf_file=str(self.settings.resolved_cfg_file),
+            user_cfg_file=str(self.settings.resolved_cfg_file),
             whitelist=self.settings.providers_whitelist,
         )
-        disable_providers(configs, self._plugins_manager.skipped_plugins)
+        disable_providers(configs, self._plugins_manager)
         self.db.upsert_fb_configs(list(configs.values()))
 
         # store credentials in core and plugins manager
@@ -228,8 +225,7 @@ class EODataAccessGateway:
         fetchable: Optional[bool] = None,
         limit: Optional[int] = None,
     ) -> ProvidersDict:
-        """
-        List providers from the database, with optional filters, in a
+        """List providers from the database, with optional filters, in a
         :class:`~eodag.api.provider.ProvidersDict` instance.
 
         :param names: (optional) Only return providers whose name is in this list.
@@ -319,11 +315,9 @@ class EODataAccessGateway:
         if not patch_conf:
             return
 
-        # restore disabled providers to be able to access their collections config
-        self.db.restore_fbs()
-
-        # log a message for restoring them
-        for name in self._plugins_manager.pruned_providers_reasons:
+        restored: set[str] = set()
+        # select providers that must be restored
+        for name in self._plugins_manager.disabled_providers_reasons:
             if name in patch_conf:
                 base_mapping = self.db.get_fb_config(name)
                 provider_config = ProviderConfig.from_mapping(base_mapping)
@@ -331,10 +325,13 @@ class EODataAccessGateway:
                     provider_config
                 ):
                     # a provider without missing plugin is restorable
-                    self._plugins_manager.pruned_providers_reasons.pop(name, None)
-                    logger.info(
-                        "%s: provider restored from the disabled configurations", name
-                    )
+                    restored.add(name)
+
+        # restore providers to be able to access their collections config
+        self.db.restore_fbs(restored if restored else None)
+        for name in restored:
+            self._plugins_manager.disabled_providers_reasons.pop(name, None)
+            logger.info("%s: provider restored from the disabled configurations", name)
 
         provider_configs: dict[str, ProviderConfig] = {}
         known_providers = self.db.get_federation_backends().keys()
@@ -366,7 +363,7 @@ class EODataAccessGateway:
         # keep the in-memory credentials store in sync with the merged configs
         update_nested_dict(self._creds_store, extract_credentials(provider_configs))
         # disable providers that became unusable (missing plugin/credentials)
-        disable_providers(provider_configs, self._plugins_manager.skipped_plugins)
+        disable_providers(provider_configs, self._plugins_manager)
 
         # persist the updated configs back to the DB (source of truth)
         self.db.upsert_fb_configs(list(provider_configs.values()))
@@ -477,7 +474,7 @@ class EODataAccessGateway:
                        ``[{"field": "datetime", "direction": "desc"}]``
         :returns: A :class:`~eodag.api.collection.CollectionsList` of matching
                   collections with a ``number_matched`` attribute.
-        :raises ValueError: If both ``cql2_text`` and ``cql2_json`` are provided,
+        :raises ValidationError: If both ``cql2_text`` and ``cql2_json`` are provided,
                             or if ``sortby`` contains invalid fields/directions.
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
@@ -549,13 +546,13 @@ class EODataAccessGateway:
             ]
 
         # get ext_collections conf
-        ext_collections_conf = get_ext_collections_conf(self.settings.ext_collections_cfg_uri)
+        ext_collections_conf = get_ext_collections_conf(
+            self.settings.ext_collections_cfg_uri
+        )
 
         if not ext_collections_conf:
             # empty ext_collections conf
-            ext_collections_conf = (
-                self.discover_collections(provider=provider) or {}
-            )
+            ext_collections_conf = self.discover_collections(provider=provider) or {}
 
         # Compare current provider with default one to see if it has been modified
         # and collections list would need to be fetched
@@ -2266,8 +2263,7 @@ class EODataAccessGateway:
         return sortables
 
     def _attach_collection_config(self, plugin: Search, collection: str) -> None:
-        """
-        Attach collections_config to plugin config. This dict contains product
+        """Attach collections_config to plugin config. This dict contains product
         type metadata that will also be stored in each product's properties.
         """
         coll = self.get_collection(collection, providers=[plugin.provider])

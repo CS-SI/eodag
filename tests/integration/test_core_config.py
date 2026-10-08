@@ -443,6 +443,8 @@ class TestCoreCollectionsConfig(TestCase):
     def test_core_discover_collections_auth(
         self, mock_requests_get, mock_urlopen, mock_build_response
     ):
+        from tests.context import MisconfiguredError
+
         # without auth plugin
         self.dag.update_providers_config("""
             foo_provider:
@@ -456,15 +458,14 @@ class TestCoreCollectionsConfig(TestCase):
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
             """)
-        with self.assertLogs(level="DEBUG") as cm:
-            ext_collections_conf = self.dag.discover_collections(
-                provider="foo_provider"
-            )
-            self.assertNotIn("foo_provider", ext_collections_conf)
-            self.assertIn(
-                "The requested provider is not enabled or not fetchable: foo_provider",
-                str(cm.output),
-            )
+
+        self.assertRaisesRegex(
+            MisconfiguredError,
+            "foo_provider: provider needing auth for search has been disabled "
+            "because no auth plugin could be found",
+            self.dag.discover_collections,
+            "foo_provider",
+        )
 
         # with auth plugin but without credentials
         self.dag.update_providers_config("""
@@ -475,15 +476,14 @@ class TestCoreCollectionsConfig(TestCase):
                     headers:
                         Authorization: "Apikey {apikey}"
             """)
-        with self.assertLogs(level="DEBUG") as cm:
-            ext_collections_conf = self.dag.discover_collections(
-                provider="foo_provider"
-            )
-            self.assertNotIn("foo_provider", ext_collections_conf)
-            self.assertIn(
-                "The requested provider is not enabled or not fetchable: foo_provider",
-                str(cm.output),
-            )
+
+        self.assertRaisesRegex(
+            MisconfiguredError,
+            "foo_provider: provider needing auth for search has been disabled "
+            "because no credentials could be found",
+            self.dag.discover_collections,
+            "foo_provider",
+        )
 
         # succeeds with auth plugin and credentials
         self.dag.update_providers_config("""

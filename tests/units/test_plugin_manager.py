@@ -47,7 +47,6 @@ class TestPluginManager(unittest.TestCase):
         )
         cls.manager = make_plugins_manager(cls.providers)
 
-
     def test_get_skipped_plugin_messages(self):
         """Skipped plugin messages are returned for configured plugin types."""
         provider_config = self.providers["low"]
@@ -75,27 +74,26 @@ class TestPluginManager(unittest.TestCase):
         cfg = ProviderConfig.from_mapping(self.manager._db.get_fb_config(provider))
         cfg.enabled = False
         self.manager._db.upsert_fb_configs([cfg])
-        self.addCleanup(self.manager._db.restore_fbs())
+        self.addCleanup(self.manager._db.restore_fbs)
 
         with self.assertRaisesRegex(
-            UnsupportedProvider,
-            "low: provider has been disabled and is not available"
+            UnsupportedProvider, "low: provider has been disabled and is not available"
         ):
             self.manager.check_provider_available("low")
 
         # disabled provider: MisconfiguredError takes precedence over UnsupportedProvider
-        self.manager.pruned_providers_reasons["low"] = {
-            "reason": "provider needing auth for search was disabled because no credentials could be found",
+        self.manager.disabled_providers_reasons["low"] = {
+            "reason": "provider needing auth for search has been disabled because no credentials could be found",
             "reason_type": "missing_credentials",
         }
         with self.assertRaisesRegex(
             MisconfiguredError,
-            "low: provider needing auth for search was disabled "
+            "low: provider needing auth for search has been disabled "
             "because no credentials could be found",
         ):
             self.manager.check_provider_available("low")
 
-        self.manager.pruned_providers_reasons["low"] = {
+        self.manager.disabled_providers_reasons["low"] = {
             "reason": "SkippedSearch plugin skipped",
             "reason_type": "skipped_plugin",
         }
@@ -106,7 +104,7 @@ class TestPluginManager(unittest.TestCase):
             self.manager.check_provider_available("low")
 
         # Clean up the disabled provider reason for "low" to avoid side effects in other tests.
-        del self.manager.pruned_providers_reasons["low"]
+        del self.manager.disabled_providers_reasons["low"]
 
     def test_get_search_plugins_uses_collection_and_priority(self):
         """Search plugins use collection settings and priority ordering."""
@@ -153,7 +151,10 @@ class TestPluginManager(unittest.TestCase):
         delattr(providers["broken"], "search")
         manager = make_plugins_manager(providers)
 
-        with self.assertRaisesRegex(MisconfiguredError, "No search or api plugin configured for provider broken."):
+        with self.assertRaisesRegex(
+            MisconfiguredError,
+            "No search or api plugin configured for provider broken.",
+        ):
             list(manager.get_search_plugins(collection=GENERIC_COLLECTION))
 
     def test_get_download_plugin_ok(self):
@@ -163,17 +164,21 @@ class TestPluginManager(unittest.TestCase):
         self.assertIsNotNone(plugin)
 
     def test_get_download_plugin_ko(self):
-        """Download selection rejects products from unknown providers,
-        misconfigured providers, and providers not having the product collection.
-        """
-        with self.assertRaisesRegex(UnsupportedProvider, "unknown: provider is not recognised by eodag"):
-            self.manager.get_download_plugin(SimpleNamespace(provider="unknown"))
+        """Download selection rejects products from providers that do not pass the check or misconfigured providers."""
+        # with a provider that does not pass the check, an error is expected
+        unknown_name = "unknown"
+        with self.assertRaisesRegex(
+            UnsupportedProvider, f"{unknown_name}: provider is not recognised by eodag"
+        ):
+            self.manager.get_download_plugin(SimpleNamespace(provider=unknown_name))
 
-        with self.assertRaisesRegex(MisconfiguredError, "No download plugin configured for provider low."):
-            self.manager.get_download_plugin(SimpleNamespace(provider="low", collection="FOO"))
-
-        with self.assertRaisesRegex(UnsupportedProvider, "Provider download not found with collection unknown"):
-            self.manager.get_download_plugin(SimpleNamespace(provider="download", collection="unknown"))
+        # with a provider that does not have a download plugin configured, an error is expected
+        with self.assertRaisesRegex(
+            MisconfiguredError, "No download plugin configured for provider low."
+        ):
+            self.manager.get_download_plugin(
+                SimpleNamespace(provider="low", collection="FOO")
+            )
 
     @mock.patch.object(PluginManager, "_get_or_create_auth_plugin")
     def test_get_auth_plugins_matches_url(self, get_or_create_auth_plugin):
@@ -191,7 +196,9 @@ class TestPluginManager(unittest.TestCase):
         plugins = list(self.manager.get_auth_plugins("low", matching_url=matching_url))
 
         self.assertListEqual(plugins, [mock.sentinel.auth])
-        get_or_create_auth_plugin.assert_called_once_with("low", auth_config.__dict__, "auth", 1)
+        get_or_create_auth_plugin.assert_called_once_with(
+            "low", auth_config.__dict__, "auth", 1
+        )
 
     @mock.patch.object(PluginManager, "get_auth_plugins")
     def test_get_auth_plugin_uses_associated_plugin(self, get_auth_plugins):

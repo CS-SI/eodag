@@ -356,9 +356,14 @@ class Database(ABC):
         pass
 
     @abstractmethod
-    def restore_fbs(self) -> None:
-        """
-        Restore federation backends which have been disabled.
+    def restore_fbs(self, names: Optional[set[str]] = None) -> None:
+        """Restore federation backends which have been disabled.
+
+        This method will re-enable federation backends that have been previously disabled.
+        If a set of names is provided, only those federation backends will be restored.
+
+        :param names: Optional set of federation backend names to restore.
+                      If None, all disabled federation backends will be restored.
         """
         pass
 

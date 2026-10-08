@@ -750,7 +750,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
     def test_end_to_end_complete_cop_dataspace(self):
         """Complete end-to-end test with cop_dataspace for download and download_all"""
 
-        self.eodag._providers.configs["cop_dataspace"].download.output_dir = (
+        self.eodag.providers.configs["cop_dataspace"].download.output_dir = (
             self.tmp_download_path
         )
 

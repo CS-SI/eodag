@@ -27,13 +27,12 @@ import os
 import shutil
 import tempfile
 import unittest
-from concurrent.futures import ThreadPoolExecutor
-from importlib.resources import files as res_files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
 import yaml
+from concurrent.futures import ThreadPoolExecutor
 from lxml import html
 from pydantic import ValidationError as PydanticValidationError
 from requests import RequestException
@@ -1038,6 +1037,14 @@ class TestCore(TestCoreBase):
             CollectionsDict([Collection(**product.model_dump(exclude={"alias"}))])
         )
 
+    def test_list_collections_ko(self):
+        """Core api must raise ValidationError if the input is invalid."""
+        with self.assertRaisesRegex(
+            ValidationError,
+            "Invalid input for listing collections: Cannot provide both cql2_text and cql2_json",
+        ):
+            self.dag.list_collections(cql2_text="some text", cql2_json={"some": "json"})
+
     def test_list_collections_for_provider_ok(self):
         """Core api must correctly return the list of supported collections for a given provider"""
         collections = self.dag.list_collections(providers=self.SUPPORTED_PROVIDERS)
@@ -1095,7 +1102,6 @@ class TestCore(TestCoreBase):
 
     def test_guess_collection_with_filter(self):
         """Testing the search terms"""
-
         with open(
             os.path.join(TEST_RESOURCES_PATH, "ext_collections_free_text_search.json")
         ) as f:
@@ -1147,7 +1153,6 @@ class TestCore(TestCoreBase):
 
     def test_guess_collection_with_mission_dates(self):
         """Testing the datetime interval"""
-
         with open(
             os.path.join(TEST_RESOURCES_PATH, "ext_collections_free_text_search.json")
         ) as f:
@@ -1413,7 +1418,8 @@ class TestCore(TestCoreBase):
     def test_update_collections_list_errors_handling(self):
         """Core api.update_collections_list must skip a collection with a log if its id is not a string and
         must log a summary for a provider if an attribute (except id) of at least one of its collection has
-        bad formatted attributed even if collection validation is disabled"""
+        bad formatted attributed even if collection validation is disabled
+        """
         provider = "earth_search"
         try:
             # ensure validation is disabled for collections
@@ -1660,36 +1666,25 @@ class TestCore(TestCoreBase):
 
     def test_discover_collections_ko(self):
         """Core api must raise an error while discovering collections
-        if given provider is unknown, not enabled or not fetchable"""
-        # check that an unknown provider raises an error
+        if given provider does not pass the check or is not fetchable
+        """
+        # with a provider that does not pass the check, an error is expected
         unknown_name = "foo"
         self.assertNotIn(unknown_name, self.dag.get_providers().keys())
-        with self.assertRaises(UnsupportedProvider) as ctx:
+        with self.assertRaisesRegex(
+            UnsupportedProvider, f"{unknown_name}: provider is not recognised by eodag"
+        ):
             self.dag.discover_collections(provider=unknown_name)
 
-        self.assertIn(
-            f"The requested provider is not (yet) supported: {unknown_name}",
-            str(ctx.exception),
-        )
-
-        # disable one provider for the duration of this sub-test
-        disabled_name = list(self.dag.get_providers().keys())[-1]
-        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config(disabled_name))
-        cfg.enabled = False
-        self.dag.db.upsert_fb_configs([cfg])
-        self.addCleanup(self.dag.db.restore_fbs)
-
-        # with a provider that is not enabled or not fetchable, log messages are expected
+        # with a provider that is not fetchable, a log message is expected
         non_fetchable_name = list(self.dag.get_providers(fetchable=False).keys())[0]
         with self.assertLogs(level="INFO") as cm:
-            self.dag.discover_collections(provider=disabled_name)
             self.dag.discover_collections(provider=non_fetchable_name)
 
-        for provider in [disabled_name, non_fetchable_name]:
-            self.assertIn(
-                f"The requested provider is not enabled or not fetchable: {provider}",
-                str(cm.output),
-            )
+        self.assertIn(
+            f"The requested provider is not fetchable: {non_fetchable_name}",
+            str(cm.output),
+        )
 
     @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
     @mock.patch(
@@ -1890,7 +1885,6 @@ class TestCore(TestCoreBase):
     )
     def test_fetch_collections_list_disabled(self, mock_discover_collections):
         """An empty ext collections URI still falls back to collections discovery."""
-
         # configure an empty external collections URI
         self.dag.settings.ext_collections_cfg_uri = ""
 
@@ -1926,36 +1920,26 @@ class TestCore(TestCoreBase):
 
     def test_fetch_collections_list_ko(self):
         """Core api must raise errors while fetching collections list
-        if given provider is unknown, not enabled or not fetchable"""
-        # check that an unknown provider raises an error
+        if given provider does not pass the check or is not fetchable
+        """
+        # with a provider that does not pass the check, an error is expected
         unknown_name = "foo"
         self.assertNotIn(unknown_name, self.dag.get_providers().keys())
-        with self.assertRaises(UnsupportedProvider) as ctx:
+        with self.assertRaisesRegex(
+            UnsupportedProvider, f"{unknown_name}: provider is not recognised by eodag"
+        ):
             self.dag.fetch_collections_list(provider=unknown_name)
 
-        self.assertIn(
-            f"The requested provider is not (yet) supported: {unknown_name}",
-            str(ctx.exception),
-        )
-
-        # disable one provider for the duration of this sub-test
-        disabled_name = list(self.dag.get_providers().keys())[-1]
-        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config(disabled_name))
-        cfg.enabled = False
-        self.dag.db.upsert_fb_configs([cfg])
-        self.addCleanup(self.dag.db.restore_fbs)
-
-        # with a provider that is not enabled or not fetchable, log messages are expected
         non_fetchable_name = list(self.dag.get_providers(fetchable=False).keys())[0]
+
+        # with a provider that is not fetchable, a log message is expected
         with self.assertLogs(level="INFO") as cm:
-            self.dag.fetch_collections_list(provider=disabled_name)
             self.dag.fetch_collections_list(provider=non_fetchable_name)
 
-        for provider in [disabled_name, non_fetchable_name]:
-            self.assertIn(
-                f"The requested provider is not enabled or not fetchable: {provider}",
-                str(cm.output),
-            )
+        self.assertIn(
+            f"The requested provider is not fetchable: {non_fetchable_name}",
+            str(cm.output),
+        )
 
     def test_core_object_set_default_locations_config(self):
         """The core object must set the default locations config on instantiation"""
@@ -2007,8 +1991,9 @@ class TestCore(TestCoreBase):
                 self.assertEqual(set(provider_conf["api"]), {"credentials"})
 
     def test_providers_attribute_only_returns_enabled(self):
-        """providers property must only return enabled providers;
-        a provider that is disabled must not appear in it"""
+        """Providers property must only return enabled providers;
+        a provider that is disabled must not appear in it
+        """
         # pick a provider that is currently enabled
         provider_name = list(self.dag.providers.keys())[0]
         self.assertIn(provider_name, self.dag.providers)
@@ -2149,7 +2134,6 @@ class TestCore(TestCoreBase):
 
     def test_set_preferred_provider(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
-
         self.assertEqual(self.dag.get_preferred_provider(), ("aws_eos", 0))
 
         self.assertRaises(
@@ -2170,27 +2154,33 @@ class TestCore(TestCoreBase):
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )
 
-    def test_set_preferred_provider_pruned(self):
+    def test_set_preferred_provider_disabled(self):
         """set_preferred_provider must raise MisconfiguredError for a disabled provider."""
-        self.dag._providers.pruned_providers_reasons["creodias"] = {
-            "reason": "provider needing auth for search was disabled because no credentials could be found",
+        # disable the provider during this test
+        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config("creodias"))
+        cfg.enabled = False
+        self.dag.db.upsert_fb_configs([cfg])
+        self.addCleanup(self.dag.db.restore_fbs)
+
+        self.dag._plugins_manager.disabled_providers_reasons["creodias"] = {
+            "reason": "provider needing auth for search has been disabled because no credentials could be found",
             "reason_type": "missing_credentials",
         }
         try:
             self.assertRaisesRegex(
                 MisconfiguredError,
-                "creodias: provider needing auth for search was disabled "
+                "creodias: provider needing auth for search has been disabled "
                 "because no credentials could be found",
                 self.dag.set_preferred_provider,
                 "creodias",
             )
         finally:
-            self.dag._providers.pruned_providers_reasons.pop("creodias", None)
-
+            self.dag._plugins_manager.disabled_providers_reasons.pop("creodias", None)
 
     def test_get_preferred_provider(self):
         """get_preferred_provider must return the highest-priority enabled provider,
-        respect enabled_only, and raise EodagError when no provider is enabled"""
+        respect enabled_only, and raise EodagError when no provider is enabled
+        """
         from eodag.utils.exceptions import EodagError
 
         # default (enabled_only=True): highest-priority enabled provider
@@ -2228,8 +2218,8 @@ class TestCore(TestCoreBase):
     def test_update_providers_config(self):
         """update_providers_config accepts yaml_conf and dict_conf, handles both new and
         existing providers, updates _creds_store with credentials and re-enables a provider
-        that was disabled when its credentials are provided."""
-
+        that has been disabled when its credentials are provided.
+        """
         # --- yaml_conf: add a new provider ---
         new_config = """
             my_new_provider:
@@ -2284,8 +2274,10 @@ class TestCore(TestCoreBase):
         self.assertFalse(self.dag._creds_store.get(auth_provider))
         # the provider is disabled (not in the enabled-only `providers` property)
         self.assertNotIn(auth_provider, self.dag.providers)
-        # the provider is listed in the pruned providers reasons because it is disabled
-        self.assertIn(auth_provider, self.dag._plugins_manager.pruned_providers_reasons)
+        # the provider is listed in the disabled providers reasons because it is disabled
+        self.assertIn(
+            auth_provider, self.dag._plugins_manager.disabled_providers_reasons
+        )
 
         # --- disabled → enabled: add credentials → provider becomes enabled ---
         with self.assertLogs(level="INFO") as cm:
@@ -2312,7 +2304,9 @@ class TestCore(TestCoreBase):
         # provider is enabled
         self.assertIn(auth_provider, self.dag.providers)
         # the provider should have been restored from the disabled configurations
-        self.assertNotIn(auth_provider, self.dag._plugins_manager.pruned_providers_reasons)
+        self.assertNotIn(
+            auth_provider, self.dag._plugins_manager.disabled_providers_reasons
+        )
         # an info log should have been emitted indicating the provider was restored
         self.assertIn(
             f"{auth_provider}: provider restored from the disabled configurations",
@@ -2377,7 +2371,6 @@ class TestCore(TestCoreBase):
         mock_requests_get: mock.Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and collection"""
-
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
 
@@ -2500,7 +2493,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     def test_alias_in_list_queryables(self, mock_list_queryables: mock.Mock):
-        """queryables alias must be resolved in list_queryables"""
+        """Queryables alias must be resolved in list_queryables"""
         self.dag.list_queryables(
             provider="cop_dataspace",
             collection="S2_MSI_L1C",
@@ -2860,7 +2853,8 @@ class TestCore(TestCoreBase):
     )
     def test_available_sortables(self, mock_auth_session_request):
         """available_sortables must return available sortable(s) and its (their)
-        maximum number dict for providers which support the sorting feature"""
+        maximum number dict for providers which support the sorting feature
+        """
         self.maxDiff = None
         expected_result = {
             "aws_eos": None,
@@ -3212,14 +3206,14 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             # only foo_provider in conf
             self.assertEqual(self.dag.providers.names, ["foo_provider"])
             self.assertEqual(
-                self.dag._providers["foo_provider"].search_config.api_endpoint,
+                self.dag.providers["foo_provider"].search_config.api_endpoint,
                 "https://foo.bar/search",
             )
         finally:
             os.environ.pop("EODAG_PROVIDERS_CFG_DIR", None)
 
     def test_core_collections_config_envvar(self):
-        """collections should be loaded from file defined in env var"""
+        """Collections should be loaded from file defined in env var"""
         # setup providers config
         config_path = os.path.join(
             TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
@@ -3885,7 +3879,8 @@ class TestCoreSearch(TestCoreBase):
     )
     def test__prepare_search_unknown_collection(self, mock_fetch_collections_list):
         """_prepare_search must not fetch collections and return generic collection
-        providers config in search plugins config if collection is unknown"""
+        providers config in search plugins config if collection is unknown
+        """
         search_plugins, kwargs = self.dag._prepare_search(collection="foo")
         mock_fetch_collections_list.assert_not_called()
         self.assertListEqual(
@@ -4425,7 +4420,7 @@ class TestCoreSearch(TestCoreBase):
     def test_search_warns_on_deprecated_page_and_items_per_page(
         self, mock_prepare_search, mock_do_search
     ):
-        """search must warn when deprecated page and items_per_page are used"""
+        """Search must warn when deprecated page and items_per_page are used"""
         search_plugin = mock.Mock(provider="cop_dataspace")
         search_plugin.config.pagination = {}
         mock_prepare_search.return_value = (
@@ -4785,8 +4780,9 @@ class TestCoreSearch(TestCoreBase):
         mock_qssearch__request,
         mock_postjsonsearch__request,
     ):
-        """search must sort results by sorting parameter(s) in their sorting order
-        from the "sort_by" argument or by default sorting parameter if exists"""
+        """Search must sort results by sorting parameter(s) in their sorting order
+        from the "sort_by" argument or by default sorting parameter if exists
+        """
         mock_qssearch__request.return_value.json.return_value = {
             "properties": {"totalResults": 2},
             "features": [],
@@ -4887,7 +4883,7 @@ class TestCoreSearch(TestCoreBase):
         # TODO: sort by default sorting parameter and sorting order
 
     def test_search_sort_by_raise_errors(self):
-        """search used with "sort_by" argument must raise errors if the argument is incorrect or if the provider does
+        """Search used with "sort_by" argument must raise errors if the argument is incorrect or if the provider does
         not support a maximum number of sorting parameter, one sorting parameter or the sorting feature
         """
         dag = EODataAccessGateway()
@@ -5294,7 +5290,7 @@ class TestCoreDownload(TestCoreBase):
         cls.dag = EODataAccessGateway()
 
     def test_download_local_product(self):
-        """download must skip local products"""
+        """Download must skip local products"""
         product = EOProduct("dummy", dict(geometry="POINT (0 0)", id="dummy_product"))
 
         product.location = "file:///some/path"
