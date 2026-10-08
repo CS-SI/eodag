@@ -156,3 +156,23 @@ This file can then be used in EODAG using the environment variable ``EODAG_EXT_C
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
 For more information on the collections discovery mechanism, please see
 `Python API User Guide / Providers and collections / Collections discovery <notebooks/api_user_guide/1_providers_collections_available.html#Collections-discovery>`_.
+
+Queryables
+----------
+
+.. command-output:: eodag queryables --help
+
+* To list the queryable parameters of a provider, i.e. the parameters that can be used to search on it:
+
+.. code-block:: console
+
+        eodag queryables creodias
+
+* To list the queryables of a given collection on this provider. Selecting a collection gives more accurate results
+  and, for some providers, the possible values of the parameters:
+
+.. code-block:: console
+
+        eodag queryables creodias --collection S2_MSI_L1C
+
+This command relies on :meth:`~eodag.api.core.EODataAccessGateway.list_queryables`.
