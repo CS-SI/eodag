@@ -263,22 +263,18 @@ class SQLiteDatabase(Database):
             return
         provider_qmarks = ", ".join(["?"] * len(changed_fbs))
 
-        self._execute(
-            """
+        self._execute("""
             CREATE TEMP TABLE IF NOT EXISTS tmp_affected (
                 collection_id TEXT PRIMARY KEY
             ) WITHOUT ROWID;
-            """
-        )
-        self._execute(
-            f"""
+            """)
+        self._execute(f"""
             CREATE TEMP TABLE IF NOT EXISTS tmp_agg (
                 collection_id TEXT PRIMARY KEY,
                 federation_backends {_CONTENT_TYPE} NOT NULL,
                 priority INTEGER NOT NULL
             ) WITHOUT ROWID;
-            """
-        )
+            """)
         self._execute("DELETE FROM tmp_affected;")
         self._execute("DELETE FROM tmp_agg;")
 
@@ -291,8 +287,7 @@ class SQLiteDatabase(Database):
             """,
             tuple(changed_fbs),
         )
-        self._execute(
-            f"""
+        self._execute(f"""
            INSERT INTO tmp_agg(collection_id, federation_backends, priority)
             SELECT
                 cfb.collection_id,
@@ -312,10 +307,8 @@ class SQLiteDatabase(Database):
             ) fb
                 ON fb.name = cfb.federation_backend_name
             GROUP BY cfb.collection_id;
-            """
-        )
-        self._execute(
-            f"""
+            """)
+        self._execute(f"""
             UPDATE collections
             SET
                 federation_backends = COALESCE(
@@ -331,8 +324,7 @@ class SQLiteDatabase(Database):
                     0
                 )
             WHERE internal_id IN (SELECT collection_id FROM tmp_affected);
-            """
-        )
+            """)
 
     def upsert_fb_configs(self, configs: list[ProviderConfig]) -> None:
         """Add or update federation backend configs (providers) in the database."""
@@ -600,9 +592,7 @@ class SQLiteDatabase(Database):
             }
 
     def get_fb_config(
-        self,
-        name: str,
-        collections: set[str] | None = None,
+        self, name: str, collections: set[str] | None = None, use_alias: bool = False
     ) -> dict[str, Any]:
         """Get the federation backend config for a given provider and optional collection filter."""
         with self._lock:
@@ -610,33 +600,63 @@ class SQLiteDatabase(Database):
 
             if collections:
                 placeholders = ", ".join("?" for _ in collections)
-                cfb_filter_sql = f"cfb.collection_id IN ({placeholders})"
+                if use_alias:
+                    cfb_filter_sql = f"coll.id IN ({placeholders})"
+                else:
+                    cfb_filter_sql = f"cfb.collection_id IN ({placeholders})"
                 cfb_params = tuple(collections)
             else:
                 cfb_filter_sql = "0"
                 cfb_params = ()
 
-            sql = f"""
-                SELECT
-                    json(fb.plugins_config) AS "provider_plugins_config [dict]",
-                    fb.priority             AS provider_priority,
-                    json(fb.metadata)       AS "provider_metadata [dict]",
-                    fb.enabled              AS provider_enabled,
-
-                    c.collection_id         AS collection_id,
-                    json(c.plugins_config)  AS "collection_plugins_config [dict]"
-                FROM federation_backends fb
-                LEFT JOIN (
+            if use_alias:
+                # use id from collections table
+                sql = f"""
                     SELECT
-                        cfb.collection_id,
-                        cfb.plugins_config
-                    FROM collections_federation_backends cfb
-                    WHERE cfb.federation_backend_name = ?
-                    AND {cfb_filter_sql}
-                ) AS c
-                ON 1 = 1
-                WHERE fb.name = ?
-            """
+                        json(fb.plugins_config) AS "provider_plugins_config [dict]",
+                        fb.priority             AS provider_priority,
+                        json(fb.metadata)       AS "provider_metadata [dict]",
+                        fb.enabled              AS provider_enabled,
+
+                        c2.coll_id         AS collection_id,
+                        json(c.plugins_config)  AS "collection_plugins_config [dict]"
+                    FROM federation_backends fb
+                    LEFT JOIN (
+                        SELECT
+                            cfb.collection_id,
+                            cfb.plugins_config
+                        FROM collections_federation_backends cfb
+                        WHERE cfb.federation_backend_name = ?
+                    ) AS c ON 1 = 1
+                    LEFT JOIN (
+                        SELECT coll.id as coll_id, coll.internal_id as internal_id FROM collections coll
+                        WHERE {cfb_filter_sql}
+                    ) AS c2 ON c.collection_id = c2.internal_id
+                    WHERE fb.name = ?
+                """
+            else:
+                # use internal id from collections_federation_backends table
+                sql = f"""
+                    SELECT
+                        json(fb.plugins_config) AS "provider_plugins_config [dict]",
+                        fb.priority             AS provider_priority,
+                        json(fb.metadata)       AS "provider_metadata [dict]",
+                        fb.enabled              AS provider_enabled,
+
+                        c.collection_id         AS collection_id,
+                        json(c.plugins_config)  AS "collection_plugins_config [dict]"
+                    FROM federation_backends fb
+                    LEFT JOIN (
+                        SELECT
+                            cfb.collection_id,
+                            cfb.plugins_config
+                        FROM collections_federation_backends cfb
+                        WHERE cfb.federation_backend_name = ?
+                        AND {cfb_filter_sql}
+                    ) AS c
+                    ON 1 = 1
+                    WHERE fb.name = ?
+                """
             params = (name, *cfb_params, name)
 
             rows = self._execute(sql, params).fetchall()
@@ -790,8 +810,7 @@ def register_custom_functions(con: sqlite3.Connection) -> None:
 def create_collections_table(con: sqlite3.Connection) -> None:
     """Create the core collections table and FTS5 index for STAC payload and metadata."""
     cur = con.cursor()
-    cur.execute(
-        f"""
+    cur.execute(f"""
         CREATE TABLE IF NOT EXISTS collections (
             key INTEGER PRIMARY KEY,
             content {_CONTENT_TYPE} NOT NULL CHECK ({_JSON_VALID_CHECK}),
@@ -844,23 +863,19 @@ def create_collections_table(con: sqlite3.Connection) -> None:
             federation {_CONTENT_TYPE},
             priority INTEGER
         );
-        """
-    )
+        """)
 
     # R-tree spatial index on collection bounding boxes
-    cur.execute(
-        """
+    cur.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS collections_rtree USING rtree(
             id,
             minx, maxx,
             miny, maxy
         );
-        """
-    )
+        """)
 
     # Triggers to keep R-tree in sync with collections table
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TRIGGER IF NOT EXISTS collections_rtree_ai AFTER INSERT ON collections
         WHEN json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array'
         BEGIN
@@ -872,18 +887,14 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                 CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL)
             );
         END;
-        """
-    )
-    cur.execute(
-        """
+        """)
+    cur.execute("""
         CREATE TRIGGER IF NOT EXISTS collections_rtree_ad AFTER DELETE ON collections
         BEGIN
             DELETE FROM collections_rtree WHERE id = OLD.key;
         END;
-        """
-    )
-    cur.execute(
-        """
+        """)
+    cur.execute("""
         CREATE TRIGGER IF NOT EXISTS collections_rtree_au AFTER UPDATE OF content ON collections
         BEGIN
             DELETE FROM collections_rtree WHERE id = OLD.key;
@@ -896,8 +907,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                 CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL)
             WHERE json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array';
         END;
-        """
-    )
+        """)
 
     # B-tree indexes on temporal columns for range queries
     cur.execute(
@@ -908,8 +918,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     )
 
     # FTS5 virtual table for full-text search on title, description, keywords
-    cur.execute(
-        """
+    cur.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS collections_fts USING fts5(
             title,
             description,
@@ -917,8 +926,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
             content='',
             tokenize='unicode61 remove_diacritics 2'
         );
-        """
-    )
+        """)
 
     # Helper: FTS extraction values for a given row reference (NEW/OLD/bare column)
     def _fts_vals(ref: str) -> str:
@@ -934,32 +942,26 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                 ), '')"""
 
     # Triggers to keep FTS index in sync with collections table
-    cur.execute(
-        f"""
+    cur.execute(f"""
         CREATE TRIGGER IF NOT EXISTS collections_ai AFTER INSERT ON collections BEGIN
             INSERT INTO collections_fts(rowid, title, description, keywords)
             VALUES ({_fts_vals("NEW")});
         END;
-    """
-    )
-    cur.execute(
-        f"""
+    """)
+    cur.execute(f"""
         CREATE TRIGGER IF NOT EXISTS collections_ad AFTER DELETE ON collections BEGIN
             INSERT INTO collections_fts(collections_fts, rowid, title, description, keywords)
             VALUES ('delete', {_fts_vals("OLD")});
         END;
-    """
-    )
-    cur.execute(
-        f"""
+    """)
+    cur.execute(f"""
         CREATE TRIGGER IF NOT EXISTS collections_au AFTER UPDATE OF content ON collections BEGIN
             INSERT INTO collections_fts(collections_fts, rowid, title, description, keywords)
             VALUES ('delete', {_fts_vals("OLD")});
             INSERT INTO collections_fts(rowid, title, description, keywords)
             VALUES ({_fts_vals("NEW")});
         END;
-    """
-    )
+    """)
 
 
 def create_federation_backends_table(con: sqlite3.Connection) -> None:
@@ -993,9 +995,7 @@ def create_collections_federation_backends_table(con: sqlite3.Connection) -> Non
         );
         """,
     )
-    cur.execute(
-        """
+    cur.execute("""
         CREATE INDEX IF NOT EXISTS idx_cfb_backend_collection
         ON collections_federation_backends (federation_backend_name, collection_id);
-        """
-    )
+        """)

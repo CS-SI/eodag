@@ -295,7 +295,7 @@ class PluginManager:
             bind_collection = getattr(plugin, "bind_collection", None)
             if bind_collection:
                 provider_config = self._db.get_fb_config(
-                    provider, collections={product.collection}
+                    provider, collections={product.collection}, use_alias=True
                 )
                 collection_def_config = (
                     provider_config.get("products").get(product.collection, {})

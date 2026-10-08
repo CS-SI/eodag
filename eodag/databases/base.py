@@ -332,6 +332,7 @@ class Database(ABC):
         self,
         name: str,
         collections: set[str] | None = None,
+        use_alias: bool = False,
     ) -> dict[str, Any]:
         """
         Get the configuration for a specific federation backend and collection from the database.
