@@ -64,15 +64,17 @@ class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseDownloadPluginTest, cls).setUpClass()
-        providers = load_provider_configs()
-        cls.plugins_manager = make_plugins_manager(providers)
+        cls.plugins_manager = make_plugins_manager(load_provider_configs())
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        expanduser_mock_side_effect = (
-            lambda *x: x[0]
-            .replace("~user", cls.tmp_home_dir.name)
-            .replace("~", cls.tmp_home_dir.name)
-        )
+
+        def expanduser_mock_side_effect(*x):
+            return (
+                x[0]
+                .replace("~user", cls.tmp_home_dir.name)
+                .replace("~", cls.tmp_home_dir.name)
+            )
+
         cls.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
@@ -2335,9 +2337,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     def setUp(self):
         super(TestDownloadPluginAws, self).setUp()
         # fresh manager: tests mutate plugin configs and mock AwsAuth.__init__ on cached instances
-        self.plugins_manager = PluginManager(
-            ProvidersDict.from_configs(load_provider_configs())
-        )
+        self.plugins_manager = make_plugins_manager(load_provider_configs())
         self.product = EOProduct(
             "aws_eos",
             dict(

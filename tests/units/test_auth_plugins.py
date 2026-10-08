@@ -2291,7 +2291,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
         self.assertIn(
-            '"token_provision" must be one of "qs", "header", or "basic"', str(context.exception)
+            '"token_provision" must be one of "qs", "header", or "basic"',
+            str(context.exception),
         )
         # `token_provision=="qs"` but `token_qs_key` is missing
         auth_plugin = self.get_auth_plugin("provider_token_qs_key_missing")

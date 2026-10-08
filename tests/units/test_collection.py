@@ -133,6 +133,8 @@ class TestCollection(unittest.TestCase):
                 "keywords",
                 "providers",
                 "summaries",
+                "federation_backends",
+                "sci_doi",
             ],
         )
 
@@ -194,23 +196,6 @@ class TestCollection(unittest.TestCase):
         self.assertListEqual(collection.keywords, ["MSI", "SENTINEL2", "S2"])
 
         # TODO: when some fields of the model will allow it, add tests of fields whose annotation is "list[str]"
-
-    def test_collection_summaries_fields(self):
-        """Check that summaries fields are fields of the model and check the list"""
-        for field in Collection.summaries_fields():
-            self.assertIn(field, Collection.model_fields)
-
-        self.assertListEqual(
-            Collection.summaries_fields(),
-            [
-                "constellation",
-                "instruments",
-                "platform",
-                "processing_level",
-                "sci_doi",
-                "eodag_sensor_type",
-            ],
-        )
 
     def test_collection_summaries(self):
         """Collection summaries must be correctly set"""
@@ -384,367 +369,6 @@ class TestCollection(unittest.TestCase):
         )
 
         # "processing_level" and "eodag_sensor_type" should have been converted to a list
-        # if their field allow list of sets or of integer
-        # TODO: add a test with a "summaries" field accepting an other type
-        # than string when a field will allow to deal with this case
-        self.assertDictEqual(
-            collection.summaries,
-            {
-                "constellation": ["SENTINEL2"],
-                "platform": ["S2A", "S2B"],
-                "instruments": ["MSI"],
-            },
-        )
-
-        # if a property of "summaries" is set to an empty value (None,
-        # or [], {} or "" when they are not its default value),
-        # it must not be present in "summaries" after validation
-        # TODO: add a test with an empty value among [], {} and "" which is a default value
-        # when a field will allow to deal with this case
-        collection = Collection(
-            id="foo",
-            processing_level=None,
-            instruments=[],
-            constellation="",
-            eodag_sensor_type="OPTICAL",
-            summaries={"constellation": None},
-        )
-
-        processing_level_default = Collection.model_fields[
-            "processing_level"
-        ].get_default()
-        self.assertIsNone(processing_level_default)
-        self.assertIsNone(collection.processing_level)
-
-        instruments_default = Collection.model_fields["instruments"].get_default()
-        self.assertIsNone(instruments_default)
-        self.assertIsNone(collection.instruments)
-
-        eodag_sensor_type_default = Collection.model_fields[
-            "eodag_sensor_type"
-        ].get_default()
-        self.assertIsNone(eodag_sensor_type_default)
-        self.assertIsNone(collection.constellation)
-
-        self.assertEqual(collection.eodag_sensor_type, ["OPTICAL"])
-        self.assertDictEqual(collection.summaries, {"eodag:sensor_type": ["OPTICAL"]})
-
-        # if all properties of "summaries" are bad formatted or set to None,
-        # "summaries" must be reset to None, its default value
-        collection = Collection(
-            id="foo", processing_level=1, summaries={"constellation": None}
-        )
-
-        summaries_default = Collection.model_fields["summaries"].get_default()
-
-        self.assertIsNone(summaries_default)
-        self.assertEqual(collection.summaries, summaries_default)
-
-    def test_collection_set_ids_and_alias(self):
-        """Collection ids and alias must be correctly set"""
-        collection = Collection(id="foo", alias="bar")
-
-        # check that id attribute has the same value as alias attribute
-        self.assertIsInstance(collection, Collection)
-        self.assertEqual(collection.id, "bar")
-        self.assertEqual(collection.alias, "bar")
-
-        # check that the internal id attribute is set to the original id
-        self.assertEqual(collection._id, "foo")
-
-    def test_collection_stac_fields(self):
-        """Check that stac fields are fields of the model and check the list"""
-        for field in Collection.__stac_fields__:
-            self.assertIn(field, Collection.model_fields)
-
-        self.assertListEqual(
-            Collection.__stac_fields__,
-            [
-                "id",
-                "description",
-                "stac_version",
-                "links",
-                "stac_extensions",
-                "title",
-                "type",
-                "assets",
-                "license",
-                "extent",
-                "keywords",
-                "providers",
-                "summaries",
-                "federation_backends",
-                "sci_doi",
-            ],
-        )
-
-    def test_collection_static_fields(self):
-        """Check that static fields are part of STAC fields and check the list"""
-        for field in Collection.__static_fields__:
-            self.assertIn(field, Collection.__stac_fields__)
-
-        self.assertListEqual(Collection.__static_fields__, ["type", "stac_version"])
-
-    def test_collection_wrong_static_fields(self):
-        """Check that static fields are set to their default value"""
-        self.assertIn("type", Collection.__static_fields__)
-        type_default = Collection.model_fields["type"].get_default()
-        self.assertEqual(type_default, "Collection")
-
-        # if a static field is not set, it will be set correctly without raising an error
-        collection = Collection(id="foo")
-
-        self.assertEqual(collection.type, type_default)
-
-        # if a static field is set to another value than the default one,
-        # logs can be emitted before the field is eventually set
-        try:
-            # ensure validation is enabled for collections
-            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
-
-            with self.assertLogs(level="DEBUG") as cm:
-                collection = Collection(id="foo", type=1)
-
-            self.assertIn(
-                f"type\\n  Input is fixed to its default value: {type_default}",
-                str(cm.output),
-            )
-            self.assertEqual(collection.type, type_default)
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
-
-    def test_collection_strings_for_list_fields(self):
-        """Check that string values of fields whose type is list in the model are converted to lists of strings"""
-        collection = Collection(
-            id="foo", keywords="MSI,SENTINEL2,S2", platform="S2A,S2B,S2C"
-        )
-
-        # strings values of fields with list or optional list type in the model are converted to lists of strings
-
-        # case with a "summaries" field
-        self.assertIn("platform", Collection.summaries_fields())
-        platform_annotation = Collection.model_fields["platform"].annotation
-
-        self.assertEqual(platform_annotation, Optional[list[str]])
-
-        self.assertListEqual(collection.platform, ["S2A", "S2B", "S2C"])
-
-        # case with a not "summaries" field
-        self.assertNotIn("keywords", Collection.summaries_fields())
-
-        keywords_annotation = Collection.model_fields["keywords"].annotation
-
-        self.assertEqual(keywords_annotation, Optional[list[str]])
-        self.assertListEqual(collection.keywords, ["MSI", "SENTINEL2", "S2"])
-
-        # TODO: when some fields of the model will allow it, add tests of fields whose annotation is "list[str]"
-
-    def test_collection_string_fields_stay_string(self):
-        """Fields with str or Optional[str] annotation must keep their string value
-        and not be converted to a list, unlike fields with list[str] or Optional[list[str]] annotation."""
-        # verify sci_doi is an optional string field in the model
-        self.assertEqual(Collection.model_fields["sci_doi"].annotation, Optional[str])
-
-        # a string value set via alias must remain a plain string, not be split into a list
-        collection = Collection(**{"id": "foo", "sci:doi": "10.1234/test-doi"})
-        self.assertIsInstance(collection.sci_doi, str)
-        self.assertEqual(collection.sci_doi, "10.1234/test-doi")
-
-    def test_collection_summaries_fields(self):
-        """Check that summaries fields are fields of the model and check the list"""
-        for field in Collection.summaries_fields():
-            self.assertIn(field, Collection.model_fields)
-
-        self.assertListEqual(
-            Collection.summaries_fields(),
-            [
-                "constellation",
-                "instruments",
-                "platform",
-                "processing_level",
-                "eodag_sensor_type",
-            ],
-        )
-
-    def test_collection_summaries(self):
-        """Collection summaries must be correctly set"""
-
-        # if there is no property of "summaries", "summaries" is set to None
-        collection = Collection(
-            id="foo",
-        )
-
-        self.assertIsNone(collection.summaries)
-
-        # only add a field to field "summaries" as a property of it if it is the case
-        # when it is the case, the pair (field, "summaries" property) must have the same values after validation
-        collection = Collection(
-            id="foo",
-            platform=["S2A", "S2B"],
-            foo=["bar"],
-            summaries={"constellation": ["SENTINEL2"], "qux": ["quux"]},
-        )
-
-        self.assertIn(
-            Collection.get_collection_field_from_alias("platform"),
-            Collection.summaries_fields(),
-        )
-        self.assertIn(
-            Collection.get_collection_field_from_alias("constellation"),
-            Collection.summaries_fields(),
-        )
-        self.assertNotIn(
-            Collection.get_collection_field_from_alias("foo"),
-            Collection.summaries_fields(),
-        )
-        self.assertNotIn(
-            Collection.get_collection_field_from_alias("qux"),
-            Collection.summaries_fields(),
-        )
-
-        self.assertListEqual(collection.constellation, ["SENTINEL2"])
-        self.assertListEqual(collection.platform, ["S2A", "S2B"])
-        self.assertDictEqual(
-            collection.summaries,
-            {"constellation": ["SENTINEL2"], "platform": ["S2A", "S2B"]},
-        )
-
-        # specific logs can be emitted when unknown properties are set in field "summaries"
-        try:
-            # ensure validation is enabled for collections
-            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
-
-            with self.assertLogs(level="DEBUG") as cm:
-                collection = Collection(
-                    id="foo",
-                    summaries={"constellation": ["SENTINEL2"], "foo": ["bar"]},
-                )
-
-            self.assertIn(
-                'summaries.foo\\n  Extra inputs are not permitted in collection field "summaries"',
-                str(cm.output),
-            )
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
-
-        # if a "summaries" field or property is not validated, their value is set
-        # to the default value of the field for both of them
-
-        # if their default value is None, the property is removed from field "summaries" which does not keep null values
-        collection = Collection(
-            id="foo",
-            platform=["S2A", "S2B"],
-            constellation=[1],
-            summaries={"instruments": [1]},
-        )
-
-        constellation_default = Collection.model_fields["constellation"].get_default()
-        self.assertIsNone(constellation_default)
-        self.assertEqual(collection.constellation, constellation_default)
-        self.assertNotIn("constellation", collection.summaries)
-
-        instruments_default = Collection.model_fields["instruments"].get_default()
-        self.assertIsNone(instruments_default)
-        self.assertIsNone(collection.instruments, instruments_default)
-        self.assertNotIn("instruments", collection.summaries)
-
-        # remove only the bad formatted elements in a list or a dict of a property of "summaries"
-        # if all elements are bad formatted, the field is reset to None if it is its default value
-        # and removed from "summaries"
-        collection = Collection(
-            id="foo",
-            platform=["S2A", "S2B", 1],
-            processing_level=[1],
-        )
-
-        processing_level_default = Collection.model_fields[
-            "processing_level"
-        ].get_default()
-        self.assertIsNone(processing_level_default)
-        self.assertEqual(collection.processing_level, processing_level_default)
-        self.assertNotIn("processing_level", collection.summaries)
-
-        self.assertDictEqual(collection.summaries, {"platform": ["S2A", "S2B"]})
-
-        # properties of "summaries" set in kwargs have priority over the ones
-        # set in "summaries" directly except if they are null
-
-        # bad formatted values in kwargs still keep their priority
-        collection = Collection(
-            id="foo",
-            platform="S2A,S2B",
-            constellation=None,
-            instruments=1,
-            summaries={
-                "constellation": "SENTINEL2",
-                "platform": ["S2C"],
-                "instruments": ["MSI"],
-            },
-        )
-
-        self.assertNotIn("instruments", collection.summaries)
-        self.assertDictEqual(
-            collection.summaries,
-            {"constellation": ["SENTINEL2"], "platform": ["S2A", "S2B"]},
-        )
-
-        # use aliases of fields in field "summaries" properties to make field "summaries" STAC-formatted
-        collection = Collection(
-            id="foo",
-            eodag_sensor_type=["OPTICAL"],
-            summaries={"processing_level": ["L2"]},
-        )
-
-        eodag_sensor_type_alias = Collection.get_collection_alias_from_field(
-            "eodag_sensor_type"
-        )
-        processing_level_alias = Collection.get_collection_alias_from_field(
-            "processing_level"
-        )
-
-        self.assertEqual(eodag_sensor_type_alias, "eodag:sensor_type")
-        self.assertEqual(processing_level_alias, "processing:level")
-        self.assertDictEqual(
-            collection.summaries,
-            {"eodag:sensor_type": ["OPTICAL"], "processing:level": ["L2"]},
-        )
-
-        # it must work by using alias in properties, and priority must work too
-        collection = Collection(
-            id="foo",
-            processing_level="L1",
-            summaries={"processing:level": "L2", "eodag:sensor_type": ["OPTICAL"]},
-        )
-        self.assertDictEqual(
-            collection.summaries,
-            {"processing:level": ["L1"], "eodag:sensor_type": ["OPTICAL"]},
-        )
-
-        collection = Collection(
-            **{
-                "id": "foo",
-                "processing:level": "L1",
-                "summaries": {"processing_level": ["L2"]},
-            }
-        )
-
-        self.assertDictEqual(
-            collection.summaries,
-            {"processing:level": ["L1"]},
-        )
-
-        # only accept lists and dictionaries for properties of "summaries", otherwise convert values to list if possible
-        collection = Collection(
-            id="foo",
-            processing_level={"L2"},
-            platform="S2A,S2B",
-            eodag_sensor_type=1,
-            summaries={"constellation": "SENTINEL2", "instruments": ["MSI"]},
-        )
-
-        # "processing_level" and "eodag_sensor_type" should have been converted to a list
         # if their field allow list of sets or of integers
         # TODO: add a test with a "summaries" field accepting an other type
         # than string when a field will allow to deal with this case
@@ -801,6 +425,34 @@ class TestCollection(unittest.TestCase):
         self.assertIsNone(summaries_default)
         self.assertEqual(collection.summaries, summaries_default)
 
+    def test_collection_summaries_fields(self):
+        """Check that summaries fields are fields of the model and check the list"""
+        for field in Collection.summaries_fields():
+            self.assertIn(field, Collection.model_fields)
+
+        self.assertListEqual(
+            Collection.summaries_fields(),
+            [
+                "constellation",
+                "instruments",
+                "platform",
+                "processing_level",
+                "eodag_sensor_type",
+            ],
+        )
+
+    def test_collection_string_fields_stay_string(self):
+        """Fields with str or Optional[str] annotation must keep their string value
+        and not be converted to a list, unlike fields with list[str] or Optional[list[str]] annotation.
+        """
+        # verify sci_doi is an optional string field in the model
+        self.assertEqual(Collection.model_fields["sci_doi"].annotation, Optional[str])
+
+        # a string value set via alias must remain a plain string, not be split into a list
+        collection = Collection(**{"id": "foo", "sci:doi": "10.1234/test-doi"})
+        self.assertIsInstance(collection.sci_doi, str)
+        self.assertEqual(collection.sci_doi, "10.1234/test-doi")
+
     def test_collection_wrong_id(self):
         """Collection with a missing or wrong id must raise an error
         even if validation of collections is disabled"""
@@ -815,23 +467,6 @@ class TestCollection(unittest.TestCase):
             Collection(id=1)
 
         self.assertIn("id\n  Input should be a valid string", str(context.exception))
-
-    def test_wrong_description(self):
-        """when description is null or not validated, it is set to the value of id"""
-        collection = Collection(id="foo")
-
-        self.assertEqual(collection.description, "foo")
-
-        collection = Collection(id="foo", description="")
-
-        self.assertEqual(collection.description, "foo")
-
-        collection = Collection(
-            id="foo",
-            description=1,
-        )
-
-        self.assertEqual(collection.description, "foo")
 
     def test_wrong_description(self):
         """when description is null or not validated, it is set to the value of id"""
@@ -979,6 +614,7 @@ class TestCollection(unittest.TestCase):
             "href": "https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file",
             "type": "application/pdf",
             "title": "User Manual",
+            "label": None,
         }
 
         # try to create a collection with a wrong link and check that logs have been emitted
@@ -989,7 +625,7 @@ class TestCollection(unittest.TestCase):
                 links=[wrong_link, right_link],
             )
 
-        self.assertIn("3 validation errors for collection foo", str(cm.output))
+        self.assertIn("2 validation errors for collection foo", str(cm.output))
 
         self.assertIn(
             "links.0.href\\n  Field required",
@@ -997,7 +633,7 @@ class TestCollection(unittest.TestCase):
         )
 
         self.assertIn(
-            "links.0.type.str\\n  Input should be a valid string",
+            "links.0.type\\n  Input should be a valid string",
             str(cm.output),
         )
 
@@ -1006,124 +642,6 @@ class TestCollection(unittest.TestCase):
             collection.links.model_dump(mode="json"),
             [right_link],
         )
-
-    def test_collection_dump(self):
-        """When a collection is dumped, unset fields are returned and ``summaries`` property ``stac_extensions``
-        can be displayed or not"""
-        collection_obj = Collection(
-            id="foo",
-            processing_level="L2",
-            constellation="SENTINEL2",
-        )
-
-        # case with extensions displayed
-        collection_dict = collection_obj.model_dump(display_extensions=True)
-
-        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
-
-        self.assertDictEqual(
-            summaries_model.model_fields["processing_level"].metadata[0],
-            {"extension": "ProcessingExtension"},
-        )
-        self.assertIn("processing", collection_dict["stac_extensions"][0])
-
-        # there is no more extension since the only other "summaries" property does not have an extension
-        self.assertListEqual(summaries_model.model_fields["constellation"].metadata, [])
-        self.assertEqual(len(collection_dict["stac_extensions"]), 1)
-
-        # unset field is also displayed
-        self.assertEqual(collection_dict["type"], "Collection")
-
-        # case with extensions not displayed
-        collection_dict = collection_obj.model_dump()
-
-        self.assertListEqual(collection_dict["stac_extensions"], [])
-
-        # unset field is still displayed
-        self.assertEqual(collection_dict["type"], "Collection")
-
-    def test_collection_dump_json(self):
-        """When a collection is dumped in a JSON string, unset fields are returned and ``summaries`` property
-        ``stac_extensions`` can be displayed or not"""
-        collection_obj = Collection(
-            id="foo",
-            processing_level="L2",
-            constellation="SENTINEL2",
-        )
-
-        # case with extensions displayed
-        collection_str = collection_obj.model_dump_json(display_extensions=True)
-        collection_dict = orjson.loads(collection_str)
-
-        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
-
-        self.assertDictEqual(
-            summaries_model.model_fields["processing_level"].metadata[0],
-            {"extension": "ProcessingExtension"},
-        )
-        self.assertIn("processing", collection_dict["stac_extensions"][0])
-
-        # there is no more extension since the only other "summaries" property does not have an extension
-        self.assertListEqual(summaries_model.model_fields["constellation"].metadata, [])
-        self.assertEqual(len(collection_dict["stac_extensions"]), 1)
-
-        # unset field is also displayed
-        self.assertEqual(collection_dict["type"], "Collection")
-
-        # case with extensions not displayed
-        collection_str = collection_obj.model_dump_json()
-        collection_dict = orjson.loads(collection_str)
-
-        self.assertListEqual(collection_dict["stac_extensions"], [])
-
-        # unset field is still displayed
-        self.assertEqual(collection_dict["type"], "Collection")
-
-    def test_collection_wrong_links(self):
-        """Collection with wrong links must remove these links and
-        raise the custom pydantic error from their field validator"""
-        try:
-            # ensure validation is activated for collections
-            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
-
-            wrong_link = {"rel": "describedby", "type": 1, "title": "User Manual"}
-
-            right_link = {
-                "rel": "describedby",
-                "href": "https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file",
-                "type": "application/pdf",
-                "title": "User Manual",
-                "label": None,
-            }
-
-            # try to create a collection with a wrong link and check that logs have been emitted
-            with self.assertLogs(level="DEBUG") as cm:
-                collection = Collection(
-                    id="foo",
-                    links=[wrong_link, right_link],
-                )
-
-            self.assertIn("2 validation errors for collection foo", str(cm.output))
-
-            self.assertIn(
-                "links.0.href\\n  Field required",
-                str(cm.output),
-            )
-
-            self.assertIn(
-                "links.0.type\\n  Input should be a valid string",
-                str(cm.output),
-            )
-
-            # the wrong link is removed from links
-            self.assertListEqual(
-                collection.links.model_dump(mode="json"),
-                [right_link],
-            )
-
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
 
     def test_collection_dump(self):
         """When a collection is dumped, unset fields are returned and ``summaries`` property ``stac_extensions``

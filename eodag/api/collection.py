@@ -23,7 +23,15 @@ from collections import UserDict, UserList
 from typing import TYPE_CHECKING, Any, ClassVar, Iterator, List, Literal, Optional, cast
 from urllib.parse import urljoin
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr, RootModel, TypeAdapter
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    RootModel,
+    TypeAdapter,
+)
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
 from pydantic_core import InitErrorDetails, PydanticCustomError
@@ -509,9 +517,9 @@ class Collection(StacCollection):
                                 default_json is not None
                                 and error["loc"][1] in default_json
                             ):
-                                values_dict[wrong_field][
-                                    error["loc"][1]
-                                ] = default_json[error["loc"][1]]
+                                values_dict[wrong_field][error["loc"][1]] = (
+                                    default_json[error["loc"][1]]
+                                )
                         else:
                             try:
                                 values_dict[wrong_field].remove(error["input"])

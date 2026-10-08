@@ -1333,7 +1333,9 @@ class TestCollectionsSearch(unittest.TestCase):
                 self.assertListEqual(self._ids(result), expected_ids)
 
     def test_cql2_text_and_json_raises(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            ValueError, "Cannot provide both cql2_text and cql2_json"
+        ):
             self.db.collections_search(
                 cql2_text="id = 'ONE'",
                 cql2_json=_cmp("=", "id", "ONE"),
@@ -2215,26 +2217,84 @@ class TestSQLiteDatabaseBackendState(unittest.TestCase):
 
     def test_restore_fbs_reenables_backends_and_refreshes_collections(self):
         """Calling restore_fbs makes disabled backends searchable again."""
+        # Insert a disabled backend and associate it with a collection.
         with self.db._con:
             self.db._upsert_federation_backends(
-                [("disabled_backend", {"search": {"type": "StacSearch"}}, 1, {}, False)]
+                [
+                    (
+                        "disabled_backend_1",
+                        {"search": {"type": "StacSearch"}},
+                        1,
+                        {},
+                        False,
+                    )
+                ]
             )
             self.db._upsert_collections_federation_backends(
-                [_make_coll_fb("disabled_backend", "ONE")]
+                [_make_coll_fb("disabled_backend_1", "ONE")]
             )
-            self.db._refresh_collections_denorm(["disabled_backend"])
+            self.db._refresh_collections_denorm(["disabled_backend_1"])
 
         self.assertEqual(self.db.collections_search()[1], 0)
 
+        # Without parameters, restore_fbs will restore all disabled federation backends.
         self.db.restore_fbs()
 
         result = self.db.collections_search()
-        backend = self.db.get_federation_backends(names={"disabled_backend"})[
-            "disabled_backend"
+        backend = self.db.get_federation_backends(names={"disabled_backend_1"})[
+            "disabled_backend_1"
         ]
         self.assertEqual(result[1], 1)
-        self.assertEqual(result[0][0]["federation:backends"], ["disabled_backend"])
+        self.assertEqual(result[0][0]["federation:backends"], ["disabled_backend_1"])
         self.assertTrue(backend["enabled"])
+
+        # Insert two disabled backends and associate them with collections.
+        with self.db._con:
+            self.db._upsert_federation_backends(
+                [
+                    (
+                        "disabled_backend_1",
+                        {"search": {"type": "StacSearch"}},
+                        1,
+                        {},
+                        False,
+                    )
+                ]
+            )
+            self.db._upsert_collections_federation_backends(
+                [_make_coll_fb("disabled_backend_1", "ONE")]
+            )
+            self.db._upsert_federation_backends(
+                [
+                    (
+                        "disabled_backend_2",
+                        {"search": {"type": "StacSearch"}},
+                        1,
+                        {},
+                        False,
+                    )
+                ]
+            )
+            self.db._upsert_collections_federation_backends(
+                [_make_coll_fb("disabled_backend_2", "TWO")]
+            )
+            self.db._refresh_collections_denorm(
+                ["disabled_backend_1", "disabled_backend_2"]
+            )
+
+        self.assertEqual(self.db.collections_search()[1], 0)
+
+        # With a specific set of names, restore_fbs will only restore those disabled federation backends.
+        self.db.restore_fbs({"disabled_backend_1"})
+
+        result = self.db.collections_search()
+        backends = self.db.get_federation_backends(
+            names={"disabled_backend_1", "disabled_backend_2"}
+        )
+        self.assertEqual(result[1], 1)
+        self.assertEqual(result[0][0]["federation:backends"], ["disabled_backend_1"])
+        self.assertTrue(backends["disabled_backend_1"]["enabled"])
+        self.assertFalse(backends["disabled_backend_2"]["enabled"])
 
     def test_set_priority_updates_backend_and_collection_order(self):
         """Calling set_priority refreshes denormalized collection ordering."""
@@ -2334,15 +2394,48 @@ class TestSQLiteDatabaseFederationBackendSearch(unittest.TestCase):
 
     def test_get_federation_backends_filters_by_collection_and_names(self):
         """Calling get_federation_backends combines collection and names."""
-        self.assertEqual(
+        # with collection filter only
+        self.assertSetEqual(
             set(self.db.get_federation_backends(collection="ONE")),
             {"backend_high", "backend_low"},
         )
-        self.assertEqual(
-            set(self.db.get_federation_backends(names={"backend_low", "backend_high"})),
+        self.assertSetEqual(
+            set(self.db.get_federation_backends(collection="UNKNOWN")),
+            set(),
+        )
+
+        # with names filter only
+        self.assertSetEqual(
+            set(
+                self.db.get_federation_backends(
+                    names={"backend_low", "backend_high", "backend_disabled"}
+                )
+            ),
+            {"backend_low", "backend_high", "backend_disabled"},
+        )
+        self.assertSetEqual(
+            set(self.db.get_federation_backends(names={"missing"})), set()
+        )
+
+        # with both names and collection filters
+        self.assertSetEqual(
+            set(
+                self.db.get_federation_backends(
+                    names={"backend_low", "backend_high", "backend_disabled"},
+                    collection="ONE",
+                )
+            ),
             {"backend_low", "backend_high"},
         )
-        self.assertEqual(self.db.get_federation_backends(names={"missing"}), {})
+        self.assertSetEqual(
+            set(
+                self.db.get_federation_backends(
+                    names={"backend_low", "backend_high", "backend_disabled"},
+                    collection="UNKNOWN",
+                )
+            ),
+            set(),
+        )
 
 
 class TestSQLiteDatabaseFederationBackendConfig(unittest.TestCase):
@@ -2408,15 +2501,18 @@ class TestSQLiteDatabaseFederationBackendConfig(unittest.TestCase):
 
     def test_get_fb_config_filters_collection_products(self):
         """Calling get_fb_config returns only requested collection products."""
-        provider_config = self.db.get_fb_config("backend_a", {"ONE"})
+        provider_config = self.db.get_fb_config("backend_a", {"ONE", "TWO", "THREE"})
 
-        self.assertEqual(provider_config["products"], {"ONE": {"search_param": "one"}})
+        self.assertDictEqual(
+            provider_config["products"],
+            {"ONE": {"search_param": "one"}, "TWO": {"search_param": "two"}},
+        )
         self.assertEqual(
             provider_config["download"]["products"],
-            {"ONE": {"download_param": "one"}},
+            {"ONE": {"download_param": "one"}, "TWO": {"download_param": "two"}},
         )
 
     def test_get_fb_config_missing_provider_raises(self):
         """Calling get_fb_config raises KeyError for unknown provider names."""
-        with self.assertRaises(KeyError):
+        with self.assertRaisesRegex(KeyError, "Provider 'missing' not found"):
             self.db.get_fb_config("missing")

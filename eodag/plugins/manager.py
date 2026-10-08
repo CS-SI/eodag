@@ -49,7 +49,8 @@ if TYPE_CHECKING:
     from requests.auth import AuthBase
 
     from eodag.api.product._product import EOProduct
-    from eodag.api.provider import ProviderConfig, PrunedProviderReason
+    from eodag.api.provider import DisabledProviderReason
+    from eodag.config import ProviderConfig
     from eodag.databases.base import Database
 
 logger = logging.getLogger("eodag.plugins.manager")
@@ -83,7 +84,7 @@ class PluginManager:
     def __init__(self, db: Database) -> None:
         self.skipped_plugins: dict[str, str] = {}
         self.external_providers_config: dict[str, ProviderConfig] = {}
-        self.pruned_providers_reasons: dict[str, PrunedProviderReason] = {}
+        self.disabled_providers_reasons: dict[str, DisabledProviderReason] = {}
         self._auth_plugins_cache: dict[AuthCacheKey, Authentication] = {}
         self._db = db
 
@@ -202,16 +203,16 @@ class PluginManager:
     def check_provider_available(self, provider: str) -> None:
         """Check whether a provider can be used by plugins.
 
-        Plugin availability is reflected in the provider prune reasons recorded during
+        Plugin availability is reflected in the provider disabled reasons recorded during
         gateway initialization.
 
         :param provider: The name of the provider (or group, if ``include_groups``) to check.
-        :raises MisconfiguredError: If the provider was disabled for a configuration reason.
+        :raises MisconfiguredError: If the provider has been disabled for a configuration reason.
         :raises UnsupportedProvider: If the provider/group is unknown, or if the provider
-                                     was disabled because a required plugin was skipped.
+                                     has been disabled because a required plugin was skipped.
         """
         if provider in self._db.get_federation_backends(enabled=False):
-            if reason_dict := self.pruned_providers_reasons.get(provider):
+            if reason_dict := self.disabled_providers_reasons.get(provider):
                 reason = reason_dict["reason"]
                 if reason_dict["reason_type"] == "skipped_plugin":
                     msg = f"{provider}: provider is not available because {reason}"
@@ -314,11 +315,9 @@ class PluginManager:
         """Build and return the download plugin for the given product."""
         self.check_provider_available(product.provider)
 
-        pc = self._db.get_fb_config(product.provider, {product.collection})
-        if product.collection not in pc["products"]:
-            raise UnsupportedProvider(
-                f"Provider {product.provider} not found with collection {product.collection}"
-            )
+        pc = self._db.get_fb_config(
+            product.provider, {product.collection} if product.collection else None
+        )
 
         if "download" in pc:
             mode, topic_class = "download", Download

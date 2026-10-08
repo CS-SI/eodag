@@ -19,7 +19,6 @@
 import os
 import tempfile
 import unittest
-from importlib.resources import files as res_files
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -866,16 +865,12 @@ class TestDisableProviders(unittest.TestCase):
     def test_disable_providers_not_disabled(self):
         """Providers not needing auth for search (and having api/search plugin)
         or needing it for search but with credentials must not be disabled"""
-        empty_conf_file = str(
-            res_files("eodag") / "resources" / "user_conf_template.yml"
-        )
-
         try:
             # auth not required for search
             os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "false"
             os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "false"
             os.environ["EODAG__USGS__API__NEED_AUTH"] = "false"
-            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            dag = EODataAccessGateway()
 
             # case with a provider with a search and an auth plugin (sara)
             sara_config = dag.db.get_fb_config("sara")
@@ -901,7 +896,7 @@ class TestDisableProviders(unittest.TestCase):
                     "aws_eos": aws_eos_config_obj,
                     "usgs": usgs_config_obj,
                 },
-                dag._plugins_manager.skipped_plugins,
+                dag._plugins_manager,
             )
             # check that providers have not been disabled
             self.assertTrue(sara_config_obj.enabled)
@@ -915,7 +910,7 @@ class TestDisableProviders(unittest.TestCase):
             os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "bar"
             os.environ["EODAG__USGS__API__NEED_AUTH"] = "true"
             os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "baz"
-            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            dag = EODataAccessGateway()
 
             # in each case, restore credentials in configs, as they are not stored in DB for security reason
 
@@ -948,7 +943,7 @@ class TestDisableProviders(unittest.TestCase):
                     "aws_eos": aws_eos_config_obj,
                     "usgs": usgs_config_obj,
                 },
-                dag._plugins_manager.skipped_plugins,
+                dag._plugins_manager,
             )
             # check that providers have not been disabled
             self.assertTrue(sara_config_obj.enabled)
@@ -966,9 +961,6 @@ class TestDisableProviders(unittest.TestCase):
     @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
     def test_disable_providers_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be disabled on init"""
-        empty_conf_file = str(
-            res_files("eodag") / "resources" / "user_conf_template.yml"
-        )
 
         def skip_usgs_api(group):
             ep = mock.MagicMock()
@@ -980,7 +972,7 @@ class TestDisableProviders(unittest.TestCase):
 
         mock_iter_ep.side_effect = skip_usgs_api
 
-        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+        dag = EODataAccessGateway()
         self.assertNotIn("usgs", dag.providers.names)
         self.assertDictEqual(
             dag._plugins_manager.skipped_plugins,
@@ -995,16 +987,12 @@ class TestDisableProviders(unittest.TestCase):
 
     def test_disable_providers_without_credentials(self):
         """Providers needing auth for search but without credentials must be disabled"""
-        empty_conf_file = str(
-            res_files("eodag") / "resources" / "user_conf_template.yml"
-        )
-
         try:
             # auth needed for search with need_auth but without credentials
             os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
             os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "true"
             os.environ["EODAG__USGS__API__NEED_AUTH"] = "true"
-            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            dag = EODataAccessGateway()
 
             # case with a provider with a search and an auth plugin (sara)
             sara_config = dag.db.get_fb_config("sara")
@@ -1031,7 +1019,7 @@ class TestDisableProviders(unittest.TestCase):
                         "aws_eos": aws_eos_config_obj,
                         "usgs": usgs_config_obj,
                     },
-                    dag._plugins_manager.skipped_plugins,
+                    dag._plugins_manager,
                 )
                 self.assertIn(
                     "sara: provider needing auth for search has been disabled because no credentials could be found",
@@ -1057,13 +1045,10 @@ class TestDisableProviders(unittest.TestCase):
 
     def test_disable_providers_without_auth(self):
         """Providers needing auth for search but without auth plugin must be disabled"""
-        empty_conf_file = str(
-            res_files("eodag") / "resources" / "user_conf_template.yml"
-        )
         try:
             # auth needed for search with need_auth but without auth plugin
             os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
-            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+            dag = EODataAccessGateway()
 
             sara_config = dag.db.get_fb_config("sara")
             sara_config.pop("auth", None)
@@ -1074,9 +1059,7 @@ class TestDisableProviders(unittest.TestCase):
             self.assertFalse(hasattr(sara_config_obj, "auth"))
 
             with self.assertLogs(level="INFO") as cm:
-                disable_providers(
-                    {"sara": sara_config_obj}, dag._plugins_manager.skipped_plugins
-                )
+                disable_providers({"sara": sara_config_obj}, dag._plugins_manager)
                 self.assertIn(
                     "sara: provider needing auth for search has been disabled because no auth plugin could be found",
                     str(cm.output),
@@ -1089,10 +1072,7 @@ class TestDisableProviders(unittest.TestCase):
 
     def test_disable_providers_without_api_or_search_plugin(self):
         """Providers without api or search plugin must be disabled."""
-        empty_conf_file = str(
-            res_files("eodag") / "resources" / "user_conf_template.yml"
-        )
-        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+        dag = EODataAccessGateway()
 
         # get sara config and remove its search plugin to simulate a provider without api or search plugin
         sara_config = dag.db.get_fb_config("sara")
@@ -1104,9 +1084,7 @@ class TestDisableProviders(unittest.TestCase):
         self.assertFalse(hasattr(sara_config_obj, "search"))
 
         with self.assertLogs(level="INFO") as cm:
-            disable_providers(
-                {"sara": sara_config_obj}, dag._plugins_manager.skipped_plugins
-            )
+            disable_providers({"sara": sara_config_obj}, dag._plugins_manager)
             self.assertIn(
                 "sara: provider has been disabled because no api or search plugin could be found",
                 str(cm.output),
@@ -1126,6 +1104,11 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
     ``matching_conf`` is a subset of its search/api config. This mirrors the
     runtime resolution done by ``PluginManager.get_auth_plugin``.
     """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.plugins_manager = make_plugins_manager()
 
     @staticmethod
     def _provider(name, mapping):
@@ -1176,7 +1159,7 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
                 }
             },
         )
-        disable_providers({"myapi": provider}, [])
+        disable_providers({"myapi": provider}, self.plugins_manager)
         self.assertTrue(provider.enabled)
 
     def test_api_need_auth_no_credentials_no_external_auth_disabled(self):
@@ -1193,7 +1176,7 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
                 }
             },
         )
-        disable_providers({"myapi": provider}, [])
+        disable_providers({"myapi": provider}, self.plugins_manager)
         self.assertFalse(provider.enabled)
 
     def test_api_need_auth_external_auth_url_match_stays_enabled(self):
@@ -1211,7 +1194,7 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
             },
         )
         ext = self._credentialed_auth_provider(matching_url="https://api.example.com")
-        disable_providers({"myapi": provider, "extauth": ext}, [])
+        disable_providers({"myapi": provider, "extauth": ext}, self.plugins_manager)
         self.assertTrue(provider.enabled)
         self.assertTrue(ext.enabled)
 
@@ -1230,12 +1213,11 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
             },
         )
         ext = self._credentialed_auth_provider(matching_conf={"result_type": "json"})
-        disable_providers({"myapi": provider, "extauth": ext}, [])
+        disable_providers({"myapi": provider, "extauth": ext}, self.plugins_manager)
         self.assertTrue(provider.enabled)
 
     def test_api_need_auth_external_auth_without_credentials_disabled(self):
-        """A matching external auth plugin without credentials does not rescue the
-        provider."""
+        """A matching external auth plugin without credentials does not rescue the provider."""
         provider = self._provider(
             "myapi",
             {
@@ -1250,7 +1232,7 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
         ext = self._credentialed_auth_provider(
             matching_url="https://api.example.com", with_credentials=False
         )
-        disable_providers({"myapi": provider, "extauth": ext}, [])
+        disable_providers({"myapi": provider, "extauth": ext}, self.plugins_manager)
         self.assertFalse(provider.enabled)
 
     # --- search plugin branch (no local auth plugin) ----------------------------
@@ -1271,7 +1253,7 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
         ext = self._credentialed_auth_provider(
             matching_url="https://search.example.com"
         )
-        disable_providers({"mysearch": provider, "extauth": ext}, [])
+        disable_providers({"mysearch": provider, "extauth": ext}, self.plugins_manager)
         self.assertTrue(provider.enabled)
 
     def test_search_no_auth_plugin_external_conf_match_stays_enabled(self):
@@ -1288,7 +1270,7 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
             },
         )
         ext = self._credentialed_auth_provider(matching_conf={"result_type": "json"})
-        disable_providers({"mysearch": provider, "extauth": ext}, [])
+        disable_providers({"mysearch": provider, "extauth": ext}, self.plugins_manager)
         self.assertTrue(provider.enabled)
 
     def test_search_no_auth_plugin_no_external_match_disabled(self):
@@ -1304,7 +1286,7 @@ class TestDisableProvidersExternalAuth(unittest.TestCase):
                 }
             },
         )
-        disable_providers({"mysearch": provider}, [])
+        disable_providers({"mysearch": provider}, self.plugins_manager)
         self.assertFalse(provider.enabled)
 
     # --- _has_matching_external_auth direct unit tests --------------------------

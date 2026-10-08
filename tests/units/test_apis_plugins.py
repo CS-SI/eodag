@@ -41,7 +41,6 @@ from tests.context import (
     SearchResult,
     USGSAuthExpiredError,
     USGSError,
-    build_provider_configs,
     get_geometry_from_various,
     load_provider_configs,
     make_plugins_manager,
@@ -54,15 +53,17 @@ class BaseApisPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseApisPluginTest, cls).setUpClass()
-        providers = load_provider_configs()
-        cls.plugins_manager = make_plugins_manager(providers)
+        cls.plugins_manager = make_plugins_manager(load_provider_configs())
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        expanduser_mock_side_effect = lambda *x: (
-            x[0]
-            .replace("~user", cls.tmp_home_dir.name)
-            .replace("~", cls.tmp_home_dir.name)
-        )
+
+        def expanduser_mock_side_effect(*x):
+            return (
+                x[0]
+                .replace("~user", cls.tmp_home_dir.name)
+                .replace("~", cls.tmp_home_dir.name)
+            )
+
         cls.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )

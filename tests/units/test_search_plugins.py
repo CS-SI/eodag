@@ -98,8 +98,7 @@ from tests.context import (
 class BaseSearchPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        providers = load_provider_configs()
-        cls.plugins_manager = make_plugins_manager(providers)
+        cls.plugins_manager = make_plugins_manager(load_provider_configs())
         return super().setUpClass()
 
     def setUp(self):
@@ -4384,9 +4383,9 @@ class TestSearchPluginECMWFSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_search_ecmwfsearch_normalize_results_check_id(self, mock_requests):
         """ECMWFSearch should add params from status request to properties"""
-        params = {"collection": "ERA5_SL", "id": "123"}
+        params = {"collection": self.collection, "id": "123"}
         status_response = {
-            "processID": "era5-sl",
+            "processID": "cams-eac4",
             "type": "process",
             "created": "2026-08-05T16:05:34.935629",
             "started": "2026-08-05T16:05:51.203071",
@@ -4413,7 +4412,7 @@ class TestSearchPluginECMWFSearch(BaseSearchPluginTest):
         raw_search_results.search_params = params
         raw_search_results.query_params = params
         raw_search_results.collection_def_params = (
-            self.search_plugin.get_collection_def_params("ERA5_SL")
+            self.search_plugin.get_collection_def_params(self.collection)
         )
         normalized_result = self.search_plugin.normalize_results(
             raw_search_results, **params
@@ -4430,7 +4429,7 @@ class TestSearchPluginECMWFSearch(BaseSearchPluginTest):
         self.assertEqual(product.properties["ecmwf:month"], ["01"])
         self.assertEqual(product.properties["ecmwf:day"], ["01"])
         self.assertEqual(product.properties["ecmwf:time"], ["00:00"])
-        self.assertEqual(product.collection, "ERA5_SL")
+        self.assertEqual(product.collection, self.collection)
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""

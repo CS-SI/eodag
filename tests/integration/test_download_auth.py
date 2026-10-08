@@ -47,11 +47,14 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         super(TestEODagDownloadCredentialsNotSet, cls).setUpClass()
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        expanduser_mock_side_effect = (
-            lambda *x: x[0]
-            .replace("~user", cls.tmp_home_dir.name)
-            .replace("~", cls.tmp_home_dir.name)
-        )
+
+        def expanduser_mock_side_effect(*x):
+            return (
+                x[0]
+                .replace("~user", cls.tmp_home_dir.name)
+                .replace("~", cls.tmp_home_dir.name)
+            )
+
         cls.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )

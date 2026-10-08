@@ -19,12 +19,7 @@ from __future__ import annotations
 import logging
 from collections import UserDict
 from textwrap import shorten
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypedDict,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from eodag.utils.exceptions import UnsupportedProvider
 from eodag.utils.repr import dict_to_html_table, str_as_href
@@ -36,7 +31,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.provider")
 
 
-class PrunedProviderReason(TypedDict):
+class DisabledProviderReason(TypedDict):
     """Reason why a provider was removed from the active providers registry."""
 
     reason: str
@@ -51,9 +46,8 @@ class PrunedProviderReason(TypedDict):
 class Provider:
     """Represents a data provider with its priority, enabled status, metadata and utility methods.
 
-    Example
+    Example:
     -------
-
     >>> from eodag.api.provider import Provider
     >>> content = {
     ...     'name': 'example_provider',
@@ -73,6 +67,7 @@ class Provider:
     'https://example.com'
     >>> provider.priority
     1
+
     """
 
     name: str
@@ -139,15 +134,13 @@ class Provider:
 
 
 class ProvidersDict(UserDict[str, Provider]):
-    """
-    A dictionary-like collection of :class:`~eodag.api.provider.Provider` objects, keyed by provider name.
+    """A dictionary-like collection of :class:`~eodag.api.provider.Provider` objects, keyed by provider name.
 
     :param providers: Initial providers to populate the dictionary.
     """
 
     def __contains__(self, item: object) -> bool:
-        """
-        Check if a provider is in the dictionary by name or :class:`~eodag.api.provider.Provider` instance.
+        """Check if a provider is in the dictionary by name or :class:`~eodag.api.provider.Provider` instance.
 
         :param item: Provider name or Provider instance to check.
         :return: True if the provider is in the dictionary, False otherwise.
@@ -157,8 +150,7 @@ class ProvidersDict(UserDict[str, Provider]):
         return item in self.data
 
     def __setitem__(self, key: str, value: Provider) -> None:
-        """
-        Add a :class:`~eodag.api.provider.Provider` to the dictionary.
+        """Add a :class:`~eodag.api.provider.Provider` to the dictionary.
 
         :param key: The name of the provider.
         :param value: The Provider instance to add.
@@ -170,8 +162,7 @@ class ProvidersDict(UserDict[str, Provider]):
         super().__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
-        """
-        Delete a provider by name.
+        """Delete a provider by name.
 
         :param key: The name of the provider to delete.
         :raises UnsupportedProvider: If the provider key is not found.
@@ -182,16 +173,14 @@ class ProvidersDict(UserDict[str, Provider]):
         super().__delitem__(key)
 
     def __repr__(self) -> str:
-        """
-        String representation of :class:`~eodag.api.provider.ProvidersDict`.
+        """String representation of :class:`~eodag.api.provider.ProvidersDict`.
 
         :return: String listing provider names.
         """
         return f"ProvidersDict({list(self.data.keys())})"
 
     def _repr_html_(self, embeded=False) -> str:
-        """
-        HTML representation for Jupyter/IPython display.
+        """HTML representation for Jupyter/IPython display.
 
         :return: HTML string representation of the :class:`~eodag.api.provider.ProvidersDict`.
         """
@@ -228,8 +217,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @property
     def names(self) -> list[str]:
-        """
-        List of provider names.
+        """List of provider names.
 
         :return: List of provider names.
         """
@@ -237,8 +225,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @property
     def priorities(self) -> dict[str, int]:
-        """
-        Dictionary of provider priorities keyed by provider name.
+        """Dictionary of provider priorities keyed by provider name.
 
         :return: Dictionary mapping provider name to priority integer.
         """
