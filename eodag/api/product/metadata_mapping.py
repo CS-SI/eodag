@@ -1874,7 +1874,7 @@ def get_queryable_from_provider(
     metadata_mapping: dict[str, Union[str, list[str]]],
     provider: Optional[str] = None,
 ) -> Optional[str]:
-    """Get EODAG configured queryable parameter from provider queryable parameter
+    """Get EODAG configured queryable parameter from provider queryable parameter.
 
     :param provider_queryable: provider queryable parameter
     :param metadata_mapping: metadata-mapping configuration
@@ -1944,9 +1944,7 @@ def get_queryable_from_provider(
         candidates: list[str] = (
             [str(a[0]) for a in queryable_alias.convert_to_aliases()]
             if isinstance(queryable_alias, AliasChoices)
-            else [queryable_alias]
-            if queryable_alias is not None
-            else []
+            else [queryable_alias] if queryable_alias is not None else []
         )
         candidates.append(k)
         # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
