@@ -22,7 +22,15 @@ from collections import UserDict
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from annotated_types import Lt
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    JsonValue,
+    ValidatorFunctionWrapHandler,
+    field_validator,
+)
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
@@ -117,7 +125,8 @@ class CommonQueryables(BaseModelCustomJsonSchema):
 class Queryables(CommonQueryables):
     """A class representing all search queryable properties.
 
-    Parameters default value is set to ``None`` to have them not required.
+    :attr:`eodag.types.queryables.CommonQueryables.collection` field is required.
+    Remaining parameters default value are set to ``None`` to have them not required.
     Fields described here are queryables-specific and complete StacMetadata fields.
     """
 
@@ -149,9 +158,17 @@ class Queryables(CommonQueryables):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @field_validator("ecmwf_date", mode="plain", check_fields=False)
+
+class QueryablesValidators(BaseModelCustomJsonSchema):
+    """Base model carrying only queryables validators, without any predefined field.
+
+    Used to build validation models from a :class:`~eodag.types.queryables.QueryablesDict`, so that the
+    resulting model contains exactly the queryables of the dict.
+    """
+
+    @field_validator("ecmwf_date", mode="wrap", check_fields=False)
     @classmethod
-    def check_date_range(cls, v: str) -> str:
+    def check_date_range(cls, v: str, _handler: ValidatorFunctionWrapHandler) -> str:
         """Validate date ranges"""
         if not isinstance(v, str):
             raise ValueError(
@@ -210,7 +227,7 @@ class Queryables(CommonQueryables):
 
 
 class QueryablesDict(UserDict[str, Any]):
-    """Class inheriting from UserDict which contains queryables with their annotated type;
+    """Class inheriting from UserDict which contains queryables with their annotated type.
 
     :param additional_properties: if additional properties (properties not given in EODAG config)
                                   are allowed
@@ -315,12 +332,104 @@ class QueryablesDict(UserDict[str, Any]):
         table += "</tbody></table>"
         return table
 
-    def get_model(self, model_name: str = "Queryables") -> BaseModel:
+    def get_model(
+        self, model_name: str = "Queryables", model_config: Optional[ConfigDict] = None
+    ) -> BaseModel:
         """
-        Converts object from :class:`eodag.api.product.QueryablesDict` to :class:`pydantic.BaseModel`
+        Convert object from :class:`eodag.types.queryables.QueryablesDict` to :class:`pydantic.BaseModel`
         so that validation can be performed
 
         :param model_name: name used for :class:`pydantic.BaseModel` creation
+        :param model_config: (optional) configuration for the returned model
         :return: pydantic BaseModel of the queryables dict
         """
-        return annotated_dict_to_model(model_name, self.data, Queryables)
+        model_config = model_config or ConfigDict()
+        model_config.setdefault("json_schema_extra", {})
+        schema_extra = model_config["json_schema_extra"]
+        if isinstance(schema_extra, dict):
+            schema_extra.update({"additionalProperties": self.additional_properties})
+        return annotated_dict_to_model(
+            model_name, self.data, QueryablesValidators, model_config=model_config
+        )
+
+    def _alias_dict(self, by_serialization_alias: bool) -> dict[str, list[str]]:
+        """
+        Get a dictionary of aliases for the queryables.
+
+        :param by_serialization_alias: whether invert the key and serialization alias in the returned dictionary
+        :return: dictionary of aliases
+        """
+        aliases: dict[str, list[str]] = {}
+        for q_key, q_annotated in self.data.items():
+            _, q_field_info = get_args(q_annotated)
+            if q_field_info.validation_alias is None:
+                continue
+
+            serialization_alias = q_field_info.serialization_alias or q_field_info.alias
+            if isinstance(serialization_alias, AliasChoices):
+                serialization_alias = next(
+                    (
+                        alias
+                        for alias in serialization_alias.choices
+                        if isinstance(alias, str)
+                    ),
+                    q_key,
+                )
+            elif not isinstance(serialization_alias, str):
+                serialization_alias = q_key
+
+            if by_serialization_alias and isinstance(
+                q_field_info.validation_alias, AliasChoices
+            ):
+                # invert key and serialization alias in alias list
+                alias_choices = [
+                    a
+                    for a in q_field_info.validation_alias.choices
+                    if isinstance(a, str)
+                ]
+                if serialization_alias in alias_choices:
+                    alias_choices.remove(serialization_alias)
+                alias_choices.append(q_key)
+                aliases[serialization_alias] = alias_choices
+            elif by_serialization_alias:
+                # invert key and serialization alias
+                aliases[serialization_alias] = [q_key]
+            elif isinstance(q_field_info.validation_alias, AliasChoices):
+                # alias list
+                aliases[q_key] = [
+                    a
+                    for a in q_field_info.validation_alias.choices
+                    if isinstance(a, str)
+                ]
+            else:
+                # single alias
+                aliases[q_key] = [q_field_info.validation_alias]
+        return aliases
+
+    def get_model_json_schema(
+        self,
+        by_alias: bool = False,
+        include_aliases: bool = True,
+        model_config: Optional[ConfigDict] = None,
+    ) -> dict[str, Any]:
+        """Convert object from :class:`eodag.types.queryables.QueryablesDict` to JSON schema of
+        :class:`pydantic.BaseModel`.
+
+        It allows seeing complex structures and constraints of the queryables in a standardized JSON schema format.
+
+        :param by_alias: whether to use the field's ``serialization_alias`` as key in the JSON schema
+        :param include_aliases: whether to include validation aliases in the JSON schema extra information
+        :param model_config: (optional) configuration for the returned model
+        :return: JSON schema of the pydantic BaseModel of the queryables dict
+        """
+        if include_aliases:
+            aliases = self._alias_dict(by_alias)
+
+            model_config = model_config or ConfigDict()
+            model_config.setdefault("json_schema_extra", {})
+            schema_extra = model_config["json_schema_extra"]
+            if isinstance(schema_extra, dict):
+                schema_extra.update({"aliases": cast(JsonValue, aliases)})
+
+        model = self.get_model(model_config=model_config)
+        return model.model_json_schema(by_alias=by_alias)
