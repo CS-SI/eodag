@@ -22,7 +22,14 @@ from collections import UserDict
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from annotated_types import Lt
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    JsonValue,
+    field_validator,
+)
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
@@ -315,22 +322,85 @@ class QueryablesDict(UserDict[str, Any]):
         table += "</tbody></table>"
         return table
 
-    def get_model(self, model_name: str = "Queryables") -> BaseModel:
+    def get_model(
+        self, model_name: str = "Queryables", model_config: Optional[ConfigDict] = None
+    ) -> BaseModel:
         """
-        Convert object from :class:`eodag.api.product.QueryablesDict` to :class:`pydantic.BaseModel`
+        Convert object from :class:`eodag.types.queryables.QueryablesDict` to :class:`pydantic.BaseModel`
         so that validation can be performed
 
         :param model_name: name used for :class:`pydantic.BaseModel` creation
+        :param model_config: (optional) configuration for the returned model
         :return: pydantic BaseModel of the queryables dict
         """
-        return annotated_dict_to_model(model_name, self.data, Queryables)
+        return annotated_dict_to_model(
+            model_name, self.data, Queryables, model_config=model_config
+        )
 
-    def get_model_json_schema(self) -> dict[str, Any]:
-        """Convert object from :class:`eodag.api.product.QueryablesDict` to JSON schema of :class:`pydantic.BaseModel`.
+    def _alias_dict(self, by_serialization_alias: bool) -> dict[str, list[str]]:
+        """
+        Get a dictionary of aliases for the queryables.
+
+        :param by_serialization_alias: whether invert the key and serialization alias in the returned dictionary
+        :return: dictionary of aliases
+        """
+        aliases: dict[str, list[str]] = {}
+        for q_key, q_annotated in self.data.items():
+            _, q_field_info = get_args(q_annotated)
+            if q_field_info.validation_alias is None:
+                continue
+
+            if by_serialization_alias and isinstance(
+                q_field_info.validation_alias, AliasChoices
+            ):
+                # invert key and serialization alias in alias list
+                alias_choices = [
+                    a
+                    for a in q_field_info.validation_alias.choices
+                    if isinstance(a, str)
+                ]
+                alias_choices.remove(q_field_info.serialization_alias)
+                alias_choices.append(q_key)
+                aliases[q_field_info.serialization_alias] = alias_choices
+            elif by_serialization_alias:
+                # invert key and serialization alias
+                aliases[q_field_info.serialization_alias] = [q_key]
+            elif isinstance(q_field_info.validation_alias, AliasChoices):
+                # alias list
+                aliases[q_key] = [
+                    a
+                    for a in q_field_info.validation_alias.choices
+                    if isinstance(a, str)
+                ]
+            else:
+                # single alias
+                aliases[q_key] = [q_field_info.validation_alias]
+        return aliases
+
+    def get_model_json_schema(
+        self,
+        by_alias: bool = False,
+        include_aliases: bool = True,
+        model_config: Optional[ConfigDict] = None,
+    ) -> dict[str, Any]:
+        """Convert object from :class:`eodag.types.queryables.QueryablesDict` to JSON schema of
+        :class:`pydantic.BaseModel`.
 
         It allows seeing complex structures and constraints of the queryables in a standardized JSON schema format.
 
+        :param by_alias: whether to use the field's ``serialization_alias`` as key in the JSON schema
+        :param include_aliases: whether to include validation aliases in the JSON schema extra information
+        :param model_config: (optional) configuration for the returned model
         :return: JSON schema of the pydantic BaseModel of the queryables dict
         """
-        model = self.get_model()
-        return model.model_json_schema()
+        if include_aliases:
+            aliases = self._alias_dict(by_alias)
+
+            model_config = model_config or ConfigDict()
+            model_config.setdefault("json_schema_extra", {})
+            schema_extra = model_config["json_schema_extra"]
+            if isinstance(schema_extra, dict):
+                schema_extra.update({"aliases": cast(JsonValue, aliases)})
+
+        model = self.get_model(model_config=model_config)
+        return model.model_json_schema(by_alias=by_alias)
