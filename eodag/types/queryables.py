@@ -124,7 +124,8 @@ class CommonQueryables(BaseModelCustomJsonSchema):
 class Queryables(CommonQueryables):
     """A class representing all search queryable properties.
 
-    Parameters default value is set to ``None`` to have them not required.
+    :attr:`eodag.types.queryables.CommonQueryables.collection` field is required.
+    Remaining parameters default value are set to ``None`` to have them not required.
     Fields described here are queryables-specific and complete StacMetadata fields.
     """
 
@@ -155,6 +156,14 @@ class Queryables(CommonQueryables):
     id: Annotated[str, Field(None)]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class QueryablesValidators(BaseModelCustomJsonSchema):
+    """Base model carrying only queryables validators, without any predefined field.
+
+    Used to build validation models from a :class:`~eodag.types.queryables.QueryablesDict`, so that the
+    resulting model contains exactly the queryables of the dict.
+    """
 
     @field_validator("ecmwf_date", mode="plain", check_fields=False)
     @classmethod
@@ -334,7 +343,7 @@ class QueryablesDict(UserDict[str, Any]):
         :return: pydantic BaseModel of the queryables dict
         """
         return annotated_dict_to_model(
-            model_name, self.data, Queryables, model_config=model_config
+            model_name, self.data, QueryablesValidators, model_config=model_config
         )
 
     def _alias_dict(self, by_serialization_alias: bool) -> dict[str, list[str]]:

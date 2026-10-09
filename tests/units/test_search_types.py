@@ -148,7 +148,7 @@ class TestQueryables(unittest.TestCase):
                 ],
                 ...,
             ),
-            __base__=queryables.Queryables,
+            __base__=queryables.QueryablesValidators,
         )
 
     def test_search_ecmwf_date(self):
