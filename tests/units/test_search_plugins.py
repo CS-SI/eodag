@@ -4640,7 +4640,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         dynamic_class_path = f"{dynamic_class.__module__}.{dynamic_class.__qualname__}"
 
         self.assertTrue(is_typeddict(dynamic_class))
-        self.assertEqual(dynamic_class_path, "eodag.types.location-object")
+        self.assertEqual(dynamic_class_path, "eodag.types.location_object")
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
