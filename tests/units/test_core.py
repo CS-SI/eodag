@@ -2359,15 +2359,37 @@ class TestCore(TestCoreBase):
                 break
         self.assertTrue(id_present)
 
+    def test_queryables_dict_get_model(self):
+        """Test that QueryablesDict creates a model with the queryables as fields."""
+        queryables = self.dag.list_queryables(
+            provider="cop_dataspace", collection="S1_SAR_GRD"
+        )
+        self.assertIsInstance(queryables, QueryablesDict)
+
+        model = queryables.get_model()
+
+        # check that the generated model contains exactly the queryables
+        self.assertEqual(set(model.model_fields), set(queryables))
+
     def test_queryables_dict_get_model_json_schema(self):
-        """Test that the QueryablesDict can return a valid JSON schema."""
+        """Test the default JSON schema structure returned by QueryablesDict."""
         from typing_extensions import get_args
 
         queryables = self.dag.list_queryables(
             provider="cop_dataspace", collection="S1_SAR_GRD"
         )
         self.assertIsInstance(queryables, QueryablesDict)
+
         json_schema = queryables.get_model_json_schema()
+
+        # check additionalProperties in the JSON schema
+        self.assertEqual(
+            json_schema.get("additionalProperties"), queryables.additional_properties
+        )
+        # check aliases in the JSON schema extra information
+        self.assertEqual(
+            json_schema["aliases"]["sar_polarizations"], ["sar:polarizations"]
+        )
 
         # check that a simple class is correctly represented in the JSON schema (not with a $defs entry)
         simple_class_origin = get_args(queryables["instruments"])[0].__origin__.__name__
@@ -2379,16 +2401,66 @@ class TestCore(TestCoreBase):
         self.assertNotIn("list", json_schema["$defs"])
         self.assertNotIn("str", json_schema["$defs"])
 
-        # check that a complex class is correctly represented in the JSON schema (with a $defs entry)
         complex_class_module = (
             get_args(queryables["providers"])[0].__args__[0].__module__
         )
         complex_class_name = get_args(queryables["providers"])[0].__args__[0].__name__
         complex_class = f"{complex_class_module}.{complex_class_name}"
 
+        # check that a complex class is correctly represented in the JSON schema (with a $defs entry)
         self.assertEqual(complex_class, "stac_pydantic.shared.Provider")
         self.assertIn("Provider", json_schema["$defs"])
         self.assertIsInstance(json_schema["$defs"]["Provider"]["properties"], dict)
+
+    def test_queryables_dict_get_model_json_schema_options(self):
+        """Test JSON schema alias options and preservation of custom schema extras."""
+        from pydantic import ConfigDict
+
+        queryables = self.dag.list_queryables(
+            provider="cop_dataspace", collection="S1_SAR_GRD"
+        )
+        model = queryables.get_model()
+
+        for by_alias in (False, True):
+            for include_aliases in (False, True):
+                with self.subTest(by_alias=by_alias, include_aliases=include_aliases):
+                    json_schema = queryables.get_model_json_schema(
+                        by_alias=by_alias,
+                        include_aliases=include_aliases,
+                        model_config=ConfigDict(
+                            json_schema_extra={"custom": "preserved"}
+                        ),
+                    )
+                    model_schema = model.model_json_schema(by_alias=by_alias)
+
+                    # check that by_alias controls JSON schema property names
+                    self.assertEqual(
+                        set(json_schema["properties"]),
+                        set(model_schema["properties"]),
+                    )
+                    # check that additionalProperties and custom schema extras are preserved
+                    self.assertEqual(
+                        json_schema["additionalProperties"],
+                        queryables.additional_properties,
+                    )
+                    self.assertEqual(json_schema["custom"], "preserved")
+                    # check that validation aliases are included only when requested
+                    self.assertEqual("aliases" in json_schema, include_aliases)
+                    if include_aliases and by_alias:
+                        # check that aliases map back to the queryable names
+                        self.assertEqual(
+                            json_schema["aliases"]["sar:polarizations"],
+                            ["sar_polarizations"],
+                        )
+                        self.assertEqual(
+                            json_schema["aliases"]["start_datetime"],
+                            ["datetime", "start"],
+                        )
+                    elif include_aliases:
+                        self.assertEqual(
+                            json_schema["aliases"]["sar_polarizations"],
+                            ["sar:polarizations"],
+                        )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",

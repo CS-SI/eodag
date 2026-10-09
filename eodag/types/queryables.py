@@ -342,6 +342,11 @@ class QueryablesDict(UserDict[str, Any]):
         :param model_config: (optional) configuration for the returned model
         :return: pydantic BaseModel of the queryables dict
         """
+        model_config = model_config or ConfigDict()
+        model_config.setdefault("json_schema_extra", {})
+        schema_extra = model_config["json_schema_extra"]
+        if isinstance(schema_extra, dict):
+            schema_extra.update({"additionalProperties": self.additional_properties})
         return annotated_dict_to_model(
             model_name, self.data, QueryablesValidators, model_config=model_config
         )
@@ -359,6 +364,19 @@ class QueryablesDict(UserDict[str, Any]):
             if q_field_info.validation_alias is None:
                 continue
 
+            serialization_alias = q_field_info.serialization_alias or q_field_info.alias
+            if isinstance(serialization_alias, AliasChoices):
+                serialization_alias = next(
+                    (
+                        alias
+                        for alias in serialization_alias.choices
+                        if isinstance(alias, str)
+                    ),
+                    q_key,
+                )
+            elif not isinstance(serialization_alias, str):
+                serialization_alias = q_key
+
             if by_serialization_alias and isinstance(
                 q_field_info.validation_alias, AliasChoices
             ):
@@ -368,12 +386,13 @@ class QueryablesDict(UserDict[str, Any]):
                     for a in q_field_info.validation_alias.choices
                     if isinstance(a, str)
                 ]
-                alias_choices.remove(q_field_info.serialization_alias)
+                if serialization_alias in alias_choices:
+                    alias_choices.remove(serialization_alias)
                 alias_choices.append(q_key)
-                aliases[q_field_info.serialization_alias] = alias_choices
+                aliases[serialization_alias] = alias_choices
             elif by_serialization_alias:
                 # invert key and serialization alias
-                aliases[q_field_info.serialization_alias] = [q_key]
+                aliases[serialization_alias] = [q_key]
             elif isinstance(q_field_info.validation_alias, AliasChoices):
                 # alias list
                 aliases[q_key] = [
