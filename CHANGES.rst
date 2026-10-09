@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.10.0 (2026-10-09)
+====================
+
+Features
+--------
+
+* **queryables**: QueryablesDict.get_model_json_schema method (`#2358`_, `1d6d9b0`_)
+
+.. _#2358: https://github.com/CS-SI/eodag/pull/2358
+.. _1d6d9b0: https://github.com/CS-SI/eodag/commit/1d6d9b0cf376ba4a8362758e9666dd9450b70459
+
+
 v4.9.2 (2026-10-07)
 ===================
 
