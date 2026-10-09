@@ -459,11 +459,30 @@ class BaseModelCustomJsonSchema(BaseModel):
         """
         json_schema = handler.resolve_ref_schema(handler(core_schema))
 
-        json_schema["required"] = [
-            key
-            for key, field_info in cls.model_fields.items()
-            if "json_schema_required" in field_info.metadata
-        ]
+        required = []
+        by_alias = getattr(handler, "generate_json_schema").by_alias
+        for key, field_info in cls.model_fields.items():
+            if "json_schema_required" not in field_info.metadata:
+                continue
+            if by_alias:
+                alias = (
+                    field_info.serialization_alias
+                    if handler.mode == "serialization"
+                    else field_info.validation_alias
+                )
+                if isinstance(alias, str):
+                    key = alias
+                elif isinstance(alias, AliasChoices):
+                    key = next(
+                        (
+                            path[0]
+                            for path in alias.convert_to_aliases()
+                            if len(path) == 1 and isinstance(path[0], str)
+                        ),
+                        key,
+                    )
+            required.append(key)
+        json_schema["required"] = required
 
         return json_schema
 

@@ -2436,6 +2436,7 @@ class TestCore(TestCoreBase):
             with self.subTest(by_alias=by_alias):
                 schema = queryables.get_model_json_schema(by_alias=by_alias)
                 key = "ecmwf:date" if by_alias else "ecmwf_date"
+                self.assertEqual(schema["required"], [key])
                 self.assertEqual(
                     schema["properties"][key],
                     {
@@ -2454,6 +2455,48 @@ class TestCore(TestCoreBase):
             )
         with self.assertRaises(PydanticValidationError):
             model.model_validate({"ecmwf:date": "2026-10-09"})
+
+    def test_queryables_dict_required_aliases(self):
+        """Required names follow property names in both JSON schema modes."""
+        from typing import Annotated
+
+        from pydantic import AliasChoices, AliasPath, Field
+
+        queryables = QueryablesDict(
+            simple=Annotated[
+                str, Field("default", alias="simple:alias"), "json_schema_required"
+            ],
+            choices=Annotated[
+                str,
+                Field(
+                    "default",
+                    validation_alias=AliasChoices(
+                        AliasPath("nested", "value"), "input"
+                    ),
+                    serialization_alias="output",
+                ),
+                "json_schema_required",
+            ],
+            path=Annotated[
+                str,
+                Field("default", validation_alias=AliasPath("path:alias")),
+                "json_schema_required",
+            ],
+        )
+        model = queryables.get_model()
+        for by_alias in (False, True):
+            for mode in ("validation", "serialization"):
+                with self.subTest(by_alias=by_alias, mode=mode):
+                    schema = model.model_json_schema(by_alias=by_alias, mode=mode)
+                    expected = {"simple", "choices", "path"}
+                    if by_alias:
+                        expected = {
+                            "simple:alias",
+                            "input" if mode == "validation" else "output",
+                            "path",
+                        }
+                    self.assertEqual(set(schema["required"]), expected)
+                    self.assertEqual(set(schema["properties"]), expected)
 
     def test_queryables_dict_get_model_json_schema_options(self):
         """Test JSON schema alias options and preservation of custom schema extras."""
