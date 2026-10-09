@@ -28,6 +28,7 @@ from pydantic import (
     ConfigDict,
     Field,
     JsonValue,
+    ValidatorFunctionWrapHandler,
     field_validator,
 )
 from pydantic.fields import FieldInfo
@@ -165,9 +166,9 @@ class QueryablesValidators(BaseModelCustomJsonSchema):
     resulting model contains exactly the queryables of the dict.
     """
 
-    @field_validator("ecmwf_date", mode="plain", check_fields=False)
+    @field_validator("ecmwf_date", mode="wrap", check_fields=False)
     @classmethod
-    def check_date_range(cls, v: str) -> str:
+    def check_date_range(cls, v: str, _handler: ValidatorFunctionWrapHandler) -> str:
         """Validate date ranges"""
         if not isinstance(v, str):
             raise ValueError(

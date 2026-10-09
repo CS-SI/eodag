@@ -2412,6 +2412,49 @@ class TestCore(TestCoreBase):
         self.assertIn("Provider", json_schema["$defs"])
         self.assertIsInstance(json_schema["$defs"]["Provider"]["properties"], dict)
 
+    def test_queryables_dict_get_model_json_schema_ecmwf_date(self):
+        """ECMWF date bounds remain in the schema without restricting valid subranges."""
+        from typing import Annotated, Literal
+
+        from pydantic import AliasChoices, Field
+
+        date_field = Field(
+            validation_alias=AliasChoices("ecmwf:date", "date"),
+            serialization_alias="ecmwf:date",
+            title="Date",
+            description="date formatted like yyyy-mm-dd/yyyy-mm-dd",
+        )
+        date_field.metadata.append("json_schema_required")
+        queryables = QueryablesDict(
+            ecmwf_date=Annotated[
+                Literal["2004-01-01/2026-10-08", "2004-02-01/2026-10-08"],
+                date_field,
+            ],
+        )
+
+        for by_alias in (False, True):
+            with self.subTest(by_alias=by_alias):
+                schema = queryables.get_model_json_schema(by_alias=by_alias)
+                key = "ecmwf:date" if by_alias else "ecmwf_date"
+                self.assertEqual(
+                    schema["properties"][key],
+                    {
+                        "description": "date formatted like yyyy-mm-dd/yyyy-mm-dd",
+                        "enum": ["2004-01-01/2026-10-08", "2004-02-01/2026-10-08"],
+                        "title": "Date",
+                        "type": "string",
+                    },
+                )
+
+        model = queryables.get_model()
+        for alias in ("ecmwf:date", "date"):
+            self.assertEqual(
+                model.model_validate({alias: "2026-10-01/2026-10-02"}).ecmwf_date,
+                "2026-10-01/2026-10-02",
+            )
+        with self.assertRaises(PydanticValidationError):
+            model.model_validate({"ecmwf:date": "2026-10-09"})
+
     def test_queryables_dict_get_model_json_schema_options(self):
         """Test JSON schema alias options and preservation of custom schema extras."""
         from pydantic import ConfigDict
