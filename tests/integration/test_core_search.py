@@ -639,7 +639,10 @@ class TestCoreSearch(unittest.TestCase):
                         dict(
                             geometry="POINT (0 0)",
                             id="a",
-                            **{"eodag:order_link": "https://somewhere/to/download"},
+                            **{
+                                "eodag:order_link": "https://somewhere/to/download",
+                                "order:status": "offline",
+                            },
                         ),
                     )
                 ],
