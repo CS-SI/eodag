@@ -34,7 +34,7 @@ from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_COLLECTION, deepcopy, dict_md5sum
+from eodag.utils import GENERIC_COLLECTION, ONLINE_STATUS, deepcopy, dict_md5sum
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -314,10 +314,13 @@ class PluginManager:
         # matching url from product to download
         if product is not None and len(product.assets) > 0:
             matching_url = next(iter(product.assets.values()))["href"]
+        elif (
+            product is not None
+            and product.properties.get("order:status") != ONLINE_STATUS
+        ):
+            matching_url = product.properties.get("eodag:order_link")
         elif product is not None:
-            matching_url = product.properties.get(
-                "eodag:download_link"
-            ) or product.properties.get("eodag:order_link")
+            matching_url = product.properties.get("eodag:download_link")
         else:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)

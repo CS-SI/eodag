@@ -2,6 +2,9 @@ import unittest
 from types import SimpleNamespace
 from unittest import mock
 
+from eodag.api.product._assets import AssetsDict
+from eodag.api.product._product import EOProduct
+from eodag.utils import ONLINE_STATUS
 from tests.context import (
     GENERIC_COLLECTION,
     Authentication,
@@ -183,6 +186,67 @@ class TestPluginManager(unittest.TestCase):
         get_auth_plugins.assert_called_once_with(
             "low",
             matching_url="https://low.example",
+            matching_conf=associated_plugin.config,
+        )
+
+    @mock.patch.object(PluginManager, "get_auth_plugins")
+    def test_get_auth_plugin_with_product(self, get_auth_plugins):
+        """Associated plugin settings select the authentication plugin."""
+        associated_plugin = SimpleNamespace(
+            provider="low", config=SimpleNamespace(api_endpoint="https://low.example")
+        )
+        get_auth_plugins.return_value = iter([mock.sentinel.auth])
+
+        # product with assets
+        product = EOProduct(provider="low", properties={"id": "test"})
+        assets = AssetsDict(product=product)
+        assets.update({"asset1": {"href": "https://asset.example.com"}})
+        product.assets = assets
+
+        plugin = self.manager.get_auth_plugin(associated_plugin, product=product)
+
+        self.assertIs(plugin, mock.sentinel.auth)
+        get_auth_plugins.assert_called_once_with(
+            "low",
+            matching_url="https://asset.example.com",
+            matching_conf=associated_plugin.config,
+        )
+
+        # product with download link
+        get_auth_plugins.return_value = iter([mock.sentinel.auth])
+        product = EOProduct(
+            provider="low",
+            properties={
+                "eodag:download_link": "https://download.example",
+                "order:status": ONLINE_STATUS,
+            },
+        )
+
+        plugin = self.manager.get_auth_plugin(associated_plugin, product=product)
+
+        self.assertIs(plugin, mock.sentinel.auth)
+        get_auth_plugins.assert_called_with(
+            "low",
+            matching_url="https://download.example",
+            matching_conf=associated_plugin.config,
+        )
+
+        # product with order link
+        get_auth_plugins.return_value = iter([mock.sentinel.auth])
+        product = EOProduct(
+            provider="low",
+            properties={
+                "eodag:order_link": "https://order.example",
+                "order:status": "orderable",
+            },
+        )
+
+        plugin = self.manager.get_auth_plugin(associated_plugin, product=product)
+
+        self.assertIs(plugin, mock.sentinel.auth)
+        get_auth_plugins.assert_called_with(
+            "low",
+            matching_url="https://order.example",
             matching_conf=associated_plugin.config,
         )
 
