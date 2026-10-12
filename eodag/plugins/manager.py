@@ -316,7 +316,7 @@ class PluginManager:
             matching_url = next(iter(product.assets.values()))["href"]
         elif (
             product is not None
-            and product.properties.get("order:status") != ONLINE_STATUS
+            and product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
         ):
             matching_url = product.properties.get("eodag:order_link")
         elif product is not None:
