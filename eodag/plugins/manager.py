@@ -515,5 +515,3 @@ class PluginManager:
                 )
                 continue
         return None
-
-    # TODO: add tests for all the methods of this class

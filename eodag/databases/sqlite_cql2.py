@@ -56,10 +56,11 @@ def _replace_properties(sql: str, properties: set[str]) -> str:
 
 
 # Pre-compiled patterns for _sqlite_compat.
-# LHS of Postgres array operators is always a SQL identifier or a function call
-# like json_extract(content, '$.prop'). We use (?:\w+\([^)]*\)|\w+) to match
-# either form without backtracking across AND/OR boundaries.
-_SQL_EXPR = r"(?:\w+\([^)]*\)|\w+)"
+# cql2 emits PostgreSQL array syntax, which we translate using SQLite's JSON1
+# functions. This also works when the stored JSON is SQLite JSONB; no
+# JSONB-specific operators are needed in the generated SQL.
+_SQL_ARRAY_LHS = r'(?:(?:\w+\.)?\w+|"[^"]+"|\w+\([^)]*\))'
+_SQL_ARRAY_SCALAR = r"'(?:[^']|'')*'"  # SQL string literal, including doubled quotes
 
 _RE_CAST_TIMESTAMP = re.compile(
     r"CAST\('([^']+)'\s+AS\s+TIMESTAMP\s+WITH\s+TIME\s+ZONE\)",
@@ -70,11 +71,17 @@ _RE_SOME_ARRAY = re.compile(
     re.IGNORECASE,
 )
 _RE_ARRAY_OPS = {
-    "@@": re.compile(rf"({_SQL_EXPR})\s*@@\s*ARRAY\[([^\]]*)\]"),
-    "@>": re.compile(rf"({_SQL_EXPR})\s*@>\s*ARRAY\[([^\]]*)\]"),
-    "<@": re.compile(rf"({_SQL_EXPR})\s*<@\s*ARRAY\[([^\]]*)\]"),
+    "@@": re.compile(
+        rf"({_SQL_ARRAY_LHS})\s*@@\s*(?:ARRAY\[([^\]]*)\]|({_SQL_ARRAY_SCALAR}))"
+    ),
+    "@>": re.compile(
+        rf"({_SQL_ARRAY_LHS})\s*@>\s*(?:ARRAY\[([^\]]*)\]|({_SQL_ARRAY_SCALAR}))"
+    ),
+    "<@": re.compile(
+        rf"({_SQL_ARRAY_LHS})\s*<@\s*(?:ARRAY\[([^\]]*)\]|({_SQL_ARRAY_SCALAR}))"
+    ),
 }
-_RE_ARRAY_EQUALS = re.compile(rf"({_SQL_EXPR})\s*=\s*ARRAY\[([^\]]*)\]")
+_RE_ARRAY_EQUALS = re.compile(rf"({_SQL_ARRAY_LHS})\s*=\s*ARRAY\[([^\]]*)\]")
 
 # Spatial function patterns for R-tree pre-filtering.
 # Excludes st_disjoint (bbox overlap doesn't imply geometry non-disjointness).
@@ -127,8 +134,6 @@ def _rtree_filter(minx: float, miny: float, maxx: float, maxy: float) -> str:
 
 def _sqlite_compat(sql: str) -> str:
     """Apply SQLite-specific rewrites to the SQL emitted by cql2."""
-    # TODO: check to refactor
-    # TODO: also verify probably no need of JSONB special operators
     result = sql
 
     # cql2 emits Postgres CAST('...' AS TIMESTAMP WITH TIME ZONE); strip for SQLite.
@@ -138,27 +143,9 @@ def _sqlite_compat(sql: str) -> str:
     result = _RE_SOME_ARRAY.sub(r"\1 IN (\2)", result)
 
     # ---- Array operators ----------------------------------------------------
-    # Guard must look for REAL operators (after html.unescape above).
-    if any(tok in result for tok in ("@>", "<@", "@@", "&&", "ARRAY[")):
-        # IMPORTANT: LHS can be:
-        # - a function call: json_extract(...)
-        # - an identifier: federation_backends
-        # - a qualified identifier: c.federation_backends
-        # - a quoted identifier: "federation:backends"
-        #
-        # So we widen the LHS expression matcher here to include "...." identifiers.
-        _LHS = r"(?:" r'"[^"]+"' r"|(?:\w+\.)?\w+" r"|\w+\([^)]*\)" r")"
-
-        _SCALAR_STR = (
-            r"'(?:[^']|'')*'"  # SQL single-quoted literal (handles doubled quotes)
-        )
-
-        # One regex per operator; RHS supports ARRAY[...] or scalar.
-        _RE_OP_MIXED = {
-            "@@": re.compile(rf"({_LHS})\s*@@\s*(?:ARRAY\[([^\]]*)\]|({_SCALAR_STR}))"),
-            "@>": re.compile(rf"({_LHS})\s*@>\s*(?:ARRAY\[([^\]]*)\]|({_SCALAR_STR}))"),
-            "<@": re.compile(rf"({_LHS})\s*<@\s*(?:ARRAY\[([^\]]*)\]|({_SCALAR_STR}))"),
-        }
+    # These are PostgreSQL-style array expressions from cql2, not SQLite
+    # JSONB operators. Rewrite them to JSON1 membership queries.
+    if any(tok in result for tok in ("@>", "<@", "@@", "ARRAY[")):
 
         def _sub_overlaps(m: re.Match[str]) -> str:
             lhs, rhs_arr, rhs_scalar = m.group(1), m.group(2), m.group(3)
@@ -193,9 +180,9 @@ def _sqlite_compat(sql: str) -> str:
                 f"NOT EXISTS (SELECT 1 FROM json_each({lhs}) je WHERE je.value NOT IN ({rhs_arr})))"
             )
 
-        result = _RE_OP_MIXED["@@"].sub(_sub_overlaps, result)
-        result = _RE_OP_MIXED["@>"].sub(_sub_contains, result)
-        result = _RE_OP_MIXED["<@"].sub(_sub_containedby, result)
+        result = _RE_ARRAY_OPS["@@"].sub(_sub_overlaps, result)
+        result = _RE_ARRAY_OPS["@>"].sub(_sub_contains, result)
+        result = _RE_ARRAY_OPS["<@"].sub(_sub_containedby, result)
 
         # Keep your a_equals rewrite as-is, but only if ARRAY[...] is present.
         if "ARRAY[" in result:
@@ -234,7 +221,6 @@ def _sqlite_compat(sql: str) -> str:
 
 def cql2_json_to_sql(cql2_json: dict[str, Any]) -> str:
     """Validate CQL2 JSON and return SQLite-compatible WHERE SQL."""
-
     validate_supported_ops(cql2_json)
 
     # First, parse the CQL2 JSON to ensure it's valid and to get the raw SQL.

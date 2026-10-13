@@ -248,7 +248,6 @@ class EODataAccessGateway:
             limit=limit,
         )
 
-        # TODO: how to see collections for each provider?
         return ProvidersDict(
             {
                 name: Provider(name=name, **content)
@@ -837,11 +836,6 @@ class EODataAccessGateway:
                         "name": p_name,
                         "products": new_provider_products_config,
                     }
-
-                # TODO: keep last fetch only for fetchable providers
-                # self.db.set_federation_backend_last_fetch(
-                #     p_name, dt.datetime.now(dt.timezone.utc).isoformat()
-                # )
 
         # if there are new collections, update collections and providers config in DB
         if all_new_collections:
