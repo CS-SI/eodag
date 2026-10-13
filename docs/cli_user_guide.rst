@@ -162,17 +162,34 @@ Queryables
 
 .. command-output:: eodag queryables --help
 
-* To list the queryable parameters of a provider, i.e. the parameters that can be used to search on it:
+* To list the names of the queryable parameters of a provider, i.e. the parameters that can be used to search on it:
 
 .. code-block:: console
 
-        eodag queryables creodias
+        eodag queryables --provider creodias
 
 * To list the queryables of a given collection on this provider. Selecting a collection gives more accurate results
   and, for some providers, the possible values of the parameters:
 
 .. code-block:: console
 
-        eodag queryables creodias --collection S2_MSI_L1C
+        eodag queryables --provider creodias --collection S2_MSI_L1C
+
+* Without ``--provider``, the queryables that are common to all providers are listed, or the ones available for the
+  given collection:
+
+.. code-block:: console
+
+        eodag queryables
+        eodag queryables --collection S2_MSI_L1C
+
+* By default, only the names of the queryables are printed, one per line. To get their details (types, possible values,
+  defaults, aliases, descriptions...), use ``--json`` or ``--yaml`` to print the schema returned by
+  :meth:`~eodag.types.queryables.QueryablesDict.get_model_json_schema`:
+
+.. code-block:: console
+
+        eodag queryables --provider creodias --collection S2_MSI_L1C --json
+        eodag queryables --provider creodias --collection S2_MSI_L1C --yaml
 
 This command relies on :meth:`~eodag.api.core.EODataAccessGateway.list_queryables`.

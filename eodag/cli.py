@@ -31,7 +31,7 @@ Commands:
   discover         Fetch providers to discover collections
   download         Download a list of products from a serialized search...
   list             List supported collections
-  queryables       List the queryable parameters of a provider, optionally...
+  queryables       List the queryable parameters of a provider and/or a...
   search           Search satellite images by their collections,...
   version          Print eodag version and exit
 
@@ -44,23 +44,12 @@ import functools
 import json
 import sys
 import textwrap
-import types
 from importlib.metadata import metadata
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Callable,
-    Literal,
-    Mapping,
-    Optional,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
 
 import click
+import yaml
 
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 
@@ -75,6 +64,14 @@ CRUNCHERS = [
     "FilterProperty",
     "FilterDate",
 ]
+
+
+class IndentedSafeDumper(yaml.SafeDumper):
+    """PyYAML dumper that indents block sequence items under their mapping key."""
+
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
+        """Force indentation for block sequence items."""
+        return super().increase_indent(flow, False)
 
 
 class MutuallyExclusiveOption(click.Option):
@@ -105,53 +102,6 @@ class MutuallyExclusiveOption(click.Option):
             )
 
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
-
-
-class OptionsAfterArgumentsCommand(click.Command):
-    """Command whose options can be given after its positional arguments.
-
-    In a chained group (``chain=True``), click stops reading the options of a command at
-    its first positional argument and takes what follows as the next commands, so that
-    ``eodag queryables foo --collection bar`` would be rejected. Here the options of the
-    command which directly follow its positional arguments are moved in front of them.
-    What comes next is left untouched, so that commands can still be chained.
-    """
-
-    def parse_args(self, ctx: Context, args: list[str]) -> list[str]:
-        """Move the options found right after the positional arguments in front of them"""
-        # number of values taken by each option name
-        nvalues: dict[str, int] = {}
-        for param in self.get_params(ctx):
-            if isinstance(param, click.Option):
-                for name in [*param.opts, *param.secondary_opts]:
-                    nvalues[name] = 0 if param.is_flag or param.count else param.nargs
-        # number of values taken by the positional arguments
-        nargs = sum(
-            param.nargs
-            for param in self.params
-            if isinstance(param, click.Argument) and param.nargs > 0
-        )
-
-        def skip_options(idx: int) -> int:
-            """Index of the first token, from idx, which is not an option of this command"""
-            while idx < len(args):
-                token = args[idx]
-                name = token.split("=", 1)[0] if token.startswith("--") else token
-                if name in nvalues:
-                    # "--name=value" holds its value, otherwise it is in the next tokens
-                    idx += 1 if "=" in token else 1 + nvalues[name]
-                elif token[:2] in nvalues and len(token) > 2 and token[1] != "-":
-                    idx += 1  # short option with its value attached, e.g. "-cvalue"
-                else:
-                    break
-            return idx
-
-        start = skip_options(0)  # options given before the positional arguments
-        stop = start + nargs  # end of the positional arguments
-        end = skip_options(stop)  # options given after the positional arguments
-        if end > stop:
-            args = [*args[:start], *args[stop:end], *args[start:stop], *args[end:]]
-        return super().parse_args(ctx, args)
 
 
 def _deprecated_cli(message: str, version: Optional[str] = None) -> Callable[..., Any]:
@@ -568,85 +518,63 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
         sys.exit(1)
 
 
-_UNION_TYPES = (Union, getattr(types, "UnionType", Union))
-
-
-def _type_repr(tp: Any) -> str:
-    """Readable representation of a type, with all the values of its ``Literal``"""
-    origin, args = get_origin(tp), get_args(tp)
-    if origin is Annotated:
-        return _type_repr(args[0])
-    if origin is Literal:
-        return "Literal[" + ", ".join(repr(arg) for arg in args) + "]"
-    if origin in _UNION_TYPES:
-        return " | ".join(_type_repr(arg) for arg in args)
-    if origin is not None:
-        name = getattr(origin, "__name__", str(origin))
-        return f"{name}[{', '.join(_type_repr(arg) for arg in args)}]" if args else name
-    if tp is type(None):
-        return "None"
-    return str(getattr(tp, "__name__", tp))
-
-
 @eodag_cli.command(
     name="queryables",
-    cls=OptionsAfterArgumentsCommand,
-    help="List the queryable parameters of a provider, optionally for a given "
-    "collection",
+    help="List the queryable parameters of a provider and/or a collection",
 )
-@click.argument("provider")
+@click.option("-p", "--provider", help="List the queryables of this provider")
 @click.option(
     "-c", "--collection", help="List the queryables available for this collection"
 )
+@click.option(
+    "--json",
+    is_flag=True,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["yaml"],
+    help="Print the detailed queryables schema as JSON",
+)
+@click.option(
+    "--yaml",
+    is_flag=True,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["json"],
+    help="Print the detailed queryables schema as YAML",
+)
 @click.pass_context
-def list_queryables(ctx: Context, provider: str, collection: Optional[str]) -> None:
-    """Print the queryable parameters of a provider"""
-    from pydantic import AliasChoices
-
+def list_queryables(ctx: Context, **kwargs: Any) -> None:
+    """Print the queryable parameters of a provider and/or a collection"""
     from eodag.api.core import EODataAccessGateway
     from eodag.utils.exceptions import UnsupportedProvider
     from eodag.utils.logging import setup_logging
 
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
-    kwargs: dict[str, Any] = {"collection": collection} if collection else {}
+    provider = kwargs.pop("provider")
+    json_output = kwargs.pop("json")
+    yaml_output = kwargs.pop("yaml")
+    search_kwargs = {k: v for k, v in kwargs.items() if v}
     try:
-        queryables = dag.list_queryables(provider=provider, **kwargs)
+        queryables = dag.list_queryables(provider=provider, **search_kwargs)
     except UnsupportedProvider as e:
         # unknown provider, provider not supporting the collection...: keep the details
         click.echo(str(e))
-        if provider not in dag.providers.names + dag.providers.groups:
+        if provider and provider not in dag.providers.names + dag.providers.groups:
             click.echo("Available providers: {}".format(", ".join(dag.providers.names)))
         sys.exit(1)
 
-    wrapper = functools.partial(
-        textwrap.TextWrapper, break_long_words=False, break_on_hyphens=False
-    )
-    name_wrapper = wrapper(initial_indent="* ", subsequent_indent="  ")
-    description_wrapper = wrapper(initial_indent="    ", subsequent_indent="    ")
-    scope = f" for collection '{collection}'" if collection else ""
-    click.echo(f"Listing queryables of provider '{provider}'{scope}:\n")
-    for name, annotated in queryables.items():
-        field = annotated.__metadata__[0]
-        details = []
-        if field.is_required():
-            details.append("required")
-        elif field.get_default() is not None:
-            details.append(f"default: {field.get_default()}")
-        alias = field.validation_alias or field.alias or field.serialization_alias
-        if isinstance(alias, AliasChoices):
-            details.append("alias: " + ", ".join(str(c) for c in alias.choices))
-        elif isinstance(alias, str):
-            details.append(f"alias: {alias}")
-        suffix = f" ({'; '.join(details)})" if details else ""
-        type_repr = _type_repr(annotated.__args__[0])
-        click.echo(name_wrapper.fill(f"{name}: {type_repr}{suffix}"))
-        if field.description:
-            click.echo(description_wrapper.fill(field.description))
-    allowed = "yes" if queryables.additional_properties else "no"
-    click.echo(f"\nAdditional properties allowed: {allowed}")
-    if queryables.additional_information:
-        click.echo(f"Note: {queryables.additional_information}")
+    if json_output:
+        click.echo(json.dumps(queryables.get_model_json_schema()))
+    elif yaml_output:
+        click.echo(
+            yaml.dump(
+                queryables.get_model_json_schema(),
+                Dumper=IndentedSafeDumper,
+                sort_keys=False,
+                allow_unicode=True,
+            )
+        )
+    elif queryables:
+        click.echo("\n".join(queryables))
 
 
 @eodag_cli.command(name="discover", help="Fetch providers to discover collections")

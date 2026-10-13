@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime as dt
+import json
 import logging
 import os
 import re
@@ -29,10 +30,11 @@ from typing import Annotated, Literal, Optional, Tuple
 import click
 import responses
 import shapely
+import yaml
 from click.testing import CliRunner
 from faker import Faker
 from packaging import version
-from pydantic import AliasChoices, Field
+from pydantic import Field
 
 from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
@@ -867,7 +869,7 @@ class TestEodagCli(unittest.TestCase):
 
     @mock.patch("eodag.api.core.EODataAccessGateway.list_queryables", autospec=True)
     def test_eodag_queryables_provider(self, mock_list_queryables):
-        """Calling eodag queryables with a provider should list its queryables"""
+        """Calling eodag queryables with a provider should only list the names of its queryables"""
         mock_list_queryables.return_value = QueryablesDict(
             additional_properties=False,
             additional_information="cop_dataspace: Please select a collection!",
@@ -878,36 +880,34 @@ class TestEodagCli(unittest.TestCase):
             ],
         )
 
-        exit_code, output, error = self.eodag_command(["queryables", "cop_dataspace"])
-        self.assertEqual(exit_code, 0)
-        self.assertIsNone(error)
+        for option in ("-p", "--provider"):
+            with self.subTest(option=option):
+                mock_list_queryables.reset_mock()
+                exit_code, output, error = self.eodag_command(
+                    ["queryables", option, "cop_dataspace"]
+                )
+                self.assertEqual(exit_code, 0)
+                self.assertIsNone(error)
 
-        mock_list_queryables.assert_called_once_with(mock.ANY, provider="cop_dataspace")
-        self.assertIn("Listing queryables of provider 'cop_dataspace':", output)
-        self.assertIn("* collection: str (required)", output)
-        self.assertIn("* eo_cloud_cover: float (alias: eo:cloud_cover)", output)
-        self.assertIn("    Cloud cover in %", output)
-        self.assertIn("Additional properties allowed: no", output)
-        self.assertIn("Note: cop_dataspace: Please select a collection!", output)
+                mock_list_queryables.assert_called_once_with(
+                    mock.ANY, provider="cop_dataspace"
+                )
+                self.assertEqual(output.splitlines(), ["collection", "eo_cloud_cover"])
 
     @mock.patch("eodag.api.core.EODataAccessGateway.list_queryables", autospec=True)
     def test_eodag_queryables_provider_collection(self, mock_list_queryables):
         """Calling eodag queryables with a provider and a collection should list the
-        queryables of this collection, wherever the option is given"""
+        queryables of this collection, wherever the options are given"""
         mock_list_queryables.return_value = QueryablesDict(
-            additional_properties=True,
             collection=Annotated[str, Field("S2_MSI_L1C")],
-            geom=Annotated[
-                str,
-                Field(None, validation_alias=AliasChoices("geometry", "intersects")),
-            ],
+            geom=Annotated[str, Field(None)],
         )
 
         for command in (
-            ["queryables", "creodias", "--collection", "S2_MSI_L1C"],
-            ["queryables", "creodias", "-c", "S2_MSI_L1C"],
-            ["queryables", "creodias", "--collection=S2_MSI_L1C"],
-            ["queryables", "--collection", "S2_MSI_L1C", "creodias"],
+            ["queryables", "-p", "creodias", "-c", "S2_MSI_L1C"],
+            ["queryables", "--provider", "creodias", "--collection", "S2_MSI_L1C"],
+            ["queryables", "--provider=creodias", "--collection=S2_MSI_L1C"],
+            ["queryables", "-c", "S2_MSI_L1C", "-p", "creodias"],
         ):
             with self.subTest(command=command):
                 mock_list_queryables.reset_mock()
@@ -918,15 +918,32 @@ class TestEodagCli(unittest.TestCase):
                 mock_list_queryables.assert_called_once_with(
                     mock.ANY, provider="creodias", collection="S2_MSI_L1C"
                 )
-                self.assertIn(
-                    "Listing queryables of provider 'creodias' "
-                    "for collection 'S2_MSI_L1C':",
-                    output,
-                )
-                self.assertIn("* collection: str (default: S2_MSI_L1C)", output)
-                self.assertIn("* geom: str (alias: geometry, intersects)", output)
-                self.assertIn("Additional properties allowed: yes", output)
-                self.assertNotIn("Note:", output)
+                self.assertEqual(output.splitlines(), ["collection", "geom"])
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.list_queryables", autospec=True)
+    def test_eodag_queryables_collection_only(self, mock_list_queryables):
+        """Calling eodag queryables with a collection only should not require a provider"""
+        mock_list_queryables.return_value = QueryablesDict(
+            collection=Annotated[str, Field("S2_MSI_L1C")]
+        )
+
+        exit_code, output, error = self.eodag_command(
+            ["queryables", "--collection", "S2_MSI_L1C"]
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+
+        mock_list_queryables.assert_called_once_with(
+            mock.ANY, provider=None, collection="S2_MSI_L1C"
+        )
+        self.assertEqual(output.splitlines(), ["collection"])
+
+    def test_eodag_queryables_no_provider(self):
+        """Calling eodag queryables without provider should list the common queryables"""
+        exit_code, output, error = self.eodag_command(["queryables"])
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertEqual(output.splitlines(), ["collection"])
 
     @mock.patch("eodag.api.core.EODataAccessGateway.list_queryables", autospec=True)
     def test_eodag_queryables_chained(self, mock_list_queryables):
@@ -935,11 +952,16 @@ class TestEodagCli(unittest.TestCase):
             collection=Annotated[str, Field(...)]
         )
 
-        for command, collection in (
-            (["queryables", "creodias", "version"], None),
-            (["queryables", "creodias", "-c", "S2_MSI_L1C", "version"], "S2_MSI_L1C"),
-            (["queryables", "-c", "S2_MSI_L1C", "creodias", "version"], "S2_MSI_L1C"),
-            (["version", "queryables", "creodias", "-c", "S2_MSI_L1C"], "S2_MSI_L1C"),
+        for command, kwargs in (
+            (["queryables", "-p", "creodias", "version"], {}),
+            (
+                ["queryables", "-p", "creodias", "-c", "S2_MSI_L1C", "version"],
+                {"collection": "S2_MSI_L1C"},
+            ),
+            (
+                ["version", "queryables", "-p", "creodias", "-c", "S2_MSI_L1C"],
+                {"collection": "S2_MSI_L1C"},
+            ),
         ):
             with self.subTest(command=command):
                 mock_list_queryables.reset_mock()
@@ -947,54 +969,94 @@ class TestEodagCli(unittest.TestCase):
                 self.assertEqual(exit_code, 0)
                 self.assertIsNone(error)
 
-                expected_kwargs = {"collection": collection} if collection else {}
                 mock_list_queryables.assert_called_once_with(
-                    mock.ANY, provider="creodias", **expected_kwargs
+                    mock.ANY, provider="creodias", **kwargs
                 )
-                self.assertIn("Listing queryables of provider 'creodias'", output)
+                self.assertIn("collection\n", output)
                 self.assertIn("): version ", output)
 
     @mock.patch("eodag.api.core.EODataAccessGateway.list_queryables", autospec=True)
-    def test_eodag_queryables_all_allowed_values(self, mock_list_queryables):
-        """Calling eodag queryables should list all the possible values of a parameter"""
-        orbits = [f"ORBIT-{n}A" for n in range(40)]
-        mock_list_queryables.return_value = QueryablesDict(
-            platform=Annotated[Literal["SENTINEL-1A", "SENTINEL-1B"], Field(None)],
-            version=Annotated[Optional[Literal["v1.2", "S2.MSI"]], Field(None)],
-            polarizations=Annotated[list[Literal["VV", "VH"]], Field(None)],
-            orbit=Annotated[Literal[tuple(orbits)], Field(None)],
+    def test_eodag_queryables_json(self, mock_list_queryables):
+        """Calling eodag queryables --json should print the detailed JSON schema of the
+        queryables"""
+        queryables = QueryablesDict(
+            collection=Annotated[str, Field(...)],
+            platform=Annotated[
+                Literal["SENTINEL-1A", "SENTINEL-1B"],
+                Field(None, description="Satellite platform"),
+            ],
+            eo_cloud_cover=Annotated[
+                Optional[float], Field(None, alias="eo:cloud_cover")
+            ],
         )
+        mock_list_queryables.return_value = queryables
 
-        exit_code, output, error = self.eodag_command(["queryables", "creodias"])
+        exit_code, output, error = self.eodag_command(
+            ["queryables", "-p", "cop_dataspace", "--json"]
+        )
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
 
-        self.assertIn("* platform: Literal['SENTINEL-1A', 'SENTINEL-1B']", output)
-        self.assertIn("* version: Literal['v1.2', 'S2.MSI'] | None", output)
-        self.assertIn("* polarizations: list[Literal['VV', 'VH']]", output)
-        # long lists of values are wrapped, but none of them is cut or hidden
-        for orbit in orbits:
-            self.assertIn(f"'{orbit}'", output)
-        self.assertNotIn("...", output)
+        mock_list_queryables.assert_called_once_with(mock.ANY, provider="cop_dataspace")
+        schema = json.loads(output)
+        self.assertEqual(schema, queryables.get_model_json_schema())
+        # details that are not available in the default output are given
+        self.assertEqual(
+            schema["properties"]["platform"]["enum"], ["SENTINEL-1A", "SENTINEL-1B"]
+        )
+        self.assertEqual(
+            schema["properties"]["platform"]["description"], "Satellite platform"
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.list_queryables", autospec=True)
+    def test_eodag_queryables_yaml(self, mock_list_queryables):
+        """Calling eodag queryables --yaml should print the detailed YAML schema of the
+        queryables"""
+        queryables = QueryablesDict(
+            collection=Annotated[str, Field(...)],
+            platform=Annotated[
+                Literal["SENTINEL-1A", "SENTINEL-1B"],
+                Field(None, description="Satellite platform"),
+            ],
+        )
+        mock_list_queryables.return_value = queryables
+
+        exit_code, output, error = self.eodag_command(
+            ["queryables", "-p", "cop_dataspace", "-c", "S1_SAR_GRD", "--yaml"]
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+
+        mock_list_queryables.assert_called_once_with(
+            mock.ANY, provider="cop_dataspace", collection="S1_SAR_GRD"
+        )
+        self.assertEqual(yaml.safe_load(output), queryables.get_model_json_schema())
+        # not JSON, and block sequences are indented under their key
+        with self.assertRaises(json.JSONDecodeError):
+            json.loads(output)
+        self.assertRegex(output, r"(?m)^( +)enum:\n\1  - SENTINEL-1A$")
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.list_queryables", autospec=True)
+    def test_eodag_queryables_json_yaml_exclusive(self, mock_list_queryables):
+        """eodag queryables --json and --yaml cannot be used together"""
+        exit_code, output, error = self.eodag_command(
+            ["queryables", "-p", "cop_dataspace", "--json", "--yaml"]
+        )
+        self.assertEqual(exit_code, 2)
+        self.assertIn("mutually exclusive", output)
+        mock_list_queryables.assert_not_called()
 
     def test_eodag_queryables_help(self):
-        """Calling eodag queryables --help should work wherever the option is given"""
-        for command in (["queryables", "--help"], ["queryables", "creodias", "--help"]):
-            with self.subTest(command=command):
-                exit_code, output, error = self.eodag_command(command)
-                self.assertEqual(exit_code, 0)
-                self.assertIn("queryables [OPTIONS] PROVIDER", output)
-
-    def test_eodag_queryables_no_provider(self):
-        """Calling eodag queryables without provider should return a usage error"""
-        exit_code, output, error = self.eodag_command(["queryables"])
-        self.assertEqual(exit_code, 2)
-        self.assertIn("PROVIDER", output)
+        """Calling eodag queryables --help should describe its options"""
+        exit_code, output, error = self.eodag_command(["queryables", "--help"])
+        self.assertEqual(exit_code, 0)
+        for option in ("--provider", "--collection", "--json", "--yaml"):
+            self.assertIn(option, output)
 
     def test_eodag_queryables_unknown_provider(self):
         """Calling eodag queryables with an unknown provider should fail and print a
         list of available providers"""
-        exit_code, output, error = self.eodag_command(["queryables", "random"])
+        exit_code, output, error = self.eodag_command(["queryables", "-p", "random"])
         self.assertEqual(exit_code, 1)
         self.assertIsInstance(error, SystemExit)
         self.assertIn("random: provider is not recognised by eodag", output)
@@ -1014,7 +1076,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag queryables with a collection that the provider does not
         support should explain it, and not report a provider typo"""
         exit_code, output, error = self.eodag_command(
-            ["queryables", "earth_search", "--collection", "S3_EFR"]
+            ["queryables", "-p", "earth_search", "--collection", "S3_EFR"]
         )
         self.assertEqual(exit_code, 1)
         self.assertIsInstance(error, SystemExit)
