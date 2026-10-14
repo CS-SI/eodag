@@ -33,6 +33,7 @@ from eodag.plugins.search.base import Search
 from eodag.utils import (
     AUTH_TOPIC_KEYS,
     GENERIC_COLLECTION,
+    ONLINE_STATUS,
     PLUGINS_TOPIC_KEYS,
     dict_md5sum,
 )
@@ -251,10 +252,13 @@ class PluginManager:
         """
         if product is not None and len(product.assets) > 0:
             matching_url = next(iter(product.assets.values()))["href"]
+        elif (
+            product is not None
+            and product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
+        ):
+            matching_url = product.properties.get("eodag:order_link")
         elif product is not None:
-            matching_url = product.properties.get(
-                "eodag:download_link"
-            ) or product.properties.get("eodag:order_link")
+            matching_url = product.properties.get("eodag:download_link")
         else:
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)
 
