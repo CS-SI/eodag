@@ -167,6 +167,34 @@ class TestProviderConfig(unittest.TestCase):
             provider_config.products["EODAG_COLLECTION"], "provider_collection"
         )
 
+    def test_provider_config_enabled_and_fetchable(self):
+        """Test that the 'enabled' and 'fetchable' flags are correctly set in ProviderConfig."""
+        # by default, a provider is enabled and not fetchable when it is configured.
+        mapping = {
+            "name": "test_provider",
+            "api": {
+                "type": "MyPluginClass",
+            },
+            "products": {"EODAG_COLLECTION": "provider_collection"},
+        }
+        provider_config = ProviderConfig.from_mapping(mapping)
+        self.assertTrue(provider_config.enabled)
+        self.assertFalse(provider_config.fetchable)
+
+        # when the provider has a discover_collections section with a fetch_url, it becomes fetchable
+        mapping = {
+            "name": "test_provider",
+            "api": {
+                "type": "MyPluginClass",
+                "discover_collections": {"fetch_url": "https://foo.bar/collections"},
+            },
+            "products": {"EODAG_COLLECTION": "provider_collection"},
+        }
+
+        provider_config = ProviderConfig.from_mapping(mapping)
+        self.assertTrue(provider_config.enabled)
+        self.assertTrue(provider_config.fetchable)
+
     def test_provider_config_validation_missing_name(self):
         """Test ProviderConfig validation with missing name."""
         with self.assertRaisesRegex(

@@ -40,7 +40,7 @@ jobs:
         run: |
           conda run eodag version
           conda run eodag --help | head -20
-          conda run eodag list --no-fetch | head -15
+          conda run eodag list | head -15
 
       - name: Test basic functionality
         shell: bash -l {0}
@@ -58,7 +58,7 @@ jobs:
           assert len(available_providers) > 0, "No providers found!"
 
           # Check that some collections are available
-          collections = dag.list_collections(fetch_providers=False)
+          collections = dag.list_collections()
           print(f"Available collections: {collections[:3]}...")  # Print first 3
           assert len(collections) > 0, "No collections found!"
 

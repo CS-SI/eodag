@@ -378,6 +378,11 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         self.mundi_search_plugin = self.get_search_plugin(self.collection, provider)
         self.mundi_auth_plugin = self.get_auth_plugin(self.mundi_search_plugin)
 
+    def tearDown(self) -> None:
+        super().tearDown()
+        # Remove the federation backend from the database as it was manually added in the setup
+        self.plugins_manager._db.delete_federation_backends(["mundi"])
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
@@ -2060,6 +2065,11 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"'
         )
         self.onda_products_count = 47
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        # Remove the federation backend from the database as it was manually added in the setup
+        self.plugins_manager._db.delete_federation_backends(["onda"])
 
     def test_plugins_search_odatav4search_normalize_results_onda(self):
         """ODataV4Search.normalize_results must use metada pre-mapping if configured"""
