@@ -1014,6 +1014,10 @@ class TestEOProduct(EODagTestBase):
                 "requester_pays": True,
             },
         )
+        zip_url = "zip+s3://foo/product.zip!band.jp2"
+        product.assets.update({"band": {"href": zip_url}})
+        expected = {**product.get_storage_options(), "path": zip_url}
+        self.assertDictEqual(product.get_storage_options(asset_key="band"), expected)
 
     @mock.patch("eodag.api.product._product.ServiceResource", new=object)
     def test_get_storage_options_s3_credentials(self):
@@ -1053,6 +1057,10 @@ class TestEOProduct(EODagTestBase):
                 "token": "baz",
             },
         )
+        zip_url = "zip+s3://foo/product.zip!band.jp2"
+        product.assets.update({"band": {"href": zip_url}})
+        expected = {**product.get_storage_options(), "path": zip_url}
+        self.assertDictEqual(product.get_storage_options(asset_key="band"), expected)
 
     @mock.patch("eodag.api.product._product.ServiceResource", new=object)
     def test_get_storage_options_s3_anon(self):
@@ -1079,6 +1087,10 @@ class TestEOProduct(EODagTestBase):
                 "anon": True,
             },
         )
+        zip_url = "zip+s3://foo/product.zip!band.jp2"
+        product.assets.update({"band": {"href": zip_url}})
+        expected = {**product.get_storage_options(), "path": zip_url}
+        self.assertDictEqual(product.get_storage_options(asset_key="band"), expected)
 
     def test_get_storage_options_error(self):
         """get_storage_options should raise when the asset key is missing"""

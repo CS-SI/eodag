@@ -704,7 +704,7 @@ class EOProduct:
         if (
             isinstance(auth, ServiceResource)
             and isinstance(self.downloader_auth, AwsAuth)
-            and url.startswith("s3://")
+            and url.startswith(("s3://", "zip+s3://"))
         ):
             auth_kwargs: dict[str, Any] = dict()
             # AwsAuth
