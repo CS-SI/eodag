@@ -22,7 +22,9 @@ dedl:
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.downloadLink.href'
-      federation:backends: '$.null'
+      federation:backends:
+        - '{{"query": {{"federation:backends": {{"eq": "{federation:backends}"}}}}}}'
+        - '$.properties.federation:backends'
       storage:schemes: '$.null'
       storage:tier: '$.null'
       assets: '$.null'
@@ -38,7 +40,7 @@ dedl:
         title: '$.title'
         extent: '$.extent'
     pagination:
-      max_limit: 100
+      max_limit: 200
       next_page_token_key: token
     sort:
       sort_param_mapping:
