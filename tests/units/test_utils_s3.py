@@ -178,6 +178,27 @@ class TestUtilsS3(TestCase):
         self.assertIsInstance(zip_file, zipfile.ZipFile)
         self.assertEqual(len(zip_file.filelist), 6)
 
+    def test_utils_s3_open_s3_zip64_object(self):
+        archive = io.BytesIO()
+        with patch("zipfile.ZIP64_LIMIT", 0), patch("zipfile.ZIP_FILECOUNT_LIMIT", 1):
+            with zipfile.ZipFile(archive, "w") as zip_file:
+                zip_file.writestr("one.txt", b"first")
+                zip_file.writestr("two.txt", b"second")
+
+        zip_bytes = archive.getvalue()
+        self.assertIn(b"PK\x06\x06", zip_bytes)
+        self.assertIn(b"PK\x06\x07", zip_bytes)
+        self.s3_client.put_object(
+            Bucket="mybucket", Key="zip64-directory.zip", Body=zip_bytes
+        )
+
+        with open_s3_zipped_object(
+            "mybucket", "zip64-directory.zip", self.s3_client
+        ) as zip_file:
+            self.assertEqual(zip_file.namelist(), ["one.txt", "two.txt"])
+            self.assertEqual(zip_file.read("one.txt"), b"first")
+            self.assertEqual(zip_file.read("two.txt"), b"second")
+
     def test_s3_seekable_file_read_and_seek_contract(self):
         stream = S3SeekableFile("mybucket", "file1.txt", self.s3_client, size=6)
 
