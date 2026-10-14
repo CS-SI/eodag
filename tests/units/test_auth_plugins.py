@@ -33,7 +33,6 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
-from eodag.api.provider import ProvidersDict
 from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
 from eodag.utils import MockResponse
 from tests.context import (
@@ -44,9 +43,10 @@ from tests.context import (
     HeaderAuth,
     MisconfiguredError,
     OIDCTokenExchangeAuth,
-    PluginManager,
     RequestError,
     TimeOutError,
+    build_provider_configs,
+    make_plugins_manager,
     raise_if_auth_error,
 )
 
@@ -55,13 +55,13 @@ class BaseAuthPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.plugins_manager = PluginManager(ProvidersDict())
+        cls.plugins_manager = make_plugins_manager()
         cls.auth_plugins = {}
 
     def tearDown(self):
         super().tearDown()
         # remove credentials set during tests
-        for provider in self.plugins_manager.providers:
+        for provider in self.plugins_manager._db.get_federation_backends():
             self.get_auth_plugin(provider).config.__dict__.pop("credentials", None)
 
     def get_auth_plugin(self, provider):
@@ -76,7 +76,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_text_token_simple_url": {
                     "products": {"foo_product": {}},
@@ -194,7 +194,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             }
         )
 
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_tokenauth_validate_credentials_empty(self):
         """TokenAuth.validate_credentials must raise an error on empty credentials"""
@@ -702,7 +702,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         cls.aws_secret_access_key = "my_secret_key"
         cls.aws_session_token = "my_session_token"
         cls.profile_name = "my_profile"
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_with_auth_keys": {
                     "products": {"foo_product": {}},
@@ -737,7 +737,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
@@ -969,7 +969,7 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -980,7 +980,7 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_eoiam_validate_credentials_empty(self):
         """EOIAMAuth.validate_config_credentials must raise an error on empty credentials"""
@@ -1573,7 +1573,7 @@ class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_with_headers_in_conf": {
                     "products": {"foo_product": {}},
@@ -1590,7 +1590,7 @@ class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_header_validate_credentials_empty(self):
         """HTTPHeaderAuth.validate_credentials must raise an error on empty credentials"""
@@ -1637,7 +1637,7 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -1648,7 +1648,7 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_qsauth_validate_credentials_empty(self):
         """HttpQueryStringAuth.validate_credentials must raise an error on empty credentials"""
@@ -1717,7 +1717,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -1732,7 +1732,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
                 }
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_sasauth_validate_credentials_ok(self):
         """SASAuth.validate_credentials must be ok on empty or non-empty credentials"""
@@ -1858,7 +1858,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -1874,7 +1874,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 }
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
         oidc_config = {
             "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             "token_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
@@ -2131,7 +2131,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_token_provision_invalid": {
                     "products": {"foo_product": {}},
@@ -2257,7 +2257,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def get_auth_plugin(self, provider):
         with mock.patch(
@@ -2290,24 +2290,24 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"foo": "bar"}
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
-        self.assertTrue(
-            '"token_provision" must be one of "qs", "header", or "basic"'
-            in str(context.exception)
+        self.assertIn(
+            '"token_provision" must be one of "qs", "header", or "basic"',
+            str(context.exception),
         )
         # `token_provision=="qs"` but `token_qs_key` is missing
         auth_plugin = self.get_auth_plugin("provider_token_qs_key_missing")
         auth_plugin.config.credentials = {"foo": "bar"}
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
-        self.assertTrue(
-            '"qs" must have "token_qs_key" config parameter as well'
-            in str(context.exception)
+        self.assertIn(
+            '"qs" must have "token_qs_key" config parameter as well',
+            str(context.exception),
         )
         # Missing credentials
         auth_plugin = self.get_auth_plugin("provider_ok")
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
-        self.assertTrue("Missing credentials" in str(context.exception))
+        self.assertIn("Missing credentials", str(context.exception))
 
     def test_plugins_auth_codeflowauth_validate_credentials_ok(self):
         """OIDCAuthorizationCodeFlowAuth.validate_credentials must be ok on non-empty credentials"""
