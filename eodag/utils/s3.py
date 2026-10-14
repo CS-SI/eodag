@@ -94,29 +94,45 @@ class S3SeekableFile(io.RawIOBase):
 
     def readable(self) -> bool:
         """Return whether the stream is readable."""
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return True
 
     def seekable(self) -> bool:
         """Return whether the stream supports seeking."""
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return True
 
     def tell(self) -> int:
         """Return the current stream position."""
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return self._pos
 
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
         """Seek to the given byte offset and return the new position."""
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         if whence == io.SEEK_SET:
-            self._pos = offset
+            new_pos = offset
         elif whence == io.SEEK_CUR:
-            self._pos += offset
+            new_pos = self._pos + offset
         elif whence == io.SEEK_END:
-            self._pos = self._size + offset
-        self._pos = max(0, min(self._pos, self._size))
+            new_pos = self._size + offset
+        else:
+            raise ValueError(f"Invalid whence ({whence}, should be 0, 1 or 2)")
+        if new_pos < 0:
+            raise OSError("Negative seek position")
+        self._pos = new_pos
         return self._pos
 
     def readinto(self, b: bytearray | memoryview) -> int:  # type: ignore[override]
         """Read bytes into a pre-allocated writable buffer and return the count."""
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
+        if not b:
+            return 0
         if self._pos >= self._size:
             return 0
         end = min(self._pos + len(b) - 1, self._size - 1)
@@ -128,9 +144,13 @@ class S3SeekableFile(io.RawIOBase):
 
     def read(self, size: int = -1) -> bytes:  # type: ignore[override]
         """Read up to *size* bytes and return them; -1 reads until EOF."""
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
+        if size == 0:
+            return b""
         if self._pos >= self._size:
             return b""
-        if size == -1 or size is None:
+        if size is None or size < 0:
             end = self._size - 1
         else:
             end = min(self._pos + size - 1, self._size - 1)

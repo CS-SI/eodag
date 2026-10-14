@@ -9,6 +9,7 @@ import boto3
 from concurrent.futures import Future, ThreadPoolExecutor
 from moto import mock_aws
 
+from eodag.utils.s3 import S3SeekableFile
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     AwsAuth,
@@ -176,6 +177,40 @@ class TestUtilsS3(TestCase):
         )
         self.assertIsInstance(zip_file, zipfile.ZipFile)
         self.assertEqual(len(zip_file.filelist), 6)
+
+    def test_s3_seekable_file_read_and_seek_contract(self):
+        stream = S3SeekableFile("mybucket", "file1.txt", self.s3_client, size=6)
+
+        with patch(
+            "eodag.utils.s3.fetch_range",
+            side_effect=lambda bucket, key, start, end, client: bytes(
+                range(start, end + 1)
+            ),
+        ) as fetch:
+            self.assertEqual(stream.read(0), b"")
+            self.assertEqual(stream.readinto(bytearray()), 0)
+            fetch.assert_not_called()
+
+            self.assertEqual(stream.read(2), b"\x00\x01")
+            buffer = bytearray(2)
+            self.assertEqual(stream.seek(0), 0)
+            self.assertEqual(stream.readinto(buffer), 2)
+            self.assertEqual(buffer, b"\x00\x01")
+            self.assertEqual(stream.seek(-1, io.SEEK_END), 5)
+            self.assertEqual(stream.read(-2), b"\x05")
+
+            self.assertEqual(stream.seek(8), 8)
+            self.assertEqual(stream.read(), b"")
+            self.assertEqual(fetch.call_count, 3)
+
+        with self.assertRaises(ValueError):
+            stream.seek(0, 99)
+        with self.assertRaises(OSError):
+            stream.seek(-1)
+
+        stream.close()
+        with self.assertRaises(ValueError):
+            stream.read()
 
     def test_utils_s3_list_files_in_s3_prefix(self):
         """list_files_in_s3_prefix must exclude directory markers and siblings."""
@@ -356,6 +391,29 @@ class TestUtilsS3(TestCase):
                     self.assertIsInstance(size, int)
                     self.assertEqual(start, case["expected_start"])
                     self.assertEqual(size, case["expected_size"])
+
+    def test_utils_s3_file_position_from_s3_zip64_local_header(self):
+        content = b"ZIP64 local header content"
+        zip_bytes = io.BytesIO()
+        with zipfile.ZipFile(
+            zip_bytes, "w", compression=zipfile.ZIP_STORED
+        ) as zip_file:
+            with zip_file.open("zip64.txt", "w", force_zip64=True) as member:
+                member.write(content)
+
+        self.s3_client.put_object(
+            Bucket="mybucket", Key="zip64-local-header.zip", Body=zip_bytes.getvalue()
+        )
+        start, size = file_position_from_s3_zip(
+            "mybucket", "zip64-local-header.zip", self.s3_client, "zip64.txt"
+        )
+
+        response = self.s3_client.get_object(
+            Bucket="mybucket",
+            Key="zip64-local-header.zip",
+            Range=f"bytes={start}-{start + size - 1}",
+        )
+        self.assertEqual(response["Body"].read(), content)
 
     def test_utils_s3_open_s3_zipped_object_invalid(self):
         """Test a corrupted ZIP file to ensure you raise properly on bad EOCD."""
