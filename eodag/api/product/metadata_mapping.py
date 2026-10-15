@@ -68,9 +68,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.product.metadata_mapping")
 
 SEP = r"#"
-INGEST_CONVERSION_REGEX = re.compile(
-    r"^{(?P<path>[^#]*)" + SEP + r"(?P<converter>[^\d\W]\w*)(\((?P<args>.*)\))*}$"
-)
 NOT_AVAILABLE = "Not Available"
 NOT_MAPPED = "Not Mapped"
 ONLINE_STATUS = "succeeded"
@@ -82,9 +79,55 @@ COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
 DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 
+def _parse_converter_chain(
+    expression: str,
+) -> tuple[str, list[tuple[str, Optional[str]]]]:
+    """Split a field and its converters, preserving separators inside arguments."""
+    if SEP not in expression:
+        return expression, []
+    parts = []
+    start = 0
+    depth = 0
+    quote = None
+    escaped = False
+    for index, character in enumerate(expression):
+        # Escaped characters cannot open/close quotes or delimit a converter.
+        if escaped:
+            escaped = False
+        elif character == "\\":
+            escaped = True
+        elif quote is not None:
+            if character == quote:
+                quote = None
+        elif character in "\"'`":
+            # Backticks protect JSONPath expressions as quotes protect arguments.
+            quote = character
+        elif character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+        elif character == SEP and depth == 0:
+            # Only separators outside quotes and nested arguments split the chain.
+            parts.append(expression[start:index])
+            start = index + 1
+    parts.append(expression[start:])
+    if len(parts) == 1:
+        return expression, []
+
+    converters = []
+    for part in parts[1:]:
+        # Keep arguments as text: each converter interprets its own argument syntax.
+        match = re.fullmatch(r"([^\d\W]\w*)(?:\((.*)\))?", part, re.DOTALL)
+        if match is None:
+            # Do not partially interpret a field containing an invalid chain.
+            return expression, []
+        converters.append((match[1], match[2]))
+    return parts[0], converters
+
+
 def get_metadata_path(
     map_value: Union[str, list[Optional[str]]],
-) -> tuple[Union[list[str], None], str]:
+) -> tuple[Union[list[Optional[str]], str, None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
 
@@ -117,8 +160,8 @@ def get_metadata_path(
                       in the provider search config. For example, it is the list
                       `['platform', '$.properties.platform']` with the sample
                       above. Or the string `$.properties.id`.
-    :returns: Either, None and the path to the metadata value, or a list of converter
-             and its args, and the path to the metadata value.
+    :returns: The converter (a name/args list for a single converter, a string for
+              a chain, or None) and the path to the metadata value.
 
     Non-queryable mapping (plain string) — no converter:
 
@@ -132,13 +175,15 @@ def get_metadata_path(
     """
     path = get_metadata_path_value(map_value)
     try:
-        match = INGEST_CONVERSION_REGEX.match(path)
+        if path.startswith("{") and path.endswith("}"):
+            field, converters = _parse_converter_chain(path[1:-1])
+            if len(converters) == 1:
+                return list(converters[0]), field
+            if converters:
+                return path[1 + len(field) + len(SEP) : -1], field
     except TypeError as e:
         logger.error("Could not match regex on metadata path '%s'" % str(path))
         raise e
-    if match:
-        g = match.groupdict()
-        return [g["converter"], g["args"]], g["path"]
     return None, path
 
 
@@ -169,6 +214,9 @@ def get_search_param(map_value: list[str]) -> str:
 
 def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     """Format a string of form ``{<field_name>#<conversion_function>}``
+
+    Converters can be chained with ``#`` and are applied from left to right.
+    Separators inside converter arguments are kept unchanged.
 
     The currently understood converters are:
         - ``assets_list_to_dict``: convert a list of asset objects into a dictionary keyed by asset name
@@ -233,18 +281,13 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     '2021-04-21T00:00:00.000Z'
     >>> format_metadata("{values#csv_list}", values=["a", "b", "c"])
     'a,b,c'
+    >>> format_metadata('{platform#slice_str(-1, None, None)#to_upper}', platform="sentinel-1a")
+    'A'
     """
 
     class MetadataFormatter(Formatter):
-        CONVERSION_REGEX = re.compile(
-            r"^(?P<field_name>.+)"
-            + SEP
-            + r"(?P<converter>[^\d\W]\w*)(\((?P<args>.*)\))*$"
-        )
-
         def __init__(self) -> None:
-            self.custom_converter: Optional[Callable] = None
-            self.custom_args: Optional[str] = None
+            self.custom_converters: list[tuple[Callable, Optional[str]]] = []
 
         def parse(self, format_string: str):
             """
@@ -254,6 +297,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             pattern = re.compile(r"{([^{}]+)}")
 
             def rewrite_field(field: str) -> str:
+                if len(_parse_converter_chain(field)[1]) > 1:
+                    return field.replace(":", "_COLON_")
                 # If there's a format spec (e.g., {foo:bar:.2f}), preserve it
                 if ":" in field and not field.lstrip().startswith(("!", ".", ":")):
                     before_colon, *after = field.split(":")
@@ -288,35 +333,34 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return super().get_value(key, args, kwargs)
 
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
-            conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
-            # Register a custom converter if any for later use (see convert_field)
-            # This is done because we don't have the value associated to field_name at
-            # this stage
-            if conversion_func_spec:
-                field_name = conversion_func_spec.groupdict()["field_name"]
-                converter = conversion_func_spec.groupdict()["converter"]
-                self.custom_args = conversion_func_spec.groupdict()["args"]
-                # converts back "_COLON_" to ":"
-                if self.custom_args is not None and "_COLON_" in self.custom_args:
-                    self.custom_args = self.custom_args.replace("_COLON_", ":")
-                self.custom_converter = getattr(self, "convert_{}".format(converter))
+            field_name, converters = _parse_converter_chain(field_name)
+            self.custom_converters = [
+                (
+                    getattr(self, "convert_{}".format(converter)),
+                    (
+                        converter_args.replace("_COLON_", ":")
+                        if converter_args is not None
+                        else None
+                    ),
+                )
+                for converter, converter_args in converters
+            ]
 
             return super(MetadataFormatter, self).get_field(field_name, args, kwargs)
 
         def convert_field(self, value: Any, conversion: Any) -> Any:
-            # Do custom conversion if any (see get_field)
-            if self.custom_converter is not None:
-                if self.custom_args is not None and value is not None:
-                    converted = self.custom_converter(value, self.custom_args)
-                elif value is not None:
-                    converted = self.custom_converter(value)
-                else:
-                    converted = None
-                # Clear this state variable in case the same converter is used to
-                # resolve other named arguments
-                self.custom_converter = None
-                self.custom_args = None
-                return converted
+            if self.custom_converters:
+                converters = self.custom_converters
+                self.custom_converters = []
+                for converter, converter_args in converters:
+                    if value is None:
+                        break
+                    value = (
+                        converter(value, converter_args)
+                        if converter_args is not None
+                        else converter(value)
+                    )
+                return value
             return super(MetadataFormatter, self).convert_field(value, conversion)
 
         @staticmethod
