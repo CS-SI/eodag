@@ -44,6 +44,7 @@ from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
     DEFAULT_SHAPELY_GEOMETRY,
+    _deprecated,
     deepcopy,
     dict_items_recursive_apply,
     format_string,
@@ -221,12 +222,12 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     The currently understood converters are:
         - ``assets_list_to_dict``: convert a list of asset objects into a dictionary keyed by asset name
         - ``ceda_collection_name``: generate a CEDA collection name from a string
-        - ``wekeo_to_cop_collection``: converts the name of a collection from the WEkEO format to the Copernicus format
+        - ``wekeo_to_cop_collection`` (deprecated): use ``replace_str`` then ``to_lower`` then ``replace_str``
         - ``csv_list``: convert to a comma separated list
         - ``dates_from_cmems_id``: extract min/max UTC datetimes from a CMEMS product identifier
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter``: filter dict items using a jsonpath predicate
-        - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``dict_filter_and_sub`` (deprecated): use ``dict_filter`` then ``recursive_sub_str``
         - ``dict_update``: add/update nested dictionary items from a list of key/value pairs
         - ``dict_with_roles``: keep only dict items with given roles in their "roles" list
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
@@ -245,7 +246,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
           splitting the string on dots
         - ``replace_str``: execute "string".replace(old, new)
-        - ``replace_str_tuple``: apply multiple replacements on a string (parts or complete)
+        - ``replace_str_tuple`` (deprecated): chain ``replace_str`` converters instead
         - ``replace_tuple``: apply multiple replacements matching whole value
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``sanitize``: sanitize string
@@ -675,11 +676,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
+        @_deprecated(reason="Please chain 'replace_str' converters instead")
         def convert_replace_str_tuple(
             value: Union[str, dict[Any, Any]], args: str
         ) -> str:
             """
             Apply multiple replacements on a string (parts or complete).
+
+            Deprecated: chain ``replace_str`` converters instead.
 
             :param value: input string or dict.
             :param args: string representing a list/tuple of (old, new) pairs, like
@@ -824,10 +828,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return result
 
         @staticmethod
+        @_deprecated(
+            reason="Please use 'dict_filter' followed by 'recursive_sub_str' instead"
+        )
         def convert_dict_filter_and_sub(
             input_dict: dict[Any, Any], args: str
         ) -> Union[dict[Any, Any], list[Any]]:
-            """Filters dict items using jsonpath and then apply recursive_sub_str"""
+            """Filter dict items using jsonpath and apply recursive_sub_str.
+
+            Deprecated: chain ``dict_filter`` and ``recursive_sub_str`` instead.
+            """
             jsonpath_filter_str, old, new = ast.literal_eval(args)
             filtered = MetadataFormatter.convert_dict_filter(
                 input_dict, jsonpath_filter_str
@@ -1187,8 +1197,15 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return assets_dict
 
         @staticmethod
+        @_deprecated(
+            reason="Please use 'replace_str' followed by 'to_lower' and 'replace_str' instead"
+        )
         def convert_wekeo_to_cop_collection(val: str, prefix: str) -> str:
-            """Converts the name of a collection from the WEkEO format to the Copernicus format."""
+            """Convert a WEkEO collection name to the Copernicus format.
+
+            Deprecated: chain prefix removal with ``replace_str``, ``to_lower``,
+            and underscore replacement with ``replace_str`` instead.
+            """
             return val.removeprefix(prefix).lower().replace("_", "-")
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat

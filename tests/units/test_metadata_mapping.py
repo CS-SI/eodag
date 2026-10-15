@@ -17,6 +17,7 @@
 # limitations under the License.
 import ast
 import unittest
+import warnings
 from unittest import mock
 
 import orjson
@@ -47,6 +48,73 @@ from tests.context import (
 
 
 class TestMetadataFormatter(unittest.TestCase):
+    def test_deprecated_converters_equivalent_to_chains(self):
+        cases = [
+            (
+                "replace_str_tuple",
+                "Please chain 'replace_str' converters instead",
+                '{value#replace_str_tuple((("foo", "bar"), ("bar", "baz")))}',
+                '{value#replace_str("foo", "bar")#replace_str("bar", "baz")}',
+                ["foo bar", "unchanged", "", {"key": "foo bar"}],
+            ),
+            (
+                "replace_str_tuple",
+                "Please chain 'replace_str' converters instead",
+                '{value#replace_str_tuple((("m", ""), ("k", "000")))}',
+                '{value#replace_str("m", "")#replace_str("k", "000")}',
+                ["10m", "100m", "1k", "1km"],
+            ),
+            (
+                "dict_filter_and_sub",
+                "'dict_filter' followed by 'recursive_sub_str'",
+                """{value#dict_filter_and_sub('$[?(href=~"^s3.*")]', 'bucket', 'archive')}""",
+                """{value#dict_filter($[?(href=~"^s3.*")])#recursive_sub_str('bucket', 'archive')}""",
+                [
+                    {},
+                    {"other": {"href": "https://bucket/other.tif"}},
+                    {
+                        "data": {
+                            "href": "s3://bucket/data.tif",
+                            "links": ["s3://bucket/quicklook.jpg"],
+                        },
+                        "metadata": {"href": "s3://bucket/metadata.xml"},
+                        "other": {"href": "https://bucket/other.tif"},
+                    },
+                    ["not", "a", "dict"],
+                ],
+            ),
+            (
+                "wekeo_to_cop_collection",
+                "'replace_str' followed by 'to_lower' and 'replace_str'",
+                "{value#wekeo_to_cop_collection(EO:ECMWF:DAT:)}",
+                '{value#replace_str("^EO:ECMWF:DAT:", "")#to_lower#replace_str("_", "-")}',
+                [
+                    "EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE",
+                    "LOREM_SATELLITE_CARBON_DIOXIDE",
+                    "OTHER:EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE",
+                    "EO:ECMWF:DAT:",
+                    "",
+                ],
+            ),
+            (
+                "wekeo_to_cop_collection",
+                "'replace_str' followed by 'to_lower' and 'replace_str'",
+                "{value#wekeo_to_cop_collection()}",
+                '{value#to_lower#replace_str("_", "-")}',
+                ["EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE", ""],
+            ),
+        ]
+        for name, replacement, deprecated, chain, values in cases:
+            for value in values:
+                with self.subTest(converter=name, value=value):
+                    with self.assertWarnsRegex(DeprecationWarning, name) as warning:
+                        legacy_result = format_metadata(deprecated, value=value)
+                    self.assertIn(replacement, str(warning.warning))
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("error", DeprecationWarning)
+                        chained_result = format_metadata(chain, value=value)
+                    self.assertEqual(chained_result, legacy_result)
+
     def test_parse_converter_chain(self):
         cases = [
             ("platform", ("platform", [])),
