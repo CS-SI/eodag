@@ -9346,7 +9346,7 @@ SPACENET_OFF_NADIR_BUILDING:
   eodag:sensor_type: OPTICAL
   license: CC-BY-4.0
   title: "SpaceNet 4: Off-Nadir Buildings"
-  extent: {"spatial": {"bbox": [[ 732701.0, 3720189.0, 748901.0, 3744039.0]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
+  extent: {"spatial": {"bbox": [[-84.4922899, 33.5924063, -84.3111812, 33.810971]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
 
 SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
   description: |
@@ -9359,7 +9359,7 @@ SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
   eodag:sensor_type: OPTICAL
   license: CC-BY-4.0
   title: "SpaceNet 5: Automated Road Network Extraction and Route Travel Time Estimation from Satellite Imagery"
-  extent: {"spatial": {"bbox": [[-43.7753747662, -23.0106794336, 72.89403328656945, 55.746917105720065], [37.62123533463809, 55.60938704097397, 37.78303540799408, 55.746917105720065], [72.7844259905958, 18.885500500608433, 72.89403328656945, 19.0645257518164]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
+  extent: {"spatial": {"bbox": [[-43.7753747662, -23.0106794336, 72.89403328656945, 55.746917105720065]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
 
 SPACENET_ALL_WEATHER_MAPPING:
   description: |
@@ -9372,7 +9372,7 @@ SPACENET_ALL_WEATHER_MAPPING:
   eodag:sensor_type: OPTICAL,RADAR
   license: CC-BY-4.0
   title: "SpaceNet 6: All-Weather Mapping"
-  extent: {"spatial": {"bbox": [[590111.9563080214, 5745470.427302527, 596702.0547804891, 5753195.130788647]]}, "temporal": {"interval": [["2019-08-04T00:00:00Z", "2019-08-23T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[4.3083568, 51.8516506, 4.4061755, 51.9221892]]}, "temporal": {"interval": [["2019-08-04T00:00:00Z", "2019-08-23T00:00:00Z"]]}}
 
 # Copernicus Global Human Settlement
 GHS_BUILT_S:
