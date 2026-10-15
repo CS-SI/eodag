@@ -277,7 +277,7 @@ intersphinx_mapping = {
     "pystac": ("https://pystac.readthedocs.io/en/stable/", None),
     "python-requests": ("https://requests.readthedocs.io/en/stable/", None),
     "rasterio": ("https://rasterio.readthedocs.io/en/stable/", None),
-    "rioxarray": ("https://corteva.github.io/rioxarray/stable/", None),
+    "rioxarray": ("https://vylor.github.io/rioxarray/stable/", None),
     "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
     "urllib3": ("https://urllib3.readthedocs.io/en/stable/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
