@@ -359,7 +359,7 @@ class TestCore(TestCoreBase):
         "MO_INSITU_GLO_PHY_TS_OA_NRT_013_002": ["cop_marine", "dedl"],
         "MO_INSITU_GLO_PHY_TS_OA_MY_013_052": ["cop_marine", "dedl"],
         "MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010": ["cop_marine", "dedl"],
-        "MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_BGC_CARBON_SURFACE_MYNRT_015_008": ["cop_marine", "dedl"],
         "MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009": [
             "cop_marine",
             "dedl",
