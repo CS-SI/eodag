@@ -531,14 +531,14 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
     is_flag=True,
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["yaml"],
-    help="Print the detailed queryables schema as JSON",
+    help="Print the detailed queryables schema as JSON.",
 )
 @click.option(
     "--yaml",
     is_flag=True,
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["json"],
-    help="Print the detailed queryables schema as YAML",
+    help="Print the detailed queryables schema as YAML.",
 )
 @click.pass_context
 def list_queryables(ctx: Context, **kwargs: Any) -> None:
