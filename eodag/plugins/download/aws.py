@@ -400,11 +400,17 @@ class AwsDownload(Download):
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
         except ClientError as e:
+            if e.response.get("Error", {}).get("Code") == "InvalidObjectState":
+                product.properties["order:status"] = "orderable"
+                raise NotAvailableError(
+                    f"Product {product.properties['id']} is archived and must be "
+                    "restored before it can be downloaded"
+                ) from e
             raise_if_auth_error(e, self.provider)
             logger.warning("Unexpected error: %s" % e)
-
-        if shutdown_executor:
-            executor.shutdown(wait=True)
+        finally:
+            if shutdown_executor:
+                executor.shutdown(wait=True)
 
         # finalize safe product
         if build_safe and product.collection and "S2_MSI" in product.collection:

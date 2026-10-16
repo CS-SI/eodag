@@ -29,8 +29,10 @@ from typing import Any
 from unittest import mock
 
 import responses
+from botocore.exceptions import ClientError
 from requests.structures import CaseInsensitiveDict
 
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
     DownloadError,
@@ -2146,6 +2148,56 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = (
             "http://somebucket.somehost.com/path/to/some/product"
         )
+
+    def test_plugins_download_aws_archived_zip(self):
+        product = EOProduct(
+            "geodes_s3",
+            {
+                "geometry": "POINT (0 0)",
+                "id": "offline_slc",
+                "title": "offline_slc",
+                "eodag:download_link": "s3://sentinel1-slc/path/product.zip",
+                "order:status": "succeeded",
+            },
+            collection="S1_SAR_SLC",
+        )
+        plugin = self.get_download_plugin(product)
+        product.downloader_auth = mock.Mock(spec=AwsAuth)
+        product.downloader_auth.s3_resource = None
+        product.downloader_auth.authenticate_objects.return_value = {}
+        chunk = mock.Mock(key="path/product.zip", bucket_name="sentinel1-slc", size=100)
+        error = ClientError(
+            {
+                "Error": {
+                    "Code": "InvalidObjectState",
+                    "Message": "The operation is not valid for the object's storage class",
+                }
+            },
+            "GetObject",
+        )
+        chunk.Bucket.return_value.download_file.side_effect = error
+        record_path = os.path.join(self.output_dir, "download-record")
+        original_location = product.location
+        with (
+            mock.patch.object(
+                plugin,
+                "_download_preparation",
+                return_value=(self.output_dir, record_path),
+            ),
+            mock.patch.object(plugin, "_get_unique_products", return_value=[chunk]),
+            mock.patch.object(
+                plugin, "get_chunk_dest_path", return_value="product.zip"
+            ),
+            mock.patch("eodag.plugins.download.aws.flatten_top_directories") as flatten,
+        ):
+            with self.assertRaises(NotAvailableError) as raised:
+                plugin.download(product)
+
+        self.assertIs(raised.exception.__cause__, error)
+        self.assertEqual(product.properties["order:status"], "orderable")
+        self.assertEqual(product.location, original_location)
+        self.assertFalse(os.path.exists(record_path))
+        flatten.assert_not_called()
 
     def test_plugins_download_aws_get_bucket_prefix(self):
         """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location."""
