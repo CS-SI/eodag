@@ -1001,6 +1001,8 @@ class EOProduct:
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         roles: Iterable[str] = {"data", "data-mask"},
+        download_fallback: bool = False,
+        max_workers: Optional[int] = None,
         **xarray_kwargs: Any,
     ):
         """
@@ -1013,6 +1015,9 @@ class EOProduct:
         :param timeout: (optional) If order is needed, maximum time in minutes before
                         stop checking order status
         :param roles: (optional) roles of assets that must be fetched
+        :param download_fallback: (optional) download assets that cannot be read remotely
+        :param max_workers: (optional) maximum concurrent asset openings; ``None`` uses
+                            the default :class:`concurrent.futures.ThreadPoolExecutor` limit
         :param xarray_kwargs: (optional) keyword arguments passed to :func:`xarray.open_dataset`
         :returns: a dictionary of :class:`xarray.Dataset`
         """
