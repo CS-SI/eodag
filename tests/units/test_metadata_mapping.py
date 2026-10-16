@@ -17,6 +17,7 @@
 # limitations under the License.
 import ast
 import unittest
+import warnings
 from unittest import mock
 
 import orjson
@@ -27,11 +28,16 @@ from shapely import LineString, Polygon, wkt
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     WKT_MAX_LEN,
+    _parse_converter_chain,
+    format_query_params,
+    get_metadata_path,
     get_provider_queryable_key,
     get_provider_queryable_path,
     get_queryable_from_provider,
+    mtd_cfg_as_conversion_and_querypath,
     properties_from_xml,
 )
+from eodag.config import PluginConfig
 from eodag.types.queryables import Queryables
 from tests.context import (
     NOT_AVAILABLE,
@@ -42,6 +48,200 @@ from tests.context import (
 
 
 class TestMetadataFormatter(unittest.TestCase):
+    def test_deprecated_converters_equivalent_to_chains(self):
+        cases = [
+            (
+                "replace_str_tuple",
+                "Please chain 'replace_str' converters instead",
+                '{value#replace_str_tuple((("foo", "bar"), ("bar", "baz")))}',
+                '{value#replace_str("foo", "bar")#replace_str("bar", "baz")}',
+                ["foo bar", "unchanged", "", {"key": "foo bar"}],
+            ),
+            (
+                "replace_str_tuple",
+                "Please chain 'replace_str' converters instead",
+                '{value#replace_str_tuple((("m", ""), ("k", "000")))}',
+                '{value#replace_str("m", "")#replace_str("k", "000")}',
+                ["10m", "100m", "1k", "1km"],
+            ),
+            (
+                "dict_filter_and_sub",
+                "'dict_filter' followed by 'recursive_sub_str'",
+                """{value#dict_filter_and_sub('$[?(href=~"^s3.*")]', 'bucket', 'archive')}""",
+                """{value#dict_filter($[?(href=~"^s3.*")])#recursive_sub_str('bucket', 'archive')}""",
+                [
+                    {},
+                    {"other": {"href": "https://bucket/other.tif"}},
+                    {
+                        "data": {
+                            "href": "s3://bucket/data.tif",
+                            "links": ["s3://bucket/quicklook.jpg"],
+                        },
+                        "metadata": {"href": "s3://bucket/metadata.xml"},
+                        "other": {"href": "https://bucket/other.tif"},
+                    },
+                    ["not", "a", "dict"],
+                ],
+            ),
+            (
+                "wekeo_to_cop_collection",
+                "'replace_str' followed by 'to_lower' and 'replace_str'",
+                "{value#wekeo_to_cop_collection(EO:ECMWF:DAT:)}",
+                '{value#replace_str("^EO:ECMWF:DAT:", "")#to_lower#replace_str("_", "-")}',
+                [
+                    "EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE",
+                    "LOREM_SATELLITE_CARBON_DIOXIDE",
+                    "OTHER:EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE",
+                    "EO:ECMWF:DAT:",
+                    "",
+                ],
+            ),
+            (
+                "wekeo_to_cop_collection",
+                "'replace_str' followed by 'to_lower' and 'replace_str'",
+                "{value#wekeo_to_cop_collection()}",
+                '{value#to_lower#replace_str("_", "-")}',
+                ["EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE", ""],
+            ),
+        ]
+        for name, replacement, deprecated, chain, values in cases:
+            for value in values:
+                with self.subTest(converter=name, value=value):
+                    with self.assertWarnsRegex(DeprecationWarning, name) as warning:
+                        legacy_result = format_metadata(deprecated, value=value)
+                    self.assertIn(replacement, str(warning.warning))
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("error", DeprecationWarning)
+                        chained_result = format_metadata(chain, value=value)
+                    self.assertEqual(chained_result, legacy_result)
+
+    def test_parse_converter_chain(self):
+        cases = [
+            ("platform", ("platform", [])),
+            ("platform#to_upper", ("platform", [("to_upper", None)])),
+            (
+                "platform#to_lower#to_upper",
+                ("platform", [("to_lower", None), ("to_upper", None)]),
+            ),
+            (
+                "value#split(#)#csv_list(;)",
+                ("value", [("split", "#"), ("csv_list", ";")]),
+            ),
+            (
+                'value#replace_str_tuple((("a", "b#c"),))#to_upper',
+                (
+                    "value",
+                    [("replace_str_tuple", '(("a", "b#c"),)'), ("to_upper", None)],
+                ),
+            ),
+            (
+                """value#replace_str('[()]', '#')#to_upper""",
+                ("value", [("replace_str", "'[()]', '#'"), ("to_upper", None)]),
+            ),
+            (
+                r"""value#replace_str("a", "x\"#y")#to_upper""",
+                ("value", [("replace_str", r'''"a", "x\"#y"'''), ("to_upper", None)]),
+            ),
+            (
+                "$.id.`sub(/#/, x)`#to_lower#to_upper",
+                ("$.id.`sub(/#/, x)`", [("to_lower", None), ("to_upper", None)]),
+            ),
+            ("value#to_upper#", ("value#to_upper#", [])),
+            ("value#to_upper#invalid-name", ("value#to_upper#invalid-name", [])),
+        ]
+        for expression, expected in cases:
+            with self.subTest(expression=expression):
+                self.assertEqual(_parse_converter_chain(expression), expected)
+
+    def test_converter_chain(self):
+        template = r'{platform#replace_str(r"^sentinel-1([a-c])$", r"\1")#to_upper}'
+        for letter in "abc":
+            with self.subTest(letter=letter):
+                self.assertEqual(
+                    format_metadata(template, platform=f"sentinel-1{letter}"),
+                    letter.upper(),
+                )
+
+    def test_converter_chain_arguments(self):
+        cases = [
+            ("{value#split(#)#csv_list(;)}", "a#b", "a;b"),
+            ('{value#replace_str("[()]", "#")#to_upper}', "a(b)", "A#B#"),
+            ('{value#replace_str("a", "x#to_lower")#to_upper}', "a", "X#TO_LOWER"),
+            (r"""{value#replace_str("a", "x\"#y")#to_upper}""", "a", 'X"#Y'),
+            ('{value#replace_str_tuple((("a", "b"), ("b", "c")))#to_upper}', "a", "C"),
+            ('{value#to_upper#replace_str("A", "b")#to_upper}', "a", "B"),
+            ('{value#to_upper#replace_str("A", "urn:a")}', "a", "urn:a"),
+            ('{value#replace_str("a", "b")#replace_str("b", "urn:c")}', "a", "urn:c"),
+        ]
+        for template, value, expected in cases:
+            with self.subTest(template=template):
+                self.assertEqual(format_metadata(template, value=value), expected)
+
+    def test_converter_chain_missing_and_multiple_fields(self):
+        self.assertEqual(format_metadata("{value#to_upper#to_lower}"), "None")
+        self.assertEqual(
+            format_metadata(
+                "{first#to_upper#to_lower} {second} {third#to_upper}",
+                first="ABC",
+                second="Keep",
+                third="last",
+            ),
+            "abc Keep LAST",
+        )
+        with self.assertRaises(AttributeError):
+            format_metadata("{value#to_upper#unknown_converter}", value="a")
+
+    def test_converter_chain_query(self):
+        config = PluginConfig.from_mapping(
+            {
+                "type": "QueryStringSearch",
+                "products": {},
+                "metadata_mapping": {
+                    "platform": [
+                        '{{"platformSerialIdentifier": "'
+                        r'{platform#replace_str(r"^sentinel-1([a-c])$", r"\1")#to_upper}"}}',
+                        "$.platform",
+                    ],
+                    "processing:level": [
+                        '{{"processingLevel": "{processing:level#to_lower#to_upper}"}}',
+                        "$.level",
+                    ],
+                },
+            }
+        )
+        self.assertEqual(
+            format_query_params(
+                "S1_SAR_GRD",
+                config,
+                {"platform": "sentinel-1b", "processing:level": "L1"},
+            ),
+            {"platformSerialIdentifier": "B", "processingLevel": "L1"},
+        )
+
+    def test_converter_chain_ingestion(self):
+        expression = r'{$.platform#to_lower#replace_str(r"^([a-c])$", r"sentinel-1\1")}'
+        mapping = mtd_cfg_as_conversion_and_querypath({"platform": expression})
+        for letter in "ABC":
+            with self.subTest(letter=letter):
+                self.assertEqual(
+                    properties_from_json({"platform": letter}, mapping),
+                    {"platform": f"sentinel-1{letter.lower()}"},
+                )
+        xml_mapping = mtd_cfg_as_conversion_and_querypath(
+            {
+                "platform": '{/root/platform/text()#to_lower#replace_str("^", "sentinel-1")}'
+            },
+            result_type="xml",
+        )
+        self.assertEqual(
+            properties_from_xml(b"<root><platform>A</platform></root>", xml_mapping),
+            {"platform": "sentinel-1a"},
+        )
+        self.assertEqual(
+            get_metadata_path("{$.platform#to_upper}"),
+            (["to_upper", None], "$.platform"),
+        )
+
     def test_convert_datetime_to_timestamp_milliseconds(self):
         to_format = "{fieldname#datetime_to_timestamp_milliseconds}"
         self.assertEqual(
