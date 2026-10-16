@@ -303,9 +303,11 @@ class TestCoreSearch(unittest.TestCase):
         search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.number_matched, 0)
+        # cop_dataspace and creodias request their count along with the search, so they each
+        # send 2 requests
         self.assertEqual(
             mock_get.call_count + mock_post.call_count + mock_request.call_count,
-            len(available_providers),
+            len(available_providers) + 2,
             "all available providers must have been requested",
         )
 
@@ -349,10 +351,12 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(
             RequestError, self.dag.search, collection="S1_SAR_SLC", raise_errors=True
         )
+        # cop_dataspace is the first provider, and sends its count and search requests at the
+        # same time
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
-            1,
-            "only 1 provider must have been requested",
+            2,
+            "only the first provider must have been requested, with both count and search",
         )
 
     @mock.patch(
@@ -442,17 +446,24 @@ class TestCoreSearch(unittest.TestCase):
 
         # cop_dataspace returns empty, creodias returns results
         cop_dataspace_empty_resp = {"@odata.context": "", "value": []}
-        mock_httpadapter.return_value.json.side_effect = [
-            cop_dataspace_empty_resp,
-            creodias_resp_search_file_content,
-        ]
+
+        def build_response_side_effect(adapter, req, resp):
+            response = mock.Mock()
+            if "creodias" in req.url:
+                response.json.return_value = creodias_resp_search_file_content
+            else:
+                response.json.return_value = cop_dataspace_empty_resp
+            return response
+
+        mock_httpadapter.side_effect = build_response_side_effect
 
         search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), creodias_resp_search_results_count)
+        # 2 providers tried, each sending a count and a search request
         self.assertEqual(
             mock_request.call_count,
-            2,
-            "there must have been 2 requests",
+            4,
+            "there must have been 2 requests per provider",
         )
 
     @mock.patch(
