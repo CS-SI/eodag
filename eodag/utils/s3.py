@@ -670,7 +670,9 @@ def update_assets_from_s3(
     """Update ``EOProduct.assets`` using content listed in its ``remote_location`` or given
     ``content_url``.
 
-    If url points to a zipped archive, its content will also be be listed.
+    If url points to a zipped archive, its content will also be listed.
+    Archived ZIP objects that require a restore are left unchanged and marked
+    ``orderable``. Successful reads preserve the configured order status.
 
     :param product: product to update
     :param auth: Authentication plugin
@@ -747,6 +749,13 @@ def update_assets_from_s3(
         product.driver = product.get_driver()
 
     except botocore.exceptions.ClientError as e:
+        if (
+            prefix.endswith(".zip")
+            and e.response.get("Error", {}).get("Code") == "InvalidObjectState"
+        ):
+            product.properties["order:status"] = "orderable"
+            logger.debug("S3 ZIP object %s requires restoration", prefix)
+            return
         if hasattr(auth.config, "auth_error_code") and str(
             auth.config.auth_error_code
         ) in str(e):

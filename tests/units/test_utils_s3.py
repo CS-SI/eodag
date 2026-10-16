@@ -6,9 +6,11 @@ from unittest import TestCase
 from unittest.mock import call, patch
 
 import boto3
+from botocore.exceptions import ClientError
 from concurrent.futures import Future, ThreadPoolExecutor
 from moto import mock_aws
 
+from eodag.utils.exceptions import AuthenticationError, NotAvailableError
 from eodag.utils.s3 import S3SeekableFile
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -252,9 +254,11 @@ class TestUtilsS3(TestCase):
 
     def test_utils_s3_update_assets_from_s3_zip(self):
         """update_assets_from_s3 must update the assets of a product from a zipped object stored in S3"""
+        self.prod.properties["order:status"] = "orderable"
         update_assets_from_s3(
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/product.zip"
         )
+        self.assertEqual(self.prod.properties["order:status"], "orderable")
         self.assertEqual(len(self.prod.assets), 3)
         expected_assets = {
             "MTD_MSIL1C.xml": {
@@ -285,6 +289,66 @@ class TestUtilsS3(TestCase):
         for asset_name, expected in expected_assets.items():
             with self.subTest(asset=asset_name):
                 self.assertDictEqual(self.prod.assets[asset_name].data, expected)
+
+    def test_utils_s3_update_assets_from_s3_archived_zip(self):
+        self.prod.properties["order:status"] = "succeeded"
+        self.auth_plugin.config.auth_error_code = 403
+        error = ClientError(
+            {
+                "Error": {
+                    "Code": "InvalidObjectState",
+                    "Message": "The operation is not valid for the object's storage class",
+                },
+                "ResponseMetadata": {"HTTPStatusCode": 403},
+            },
+            "GetObject",
+        )
+        with patch.object(
+            self.auth_plugin, "get_s3_client", return_value=self.s3_client
+        ):
+            with patch.object(self.s3_client, "get_object", side_effect=error):
+                update_assets_from_s3(
+                    self.prod,
+                    self.auth_plugin,
+                    content_url="s3://mybucket/path/to/product.zip",
+                )
+
+        self.assertFalse(self.prod.assets)
+        self.assertEqual(self.prod.properties["order:status"], "orderable")
+
+        self.prod.assets["thumbnail"] = {
+            "href": "https://example.com/thumbnail.jpg",
+            "roles": ["thumbnail"],
+        }
+        with patch("eodag.utils.s3.list_files_in_s3_zipped_object", side_effect=error):
+            update_assets_from_s3(
+                self.prod,
+                self.auth_plugin,
+                content_url="s3://mybucket/path/to/product.zip",
+            )
+        self.assertEqual(list(self.prod.assets), ["thumbnail"])
+        self.assertEqual(self.prod.properties["order:status"], "orderable")
+
+    def test_utils_s3_update_assets_from_s3_zip_errors(self):
+        self.auth_plugin.config.auth_error_code = 403
+        for code, message, exception in (
+            ("AccessDenied", "Forbidden (403)", AuthenticationError),
+            ("NoSuchKey", "The specified key does not exist", NotAvailableError),
+        ):
+            with self.subTest(code=code):
+                error = ClientError(
+                    {"Error": {"Code": code, "Message": message}}, "GetObject"
+                )
+                with patch(
+                    "eodag.utils.s3.list_files_in_s3_zipped_object", side_effect=error
+                ):
+                    with self.assertRaises(exception):
+                        update_assets_from_s3(
+                            self.prod,
+                            self.auth_plugin,
+                            content_url="s3://mybucket/path/to/product.zip",
+                        )
+                self.assertFalse(self.prod.assets)
 
     def test_utils_s3_update_assets_from_s3(self):
         """update_assets_from_s3 must update the assets of a product from a folder stored in S3"""

@@ -89,7 +89,7 @@ geodes_s3:
       eodag:download_link: '$.properties.endpoint_url'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # order:status set to succeeded for consistency between providers
+      # order:status set to succeeded by default and then updated from plugin
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
     S1_SAR_OCN:
