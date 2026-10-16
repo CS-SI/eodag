@@ -293,6 +293,41 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             self.assertFalse(arch_path.exists())
             self.assertTrue(os.path.isfile(Path(output_dir) / "FOO" / "FOO.bar"))
 
+    def test_plugins_download_base_finalize_extract_flat_archive(self):
+        """Download._finalize must keep all files of a flat archive when archive_depth > 1."""
+        plugin = self.get_download_plugin(self.product)
+        self.assertEqual(plugin.config.archive_depth, 2)
+
+        with TemporaryDirectory() as output_dir:
+            arch_path = Path(output_dir) / "FOO.zip"
+            with zipfile.ZipFile(arch_path, "w") as zfile:
+                zfile.writestr("EOPMetadata.xml", "metadata")
+                zfile.writestr("FOO.nat", "data")
+
+            plugin._finalize(str(arch_path), output_dir=output_dir, extract=True)
+
+            self.assertEqual(
+                sorted(os.listdir(Path(output_dir) / "FOO")),
+                ["EOPMetadata.xml", "FOO.nat"],
+            )
+
+    def test_plugins_download_base_finalize_extract_nested_archive(self):
+        """Download._finalize must skip the top-level directory when archive_depth is 2."""
+        plugin = self.get_download_plugin(self.product)
+
+        with TemporaryDirectory() as output_dir:
+            arch_path = Path(output_dir) / "FOO.zip"
+            with zipfile.ZipFile(arch_path, "w") as zfile:
+                zfile.writestr("FOO.SAFE/manifest.safe", "manifest")
+                zfile.writestr("FOO.SAFE/measurement/band.tif", "data")
+
+            plugin._finalize(str(arch_path), output_dir=output_dir, extract=True)
+
+            self.assertEqual(
+                sorted(os.listdir(Path(output_dir) / "FOO")),
+                ["manifest.safe", "measurement"],
+            )
+
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
     """Test cases for the HTTP download plugin."""
