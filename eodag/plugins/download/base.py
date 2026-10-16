@@ -516,6 +516,12 @@ class Download(PluginTopic):
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
         """
+        if kwargs.get("asset") is not None:
+            # A product whose asset filter matches nothing is retried until
+            # ``timeout`` is reached, so check the filter first and fail fast.
+            for product in products:
+                product.assets.get_values(kwargs["asset"])
+
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]
