@@ -222,12 +222,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     The currently understood converters are:
         - ``assets_list_to_dict``: convert a list of asset objects into a dictionary keyed by asset name
         - ``ceda_collection_name``: generate a CEDA collection name from a string
-        - ``wekeo_to_cop_collection`` (deprecated): use ``replace_str`` then ``to_lower`` then ``replace_str``
         - ``csv_list``: convert to a comma separated list
         - ``dates_from_cmems_id``: extract min/max UTC datetimes from a CMEMS product identifier
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter``: filter dict items using a jsonpath predicate
-        - ``dict_filter_and_sub`` (deprecated): use ``dict_filter`` then ``recursive_sub_str``
         - ``dict_update``: add/update nested dictionary items from a list of key/value pairs
         - ``dict_with_roles``: keep only dict items with given roles in their "roles" list
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
@@ -246,7 +244,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
           splitting the string on dots
         - ``replace_str``: execute "string".replace(old, new)
-        - ``replace_str_tuple`` (deprecated): chain ``replace_str`` converters instead
         - ``replace_tuple``: apply multiple replacements matching whole value
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``sanitize``: sanitize string
