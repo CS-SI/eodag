@@ -6,6 +6,15 @@ Release history
 v4.10.0 (2026-10-19)
 ====================
 
+Features
+--------
+
+* **cli**: Add queryables command (`#2383`_, `7ee8007`_)
+
+* **mapping**: Allow chained converters (`#2394`_, `42e8051`_)
+
+* **queryables**: QueryablesDict.get_model_json_schema method (`#2358`_, `1d6d9b0`_)
+
 Bug Fixes
 ---------
 
@@ -23,15 +32,6 @@ Documentation
 -------------
 
 * Links to rioxarray api ref update (`#2391`_, `8401cb5`_)
-
-Features
---------
-
-* **cli**: Add queryables command (`#2383`_, `7ee8007`_)
-
-* **mapping**: Allow chained converters (`#2394`_, `42e8051`_)
-
-* **queryables**: QueryablesDict.get_model_json_schema method (`#2358`_, `1d6d9b0`_)
 
 Refactoring
 -----------
