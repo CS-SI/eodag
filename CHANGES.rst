@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.10.1 (2026-10-19)
+====================
+
+Bug Fixes
+---------
+
+* **docker**: Pin Python to 3.14 to restore container startup (`#2402`_, `6a756c2`_)
+
+.. _#2402: https://github.com/CS-SI/eodag/pull/2402
+.. _6a756c2: https://github.com/CS-SI/eodag/commit/6a756c2acfb69a81d7b9e3f9e1286df60a28a1ed
+
+
 v4.10.0 (2026-10-19)
 ====================
 
