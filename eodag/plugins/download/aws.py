@@ -341,6 +341,25 @@ class AwsDownload(Download):
             raise_error=raise_error,
         )
 
+        # a single archive is stored as {output_dir}/{title}.{ext} and finalized like with HTTPDownload
+        single_archive_path: Optional[str] = None
+        if (
+            not build_safe
+            and len(unique_product_chunks) == 1
+            and len(updated_bucket_names_and_prefixes) == len(bucket_names_and_prefixes)
+        ):
+            archive_key = next(iter(unique_product_chunks)).key.lower()
+            archive_ext = next(
+                (
+                    ext
+                    for ext in (".tar.gz", ".tgz", ".tar", ".zip")
+                    if archive_key.endswith(ext)
+                ),
+                None,
+            )
+            if archive_ext:
+                single_archive_path = product_local_path + archive_ext
+
         total_size = sum([p.size for p in unique_product_chunks]) or None
 
         # download
@@ -360,7 +379,9 @@ class AwsDownload(Download):
                     logger.warning(e)
                     return
 
-                chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
+                chunk_abs_path = single_archive_path or os.path.join(
+                    product_local_path, chunk_rel_path
+                )
                 chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
                 os.makedirs(chunk_abs_path_dir, exist_ok=True)
 
@@ -406,15 +427,29 @@ class AwsDownload(Download):
         if shutdown_executor:
             executor.shutdown(wait=True)
 
-        # finalize safe product
-        if build_safe and product.collection and "S2_MSI" in product.collection:
-            self.finalize_s2_safe_product(product_local_path)
-        # flatten directory structure
-        elif flatten_top_dirs:
-            flatten_top_directories(product_local_path)
+        product_path = product_local_path
+        if single_archive_path and os.path.isfile(single_archive_path):
+            if not os.listdir(product_local_path):
+                os.rmdir(product_local_path)
+            product_path = self._finalize(
+                single_archive_path, progress_callback=progress_callback, **kwargs
+            )
+            if flatten_top_dirs and os.path.isdir(product_path):
+                flatten_top_directories(product_path)
+        else:
+            # finalize safe product
+            if build_safe and product.collection and "S2_MSI" in product.collection:
+                self.finalize_s2_safe_product(product_local_path)
 
-        if build_safe:
-            self.check_manifest_file_list(product_local_path)
+            if build_safe:
+                self.check_manifest_file_list(product_local_path)
+
+            self._finalize_archives(
+                product_local_path, progress_callback=progress_callback, **kwargs
+            )
+
+            if not build_safe and flatten_top_dirs:
+                flatten_top_directories(product_local_path)
 
         if asset_filter is None:
             # save hash/record file
@@ -422,9 +457,26 @@ class AwsDownload(Download):
                 fh.write(product.remote_location)
             logger.debug("Download recorded in %s", record_filename)
 
-            product.location = path_to_uri(product_local_path)
+            product.location = path_to_uri(product_path)
 
-        return product_local_path
+        return product_path
+
+    def _finalize_archives(
+        self,
+        product_local_path: str,
+        progress_callback: ProgressCallback,
+        **kwargs: Unpack[DownloadConf],
+    ) -> None:
+        """Apply configured archive extraction to files downloaded from S3."""
+        for directory, _, filenames in os.walk(product_local_path):
+            for filename in filenames:
+                if filename.lower().endswith((".zip", ".tar", ".tar.gz", ".tgz")):
+                    archive_path = os.path.join(directory, filename)
+                    self._finalize(
+                        archive_path,
+                        progress_callback=progress_callback,
+                        **kwargs,
+                    )
 
     def _download_file_in_zip(
         self,
