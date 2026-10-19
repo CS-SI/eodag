@@ -416,6 +416,10 @@ class AwsDownload(Download):
         if build_safe:
             self.check_manifest_file_list(product_local_path)
 
+        self._finalize_archives(
+            product_local_path, progress_callback=progress_callback, **kwargs
+        )
+
         if asset_filter is None:
             # save hash/record file
             with open(record_filename, "w") as fh:
@@ -425,6 +429,23 @@ class AwsDownload(Download):
             product.location = path_to_uri(product_local_path)
 
         return product_local_path
+
+    def _finalize_archives(
+        self,
+        product_local_path: str,
+        progress_callback: ProgressCallback,
+        **kwargs: Unpack[DownloadConf],
+    ) -> None:
+        """Apply configured archive extraction to files downloaded from S3."""
+        for directory, _, filenames in os.walk(product_local_path):
+            for filename in filenames:
+                if filename.lower().endswith((".zip", ".tar", ".tar.gz", ".tgz")):
+                    archive_path = os.path.join(directory, filename)
+                    self._finalize(
+                        archive_path,
+                        progress_callback=progress_callback,
+                        **kwargs,
+                    )
 
     def _download_file_in_zip(
         self,

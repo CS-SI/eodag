@@ -2179,6 +2179,35 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         self.assertEqual(common_path, "path/to/some/product")
 
+    def test_plugins_download_aws_extract_setting(self):
+        """AwsDownload.download() must honor the configured extract setting."""
+        plugin = self.get_download_plugin(self.product)
+        product_path = os.path.join(self.output_dir, "product")
+        os.makedirs(product_path)
+        archive_path = os.path.join(product_path, "archive.zip")
+        with zipfile.ZipFile(archive_path, "w") as archive:
+            archive.writestr("data.txt", "content")
+
+        progress_callback = ProgressCallback(disable=True)
+        plugin.config.extract = False
+        plugin._finalize_archives(
+            product_path,
+            progress_callback=progress_callback,
+            output_dir=self.output_dir,
+        )
+        self.assertTrue(os.path.isfile(archive_path))
+        self.assertFalse(os.path.exists(os.path.join(product_path, "archive")))
+
+        plugin.config.extract = True
+        plugin._finalize_archives(
+            product_path,
+            progress_callback=progress_callback,
+            output_dir=self.output_dir,
+        )
+        self.assertFalse(os.path.exists(archive_path))
+        with open(os.path.join(product_path, "archive", "data.txt")) as extracted:
+            self.assertEqual(extracted.read(), "content")
+
     def test_plugins_download_aws_ignores_directory_markers_and_sibling_files(self):
         """AwsDownload._get_unique_products() must ignore S3 directory markers and sibling files.
 
