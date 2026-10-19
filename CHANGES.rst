@@ -3,6 +3,67 @@ Release history
 ===============
 
 
+v4.10.0 (2026-10-19)
+====================
+
+Bug Fixes
+---------
+
+* **mapping**: Jsonpath-ng 1.11.0 compatibility (`#2400`_, `19de18c`_)
+
+* **plugins**: Extract AwsDownload downloaded files (`#2399`_, `aeff266`_)
+
+* **plugins**: Use order_link as matching_url for offline products (`#2384`_, `5c028e7`_)
+
+* **providers**: Remove invalid escape sequence in earth_search mapping (`#2398`_, `ba9c0c5`_)
+
+* **s3**: Remote s3 zip64 files read support (`#2389`_, `932db4f`_)
+
+Documentation
+-------------
+
+* Links to rioxarray api ref update (`#2391`_, `8401cb5`_)
+
+Features
+--------
+
+* **cli**: Add queryables command (`#2383`_, `7ee8007`_)
+
+* **mapping**: Allow chained converters (`#2394`_, `42e8051`_)
+
+* **queryables**: QueryablesDict.get_model_json_schema method (`#2358`_, `1d6d9b0`_)
+
+Refactoring
+-----------
+
+* Align to_xarray with eodag-cube (`#2397`_, `d43fe8e`_)
+
+* **providers**: Update multiobs carbon surface collection (`#2392`_, `e79b6a0`_)
+
+.. _#2358: https://github.com/CS-SI/eodag/pull/2358
+.. _#2383: https://github.com/CS-SI/eodag/pull/2383
+.. _#2384: https://github.com/CS-SI/eodag/pull/2384
+.. _#2389: https://github.com/CS-SI/eodag/pull/2389
+.. _#2391: https://github.com/CS-SI/eodag/pull/2391
+.. _#2392: https://github.com/CS-SI/eodag/pull/2392
+.. _#2394: https://github.com/CS-SI/eodag/pull/2394
+.. _#2397: https://github.com/CS-SI/eodag/pull/2397
+.. _#2398: https://github.com/CS-SI/eodag/pull/2398
+.. _#2399: https://github.com/CS-SI/eodag/pull/2399
+.. _#2400: https://github.com/CS-SI/eodag/pull/2400
+.. _19de18c: https://github.com/CS-SI/eodag/commit/19de18c4388e74932b16a6d728cf9e9494354bd4
+.. _1d6d9b0: https://github.com/CS-SI/eodag/commit/1d6d9b0cf376ba4a8362758e9666dd9450b70459
+.. _42e8051: https://github.com/CS-SI/eodag/commit/42e80519721696cece94d49dfb4207797c9d234f
+.. _5c028e7: https://github.com/CS-SI/eodag/commit/5c028e731f9de41fc7bb4cc547e3ed72637d3ae6
+.. _7ee8007: https://github.com/CS-SI/eodag/commit/7ee80074357ec3c8435a24790781a7fb72b8bd65
+.. _8401cb5: https://github.com/CS-SI/eodag/commit/8401cb525e02e891665731192949f5065a51b23e
+.. _932db4f: https://github.com/CS-SI/eodag/commit/932db4f3700664beb96ea3295ea55129515f674b
+.. _aeff266: https://github.com/CS-SI/eodag/commit/aeff26698d1b77abedec85c8c2d1dff05aa06cab
+.. _ba9c0c5: https://github.com/CS-SI/eodag/commit/ba9c0c5c5170db294a46a86add4b8cb576342b33
+.. _d43fe8e: https://github.com/CS-SI/eodag/commit/d43fe8e549243002d7c9f7fe4527325df03cca1f
+.. _e79b6a0: https://github.com/CS-SI/eodag/commit/e79b6a000a30562674d8679070b20dcb1c2da1b7
+
+
 v4.9.2 (2026-10-07)
 ===================
 
