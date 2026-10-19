@@ -2331,7 +2331,9 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
     def test_plugins_search_stacsearch_default_geometry(self, mock__request):
         """The metadata mapping for a stac provider should return a default geometry"""
 
-        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        geojson_geometry = json.loads(
+            json.dumps(self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__)
+        )
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
@@ -2344,6 +2346,9 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                     {
                         "id": "bar",
                         "geometry": None,
+                    },
+                    {
+                        "id": "baz",
                     },
                 ],
             },
@@ -2361,6 +2366,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products.data[0].geometry, self.search_criteria_s2_msi_l1c["geometry"]
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
+        self.assertEqual(products[2].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
 
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
     def test_plugins_search_stacsearch_normalize_links(self, mock__request):

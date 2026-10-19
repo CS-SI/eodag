@@ -123,7 +123,7 @@ class OARSearch(QueryStringSearch):
             api_root_endpoint + "/collections/{provider_collection}/queryables",
         )
         config.discover_queryables.setdefault("result_type", "json")
-        config.discover_queryables.setdefault("results_entry", "$.properties[*]")
+        config.discover_queryables.setdefault("results_entry", "$.properties")
 
         # Metadata mapping
         config.__dict__.setdefault("metadata_mapping", {})
