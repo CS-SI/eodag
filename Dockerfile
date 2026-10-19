@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:alpine3.23
+FROM python:3.14-alpine3.23
 
 LABEL author="CS GROUP - France"
 
