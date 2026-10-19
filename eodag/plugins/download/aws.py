@@ -409,9 +409,6 @@ class AwsDownload(Download):
         # finalize safe product
         if build_safe and product.collection and "S2_MSI" in product.collection:
             self.finalize_s2_safe_product(product_local_path)
-        # flatten directory structure
-        elif flatten_top_dirs:
-            flatten_top_directories(product_local_path)
 
         if build_safe:
             self.check_manifest_file_list(product_local_path)
@@ -419,6 +416,9 @@ class AwsDownload(Download):
         self._finalize_archives(
             product_local_path, progress_callback=progress_callback, **kwargs
         )
+
+        if not build_safe and flatten_top_dirs:
+            flatten_top_directories(product_local_path)
 
         if asset_filter is None:
             # save hash/record file

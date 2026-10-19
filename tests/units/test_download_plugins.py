@@ -2208,6 +2208,148 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         with open(os.path.join(product_path, "archive", "data.txt")) as extracted:
             self.assertEqual(extracted.read(), "content")
 
+    def test_plugins_download_aws_extract_single_product_archive(self):
+        """Archive finalization must honor archive depth and retention settings."""
+        plugin = self.get_download_plugin(self.product)
+        for extension in (".zip", ".tar", ".tar.gz", ".tgz"):
+            for delete_archive in (True, False):
+                for archive_depth in (1, 2):
+                    with (
+                        self.subTest(
+                            extension=extension,
+                            delete_archive=delete_archive,
+                            archive_depth=archive_depth,
+                        ),
+                        TemporaryDirectory(dir=self.output_dir) as output_dir,
+                    ):
+                        product_path = os.path.join(output_dir, "product")
+                        os.makedirs(product_path)
+                        archive_path = os.path.join(product_path, "product" + extension)
+                        if extension == ".zip":
+                            with zipfile.ZipFile(archive_path, "w") as archive:
+                                archive.writestr(
+                                    "product.SAFE/manifest.safe", "content"
+                                )
+                        else:
+                            mode = "w" if extension == ".tar" else "w:gz"
+                            with tarfile.open(archive_path, mode) as archive:
+                                member = tarfile.TarInfo("product.SAFE/manifest.safe")
+                                member.size = len(b"content")
+                                archive.addfile(member, io.BytesIO(b"content"))
+
+                        with mock.patch.object(
+                            plugin.config, "archive_depth", archive_depth, create=True
+                        ):
+                            plugin._finalize_archives(
+                                product_path,
+                                progress_callback=ProgressCallback(disable=True),
+                                output_dir=output_dir,
+                                extract=True,
+                                delete_archive=delete_archive,
+                            )
+
+                        expected_name = (
+                            "product.SAFE" if archive_depth == 1 else "manifest.safe"
+                        )
+                        extraction_path = os.path.splitext(archive_path)[0]
+                        expected_entries = [os.path.basename(extraction_path)]
+                        if not delete_archive:
+                            expected_entries.append("product" + extension)
+                        self.assertCountEqual(
+                            os.listdir(product_path), expected_entries
+                        )
+                        manifest_path = os.path.join(extraction_path, expected_name)
+                        if archive_depth == 1:
+                            manifest_path = os.path.join(manifest_path, "manifest.safe")
+                        with open(manifest_path) as extracted:
+                            self.assertEqual(extracted.read(), "content")
+
+    def test_plugins_download_aws_extract_flatten_top_dirs(self):
+        """Flatten extracted archives using collection or provider configuration."""
+        plugin = self.get_download_plugin(self.product)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        self.product.downloader_auth = auth_plugin
+        for provider_flatten, collection_flatten, expected_flatten in (
+            (True, None, True),
+            (False, None, False),
+            (False, True, True),
+            (True, False, False),
+        ):
+            with (
+                self.subTest(provider=provider_flatten, collection=collection_flatten),
+                TemporaryDirectory(dir=self.output_dir) as output_dir,
+            ):
+                product_path = os.path.join(output_dir, "product")
+                os.makedirs(product_path)
+                archive_path = os.path.join(product_path, "product.zip")
+                with zipfile.ZipFile(archive_path, "w") as archive:
+                    archive.writestr("product.SAFE/manifest.safe", "content")
+                product_config = {"build_safe": False}
+                if collection_flatten is not None:
+                    product_config["flatten_top_dirs"] = collection_flatten
+
+                with (
+                    mock.patch.dict(
+                        plugin.config.products,
+                        {self.product.collection: product_config},
+                    ),
+                    mock.patch.object(
+                        plugin.config, "flatten_top_dirs", provider_flatten, create=True
+                    ),
+                    mock.patch.object(
+                        plugin,
+                        "_download_preparation",
+                        return_value=(product_path, os.path.join(output_dir, "record")),
+                    ),
+                    mock.patch.object(
+                        auth_plugin, "authenticate_objects", return_value={}
+                    ),
+                    mock.patch.object(plugin, "_download_file_in_zip", return_value=[]),
+                    mock.patch.object(plugin, "_get_unique_products", return_value=[]),
+                ):
+                    result = plugin.download(
+                        self.product,
+                        output_dir=output_dir,
+                        extract=True,
+                        delete_archive=True,
+                    )
+
+                self.assertEqual(result, product_path)
+                expected_path = (
+                    os.path.join(product_path, "manifest.safe")
+                    if expected_flatten
+                    else os.path.join(
+                        product_path, "product", "product.SAFE", "manifest.safe"
+                    )
+                )
+                with open(expected_path) as extracted:
+                    self.assertEqual(extracted.read(), "content")
+                if expected_flatten:
+                    self.assertEqual(os.listdir(product_path), ["manifest.safe"])
+
+    def test_plugins_download_aws_extract_multiple_archives(self):
+        """Multiple archives must keep separate extraction directories."""
+        plugin = self.get_download_plugin(self.product)
+        product_path = os.path.join(self.output_dir, "product")
+        os.makedirs(product_path)
+        for name in ("first", "second"):
+            with zipfile.ZipFile(
+                os.path.join(product_path, name + ".zip"), "w"
+            ) as archive:
+                archive.writestr("data.txt", name)
+
+        plugin._finalize_archives(
+            product_path,
+            progress_callback=ProgressCallback(disable=True),
+            output_dir=self.output_dir,
+            extract=True,
+        )
+
+        self.assertCountEqual(os.listdir(product_path), ["first", "second"])
+        for name in ("first", "second"):
+            with open(os.path.join(product_path, name, "data.txt")) as extracted:
+                self.assertEqual(extracted.read(), name)
+
     def test_plugins_download_aws_ignores_directory_markers_and_sibling_files(self):
         """AwsDownload._get_unique_products() must ignore S3 directory markers and sibling files.
 
