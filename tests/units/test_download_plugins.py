@@ -2327,6 +2327,65 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                 if expected_flatten:
                     self.assertEqual(os.listdir(product_path), ["manifest.safe"])
 
+    def test_plugins_download_aws_single_archive(self):
+        """A single archive must be stored and finalized like with HTTPDownload."""
+        plugin = self.get_download_plugin(self.product)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        self.product.downloader_auth = auth_plugin
+
+        def download_file(key, dest, **kwargs):
+            with zipfile.ZipFile(dest, "w") as archive:
+                archive.writestr("product.SAFE/manifest.safe", "content")
+
+        chunk = mock.Mock(key="path/to/remote_name.zip", bucket_name="bucket", size=1)
+        chunk.Bucket.return_value.download_file.side_effect = download_file
+
+        for extract in (False, True):
+            with (
+                self.subTest(extract=extract),
+                TemporaryDirectory(dir=self.output_dir) as output_dir,
+            ):
+                product_path = os.path.join(output_dir, "product")
+                os.makedirs(product_path)
+                with (
+                    mock.patch.dict(
+                        plugin.config.products,
+                        {self.product.collection: {"build_safe": False}},
+                    ),
+                    mock.patch.object(
+                        plugin.config, "flatten_top_dirs", True, create=True
+                    ),
+                    mock.patch.object(
+                        plugin,
+                        "_download_preparation",
+                        return_value=(product_path, os.path.join(output_dir, "record")),
+                    ),
+                    mock.patch.object(
+                        auth_plugin, "authenticate_objects", return_value={}
+                    ),
+                    mock.patch.object(
+                        plugin,
+                        "_download_file_in_zip",
+                        side_effect=lambda _auth, packs, *args: packs,
+                    ),
+                    mock.patch.object(
+                        plugin, "_get_unique_products", return_value={chunk}
+                    ),
+                ):
+                    result = plugin.download(
+                        self.product, output_dir=output_dir, extract=extract
+                    )
+
+                self.assertEqual(self.product.location, path_to_uri(result))
+                if extract:
+                    self.assertEqual(result, product_path)
+                    self.assertCountEqual(os.listdir(output_dir), ["product", "record"])
+                    self.assertEqual(os.listdir(product_path), ["manifest.safe"])
+                else:
+                    self.assertEqual(result, product_path + ".zip")
+                    self.assertTrue(zipfile.is_zipfile(result))
+                    self.assertFalse(os.path.exists(product_path))
+
     def test_plugins_download_aws_extract_multiple_archives(self):
         """Multiple archives must keep separate extraction directories."""
         plugin = self.get_download_plugin(self.product)
