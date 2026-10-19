@@ -42,7 +42,7 @@ wekeo_cmems:
       fetch_url: null
       collection_fetch_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{provider_collection}'
       result_type: json
-      results_entry: '$.properties[*]'
+      results_entry: '$.properties'
     metadata_mapping:
       _collection:
         - '{{"dataset_id": "{_collection}"}}'

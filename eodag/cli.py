@@ -31,6 +31,7 @@ Commands:
   discover         Fetch providers to discover collections
   download         Download a list of products from a serialized search...
   list             List supported collections
+  queryables       List the queryable parameters of a provider and/or a...
   search           Search satellite images by their collections,...
   version          Print eodag version and exit
 
@@ -48,6 +49,7 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
 
 import click
+import yaml
 
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 
@@ -62,6 +64,14 @@ CRUNCHERS = [
     "FilterProperty",
     "FilterDate",
 ]
+
+
+class IndentedSafeDumper(yaml.SafeDumper):
+    """PyYAML dumper that indents block sequence items under their mapping key."""
+
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
+        """Force indentation for block sequence items."""
+        return super().increase_indent(flow, False)
 
 
 class MutuallyExclusiveOption(click.Option):
@@ -506,6 +516,65 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
         click.echo("Unsupported provider. You may have a typo")
         click.echo("Available providers: {}".format(", ".join(dag.providers.names)))
         sys.exit(1)
+
+
+@eodag_cli.command(
+    name="queryables",
+    help="List the queryable parameters of a provider and/or a collection",
+)
+@click.option("-p", "--provider", help="List the queryables of this provider")
+@click.option(
+    "-c", "--collection", help="List the queryables available for this collection"
+)
+@click.option(
+    "--json",
+    is_flag=True,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["yaml"],
+    help="Print the detailed queryables schema as JSON.",
+)
+@click.option(
+    "--yaml",
+    is_flag=True,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["json"],
+    help="Print the detailed queryables schema as YAML.",
+)
+@click.pass_context
+def list_queryables(ctx: Context, **kwargs: Any) -> None:
+    """Print the queryable parameters of a provider and/or a collection"""
+    from eodag.api.core import EODataAccessGateway
+    from eodag.utils.exceptions import UnsupportedProvider
+    from eodag.utils.logging import setup_logging
+
+    setup_logging(verbose=ctx.obj["verbosity"])
+    dag = EODataAccessGateway()
+    provider = kwargs.pop("provider")
+    json_output = kwargs.pop("json")
+    yaml_output = kwargs.pop("yaml")
+    search_kwargs = {k: v for k, v in kwargs.items() if v}
+    try:
+        queryables = dag.list_queryables(provider=provider, **search_kwargs)
+    except UnsupportedProvider as e:
+        # unknown provider, provider not supporting the collection...: keep the details
+        click.echo(str(e))
+        if provider and provider not in dag.providers.names + dag.providers.groups:
+            click.echo("Available providers: {}".format(", ".join(dag.providers.names)))
+        sys.exit(1)
+
+    if json_output:
+        click.echo(json.dumps(queryables.get_model_json_schema()))
+    elif yaml_output:
+        click.echo(
+            yaml.dump(
+                queryables.get_model_json_schema(),
+                Dumper=IndentedSafeDumper,
+                sort_keys=False,
+                allow_unicode=True,
+            )
+        )
+    elif queryables:
+        click.echo("\n".join(queryables))
 
 
 @eodag_cli.command(name="discover", help="Fetch providers to discover collections")

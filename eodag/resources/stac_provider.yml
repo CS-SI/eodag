@@ -60,7 +60,7 @@ search:
     fetch_url: '{api_endpoint}/../queryables'
     collection_fetch_url: '{api_endpoint}/../collections/{provider_collection}/queryables'
     result_type: json
-    results_entry: '$.properties[*]'
+    results_entry: '$.properties'
   common_metadata_mapping_path: '$'
   metadata_mapping:
     productType: '$.null'
@@ -96,7 +96,7 @@ search:
       - '$.id'
     geometry:
       - '{{"intersects":{geometry#to_geojson}}}'
-      - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      - '{$.geometry.`str()`#replace_str("^None$","POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))")}'
     # extensions parameters having specific mapping
     sar:polarizations:
       - '{{"query":{{"sar:polarizations":{{"eq":{sar:polarizations}}}}}}}'

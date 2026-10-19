@@ -87,7 +87,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseDownloadPluginTest, self).setUp()
         self.product = EOProduct(
-            "sara",
+            "wekeo_main",
             dict(
                 geometry="POINT (0 0)",
                 title="dummy_product",
@@ -1496,14 +1496,20 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         run()
 
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_get(self, mock_request):
+    def test_plugins_download_http_order_get(self, mock_request, mock_auth_request):
         """HTTPDownload._order() must request using eodag:order_link and GET protocol."""
         plugin = self.get_download_plugin(self.product)
+        plugin.config.order_method = "GET"
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
         )
-        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
         self.product.properties["order:status"] = OFFLINE_STATUS
 
         # customized timeout
@@ -1530,17 +1536,25 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             else:
                 del plugin.config.timeout
 
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_get_raises_if_request_500(self, mock_request):
+    def test_plugins_download_http_order_get_raises_if_request_500(
+        self, mock_request, mock_auth_request
+    ):
         """HTTPDownload._order() must raise an error if request to backend provider failed."""
         # Configure mock to raise an error
         mock_request.return_value = MockResponse(status_code=500)
 
         plugin = self.get_download_plugin(self.product)
+        plugin.config.order_method = "GET"
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
         )
-        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1561,13 +1575,21 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_get_raises_if_request_400(self, mock_request):
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
+    def test_plugins_download_http_order_get_raises_if_request_400(
+        self, mock_auth_request, mock_request
+    ):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
+        plugin.config.order_method = "GET"
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
         )
-        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1594,21 +1616,26 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_post(self, mock_request):
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
+    def test_plugins_download_http_order_post(self, mock_auth_request, mock_request):
         """HTTPDownload._order() must request using eodag:order_link and POST protocol."""
         plugin = self.get_download_plugin(self.product)
+        plugin.config.order_method = "POST"
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
         )
         self.product.properties["order:status"] = OFFLINE_STATUS
-        plugin.config.order_method = "POST"
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
         # eodag:order_link without query query args
-        self.product.properties["eodag:order_link"] = "http://somewhere/order"
         plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
@@ -1620,11 +1647,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         # eodag:order_link with query query args
         mock_request.reset_mock()
-        self.product.properties["eodag:order_link"] = "http://somewhere/order?foo=bar"
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?foo=bar"
+        )
         plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
-            url="http://somewhere/order",
+            url="https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -1635,12 +1664,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # eodag:order_link with JSON data containing a query string
         mock_request.reset_mock()
         self.product.properties["eodag:order_link"] = (
-            'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?"
+            '{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
         )
         plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
-            url="http://somewhere/order",
+            url="https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -1651,7 +1681,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             verify=True,
         )
 
-    def test_plugins_download_http_order_status(self):
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
+    def test_plugins_download_http_order_status(self, mock_auth_request):
         """HTTPDownload._order_status() must request status using eodag:status_link."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
@@ -1664,6 +1697,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
+        )
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
         )
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1709,6 +1745,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             ),
         )
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         response = mock_request.return_value
         response.status_code = 200
@@ -1729,9 +1768,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         response.json.assert_not_called()
 
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_status_get_raises_if_request_500(
-        self, mock_request
+        self, mock_request, mock_auth_request
     ):
         """HTTPDownload._order() must raise an error if request to backend provider failed."""
         # Configure mock to raise an error
@@ -1741,7 +1783,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
         )
-        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
         self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1763,16 +1807,21 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             json=None,
         )
 
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_status_get_raises_if_request_400(
-        self, mock_request
+        self, mock_request, mock_auth_request
     ):
         # Set up the EOProduct and the necessary properties
         plugin: HTTPDownload = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = (
             "https://copernicus.nci.org.au/dummy"
         )
-        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
         self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1800,7 +1849,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             json=None,
         )
 
-    def test_plugins_download_http_order_status_search_again(self):
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
+    def test_plugins_download_http_order_status_search_again(self, mock_auth_request):
         """HTTPDownload._order_status() must search again after success if needed"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
@@ -1815,6 +1867,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             },
         }
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
         self.product.properties["eodag:download_link"] = (
@@ -1855,8 +1910,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         run()
 
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
+    )
     def test_plugins_download_http_order_status_search_again_raises_if_request_failed(
-        self,
+        self, mock_auth_request
     ):
         """HTTPDownload._order_status() must raise an error if the search request after success failed."""
         plugin = self.get_download_plugin(self.product)
@@ -1872,6 +1930,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             },
         }
+        self.product.properties["eodag:order_link"] = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
+        )
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
         self.product.properties["eodag:download_link"] = (
@@ -2117,6 +2178,236 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
 
         self.assertEqual(common_path, "path/to/some/product")
+
+    def test_plugins_download_aws_extract_setting(self):
+        """AwsDownload.download() must honor the configured extract setting."""
+        plugin = self.get_download_plugin(self.product)
+        product_path = os.path.join(self.output_dir, "product")
+        os.makedirs(product_path)
+        archive_path = os.path.join(product_path, "archive.zip")
+        with zipfile.ZipFile(archive_path, "w") as archive:
+            archive.writestr("data.txt", "content")
+
+        progress_callback = ProgressCallback(disable=True)
+        plugin.config.extract = False
+        plugin._finalize_archives(
+            product_path,
+            progress_callback=progress_callback,
+            output_dir=self.output_dir,
+        )
+        self.assertTrue(os.path.isfile(archive_path))
+        self.assertFalse(os.path.exists(os.path.join(product_path, "archive")))
+
+        plugin.config.extract = True
+        plugin._finalize_archives(
+            product_path,
+            progress_callback=progress_callback,
+            output_dir=self.output_dir,
+        )
+        self.assertFalse(os.path.exists(archive_path))
+        with open(os.path.join(product_path, "archive", "data.txt")) as extracted:
+            self.assertEqual(extracted.read(), "content")
+
+    def test_plugins_download_aws_extract_single_product_archive(self):
+        """Archive finalization must honor archive depth and retention settings."""
+        plugin = self.get_download_plugin(self.product)
+        for extension in (".zip", ".tar", ".tar.gz", ".tgz"):
+            for delete_archive in (True, False):
+                for archive_depth in (1, 2):
+                    with (
+                        self.subTest(
+                            extension=extension,
+                            delete_archive=delete_archive,
+                            archive_depth=archive_depth,
+                        ),
+                        TemporaryDirectory(dir=self.output_dir) as output_dir,
+                    ):
+                        product_path = os.path.join(output_dir, "product")
+                        os.makedirs(product_path)
+                        archive_path = os.path.join(product_path, "product" + extension)
+                        if extension == ".zip":
+                            with zipfile.ZipFile(archive_path, "w") as archive:
+                                archive.writestr(
+                                    "product.SAFE/manifest.safe", "content"
+                                )
+                        else:
+                            mode = "w" if extension == ".tar" else "w:gz"
+                            with tarfile.open(archive_path, mode) as archive:
+                                member = tarfile.TarInfo("product.SAFE/manifest.safe")
+                                member.size = len(b"content")
+                                archive.addfile(member, io.BytesIO(b"content"))
+
+                        with mock.patch.object(
+                            plugin.config, "archive_depth", archive_depth, create=True
+                        ):
+                            plugin._finalize_archives(
+                                product_path,
+                                progress_callback=ProgressCallback(disable=True),
+                                output_dir=output_dir,
+                                extract=True,
+                                delete_archive=delete_archive,
+                            )
+
+                        expected_name = (
+                            "product.SAFE" if archive_depth == 1 else "manifest.safe"
+                        )
+                        extraction_path = os.path.splitext(archive_path)[0]
+                        expected_entries = [os.path.basename(extraction_path)]
+                        if not delete_archive:
+                            expected_entries.append("product" + extension)
+                        self.assertCountEqual(
+                            os.listdir(product_path), expected_entries
+                        )
+                        manifest_path = os.path.join(extraction_path, expected_name)
+                        if archive_depth == 1:
+                            manifest_path = os.path.join(manifest_path, "manifest.safe")
+                        with open(manifest_path) as extracted:
+                            self.assertEqual(extracted.read(), "content")
+
+    def test_plugins_download_aws_extract_flatten_top_dirs(self):
+        """Flatten extracted archives using collection or provider configuration."""
+        plugin = self.get_download_plugin(self.product)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        self.product.downloader_auth = auth_plugin
+        for provider_flatten, collection_flatten, expected_flatten in (
+            (True, None, True),
+            (False, None, False),
+            (False, True, True),
+            (True, False, False),
+        ):
+            with (
+                self.subTest(provider=provider_flatten, collection=collection_flatten),
+                TemporaryDirectory(dir=self.output_dir) as output_dir,
+            ):
+                product_path = os.path.join(output_dir, "product")
+                os.makedirs(product_path)
+                archive_path = os.path.join(product_path, "product.zip")
+                with zipfile.ZipFile(archive_path, "w") as archive:
+                    archive.writestr("product.SAFE/manifest.safe", "content")
+                product_config = {"build_safe": False}
+                if collection_flatten is not None:
+                    product_config["flatten_top_dirs"] = collection_flatten
+
+                with (
+                    mock.patch.dict(
+                        plugin.config.products,
+                        {self.product.collection: product_config},
+                    ),
+                    mock.patch.object(
+                        plugin.config, "flatten_top_dirs", provider_flatten, create=True
+                    ),
+                    mock.patch.object(
+                        plugin,
+                        "_download_preparation",
+                        return_value=(product_path, os.path.join(output_dir, "record")),
+                    ),
+                    mock.patch.object(
+                        auth_plugin, "authenticate_objects", return_value={}
+                    ),
+                    mock.patch.object(plugin, "_download_file_in_zip", return_value=[]),
+                    mock.patch.object(plugin, "_get_unique_products", return_value=[]),
+                ):
+                    result = plugin.download(
+                        self.product,
+                        output_dir=output_dir,
+                        extract=True,
+                        delete_archive=True,
+                    )
+
+                self.assertEqual(result, product_path)
+                expected_path = (
+                    os.path.join(product_path, "manifest.safe")
+                    if expected_flatten
+                    else os.path.join(
+                        product_path, "product", "product.SAFE", "manifest.safe"
+                    )
+                )
+                with open(expected_path) as extracted:
+                    self.assertEqual(extracted.read(), "content")
+                if expected_flatten:
+                    self.assertEqual(os.listdir(product_path), ["manifest.safe"])
+
+    def test_plugins_download_aws_single_archive(self):
+        """A single archive must be stored and finalized like with HTTPDownload."""
+        plugin = self.get_download_plugin(self.product)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        self.product.downloader_auth = auth_plugin
+
+        def download_file(key, dest, **kwargs):
+            with zipfile.ZipFile(dest, "w") as archive:
+                archive.writestr("product.SAFE/manifest.safe", "content")
+
+        chunk = mock.Mock(key="path/to/remote_name.zip", bucket_name="bucket", size=1)
+        chunk.Bucket.return_value.download_file.side_effect = download_file
+
+        for extract in (False, True):
+            with (
+                self.subTest(extract=extract),
+                TemporaryDirectory(dir=self.output_dir) as output_dir,
+            ):
+                product_path = os.path.join(output_dir, "product")
+                os.makedirs(product_path)
+                with (
+                    mock.patch.dict(
+                        plugin.config.products,
+                        {self.product.collection: {"build_safe": False}},
+                    ),
+                    mock.patch.object(
+                        plugin.config, "flatten_top_dirs", True, create=True
+                    ),
+                    mock.patch.object(
+                        plugin,
+                        "_download_preparation",
+                        return_value=(product_path, os.path.join(output_dir, "record")),
+                    ),
+                    mock.patch.object(
+                        auth_plugin, "authenticate_objects", return_value={}
+                    ),
+                    mock.patch.object(
+                        plugin,
+                        "_download_file_in_zip",
+                        side_effect=lambda _auth, packs, *args: packs,
+                    ),
+                    mock.patch.object(
+                        plugin, "_get_unique_products", return_value={chunk}
+                    ),
+                ):
+                    result = plugin.download(
+                        self.product, output_dir=output_dir, extract=extract
+                    )
+
+                self.assertEqual(self.product.location, path_to_uri(result))
+                if extract:
+                    self.assertEqual(result, product_path)
+                    self.assertCountEqual(os.listdir(output_dir), ["product", "record"])
+                    self.assertEqual(os.listdir(product_path), ["manifest.safe"])
+                else:
+                    self.assertEqual(result, product_path + ".zip")
+                    self.assertTrue(zipfile.is_zipfile(result))
+                    self.assertFalse(os.path.exists(product_path))
+
+    def test_plugins_download_aws_extract_multiple_archives(self):
+        """Multiple archives must keep separate extraction directories."""
+        plugin = self.get_download_plugin(self.product)
+        product_path = os.path.join(self.output_dir, "product")
+        os.makedirs(product_path)
+        for name in ("first", "second"):
+            with zipfile.ZipFile(
+                os.path.join(product_path, name + ".zip"), "w"
+            ) as archive:
+                archive.writestr("data.txt", name)
+
+        plugin._finalize_archives(
+            product_path,
+            progress_callback=ProgressCallback(disable=True),
+            output_dir=self.output_dir,
+            extract=True,
+        )
+
+        self.assertCountEqual(os.listdir(product_path), ["first", "second"])
+        for name in ("first", "second"):
+            with open(os.path.join(product_path, name, "data.txt")) as extracted:
+                self.assertEqual(extracted.read(), name)
 
     def test_plugins_download_aws_ignores_directory_markers_and_sibling_files(self):
         """AwsDownload._get_unique_products() must ignore S3 directory markers and sibling files.
@@ -2457,16 +2748,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         """AwsDownload.download() must handle files in zip."""
 
         def _open_zip(*args, **kwargs):
-            return (
-                zipfile.ZipFile(
-                    os.path.join(
-                        TEST_RESOURCES_PATH,
-                        "products",
-                        "as_archive",
-                        "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.zip",
-                    )
-                ),
-                b"",
+            return zipfile.ZipFile(
+                os.path.join(
+                    TEST_RESOURCES_PATH,
+                    "products",
+                    "as_archive",
+                    "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.zip",
+                )
             )
 
         mock_open_s3_zipped_object.side_effect = _open_zip

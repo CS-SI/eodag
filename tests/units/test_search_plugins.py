@@ -50,6 +50,7 @@ from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.build_search_result import (
+    NOT_ECMWF_PARAMETERS,
     _check_id,
     _request_params_to_properties,
     _update_properties_from_element,
@@ -2330,7 +2331,9 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
     def test_plugins_search_stacsearch_default_geometry(self, mock__request):
         """The metadata mapping for a stac provider should return a default geometry"""
 
-        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        geojson_geometry = json.loads(
+            json.dumps(self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__)
+        )
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
@@ -2343,6 +2346,9 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                     {
                         "id": "bar",
                         "geometry": None,
+                    },
+                    {
+                        "id": "baz",
                     },
                 ],
             },
@@ -2360,6 +2366,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products.data[0].geometry, self.search_criteria_s2_msi_l1c["geometry"]
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
+        self.assertEqual(products[2].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
 
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
     def test_plugins_search_stacsearch_normalize_links(self, mock__request):
@@ -3964,6 +3971,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertEqual(prop["type"], "object")
         self.assertIn("longitude", prop["properties"])
         self.assertIn("latitude", prop["properties"])
+        self.assertListEqual(prop["required"], ["longitude", "latitude"])
 
     def test_plugins_search_ecmwfsearch_queryables_by_values(self):
         """queryables_by_values must expose defaults, aliases and required fields"""
@@ -4389,16 +4397,21 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         }
         setattr(self.search_plugin.config, "collection_config", collection_config)
 
-        provider_queryables_from_constraints_file = [
-            "ecmwf_year",
-            "ecmwf_month",
-            "ecmwf_day",
-            "ecmwf_time",
-            "ecmwf_variable",
-            "ecmwf_leadtime_hour",
-            "ecmwf_type",
-            "ecmwf_product_type",
-        ]
+        provider_queryables_from_constraints_file = set()
+        for constraint in constraints:
+            provider_queryables_from_constraints_file.update(constraint.keys())
+
+        provider_queryables_from_form_file = set()
+        for param in form:
+            provider_queryables_from_form_file.add(param["name"])
+
+        expected_queryables = (
+            provider_queryables_from_constraints_file
+            | provider_queryables_from_form_file
+            | {"start", "end"}
+        )
+        expected_queryables -= set(NOT_ECMWF_PARAMETERS)
+
         default_values = deepcopy(
             getattr(self.search_plugin.config, "products", {}).get(
                 "CAMS_EU_AIR_QUALITY_RE", {}
@@ -4456,6 +4469,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
 
         # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_ads)
+        prefix = "ecmwf_"
         for provider_queryable in provider_queryables_from_constraints_file:
             provider_queryable = (
                 get_queryable_from_provider(
@@ -4464,7 +4478,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 )
                 or provider_queryable
             )
-            self.assertIn(provider_queryable, queryables)
+            self.assertIn(prefix + provider_queryable, queryables)
 
         # default properties in provider config are added and must be default values of the queryables
         for property, default_value in self.search_plugin.config.products[
@@ -4526,7 +4540,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(12, len(queryables))
+        self.assertEqual(len(expected_queryables), len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("ecmwf:variable")
         if queryable is not None:
@@ -4595,6 +4609,44 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 ),
             ]
         )
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_dict_property(
+        self, mock__fetch_data
+    ):
+        """Indicate dynamic :class:`typing_extensions.TypedDict` for queryables with dict of sub-properties in form."""
+        from typing_extensions import is_typeddict
+
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock__fetch_data.side_effect = [constraints, form]
+
+        queryables = self.search_plugin.discover_queryables(
+            collection="CAMS_EU_AIR_QUALITY_RE"
+        )
+
+        # check that queryable "location" is expected as a dict
+        self.assertEqual(form[11]["name"], "location")
+        self.assertEqual(form[11]["type"], "GeographicLocationWidget")
+        prop = {}
+        _update_properties_from_element(prop, {"type": "GeographicLocationWidget"}, [])
+        self.assertTrue(isinstance(prop["properties"], dict))
+
+        # check that the queryables dictionary contains a dynamic TypedDict for "ecmwf_location"
+        assert isinstance(queryables, dict)
+        self.assertIn("ecmwf_location", queryables)
+        dynamic_class = get_args(queryables["ecmwf_location"])[0]
+        dynamic_class_path = f"{dynamic_class.__module__}.{dynamic_class.__qualname__}"
+
+        self.assertTrue(is_typeddict(dynamic_class))
+        self.assertEqual(dynamic_class_path, "eodag.types.location_object")
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
@@ -4977,16 +5029,20 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             MockResponse(wekeo_ecmwf_form, status_code=200),
         ]
 
-        provider_queryables_from_constraints_file = [
-            "ecmwf_year",
-            "ecmwf_month",
-            "ecmwf_day",
-            "ecmwf_time",
-            "ecmwf_variable",
-            "ecmwf_leadtime_hour",
-            "ecmwf_type",
-            "ecmwf_product_type",
-        ]
+        provider_queryables_from_constraints_file = set()
+        for constraint in constraints:
+            provider_queryables_from_constraints_file.update(constraint.keys())
+
+        provider_queryables_from_form_file = set()
+        for param in form:
+            provider_queryables_from_form_file.add(param["name"])
+
+        expected_queryables = (
+            provider_queryables_from_constraints_file
+            | provider_queryables_from_form_file
+            | {"start", "end"}
+        )
+        expected_queryables -= set(NOT_ECMWF_PARAMETERS)
 
         queryables = search_plugin._get_collection_queryables(
             collection="ERA5_SL_MONTHLY", alias=None, filters={}
@@ -5012,6 +5068,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
 
         # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo_ecmwf)
+        prefix = "ecmwf_"
         for provider_queryable in provider_queryables_from_constraints_file:
             provider_queryable = (
                 get_queryable_from_provider(
@@ -5020,7 +5077,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 )
                 or provider_queryable
             )
-            self.assertIn(provider_queryable, queryables)
+            self.assertIn(prefix + provider_queryable, queryables)
 
         # default properties in provider config are added and must be default values of the queryables
         for property, default_value in search_plugin.config.products[
@@ -5062,7 +5119,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         self.assertIsNotNone(queryables)
 
-        self.assertEqual(12, len(queryables))
+        self.assertEqual(len(expected_queryables), len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("ecmwf:variable")
         if queryable is not None:

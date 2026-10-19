@@ -11,8 +11,8 @@ wekeo_main:
       - '{{"processingLevel": "{processing:level#replace_str("L", "LEVEL")}"}}'
       - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, L\\4)`'
     platform:
-      - '{{"platformSerialIdentifier": "{platform#replace_str_tuple(("sentinel-1a", "A"), ("sentinel-1b", "B"), ("sentinel-1c", "C"))}"}}'
-      - '{$.properties.metadata.platformSerialIdentifier#replace_str_tuple(("A", "sentinel-1a"), ("B", "sentinel-1b"), ("C", "sentinel-1c"))}'
+      - '{{"platformSerialIdentifier": "{platform#replace_str(r"^sentinel-1([a-c])$", r"\1")#to_upper}"}}'
+      - '{$.properties.metadata.platformSerialIdentifier#to_lower#replace_str(r"^([a-c])$", r"sentinel-1\1")}'
     instruments: '{$.properties.metadata.instrumentShortName#split(,)}'
     order:status:
       - '{{"online": "{order:status#get_group_name((?P<true>succeeded)|(?P<false>orderable))}"}}'
@@ -60,7 +60,7 @@ wekeo_main:
       fetch_url: null
       collection_fetch_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{provider_collection}'
       result_type: json
-      results_entry: '$.properties[*]'
+      results_entry: '$.properties'
     metadata_mapping:
       _collection:
         - '{{"dataset_id": "{_collection}"}}'
@@ -174,8 +174,8 @@ wekeo_main:
           - '{{"processingLevel": "{processing:level#replace_str_tuple(("L1", "S2MSI1C"), ("L2", "S2MSI2A"))}"}}'
           - '{$.properties.metadata.processingLevel#replace_str_tuple(("S2MSI1C", "L1"), ("S2MSI2A", "L2"))}'
         platform:
-          - '{{"platformSerialIdentifier": "{platform#replace_str_tuple(("sentinel-2a", "A"), ("sentinel-2b", "B"), ("sentinel-2c", "C"))}"}}'
-          - '{$.properties.metadata.platformSerialIdentifier#replace_str_tuple(("A", "sentinel-2a"), ("B", "sentinel-2b"), ("C", "sentinel-2c"))}'
+          - '{{"platformSerialIdentifier": "{platform#replace_str(r"^sentinel-2([a-c])$", r"\1")#to_upper}"}}'
+          - '{$.properties.metadata.platformSerialIdentifier#to_lower#replace_str(r"^([a-c])$", r"sentinel-2\1")}'
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
           - '{$.properties.metadata.instrumentShortName#split(,)}'
@@ -208,8 +208,8 @@ wekeo_main:
           - '{{"processingLevel": "{processing:level#replace_str("L", "")}"}}'
           - 'L2'
         platform:
-          - '{{"platformSerialIdentifier": "{platform#replace_str_tuple(("sentinel-3a", "A"), ("sentinel-3b", "B"), ("sentinel-3c", "C"))}"}}'
-          - '{$.properties.metadata.platformSerialIdentifier#replace_str_tuple(("A", "sentinel-3a"), ("B", "sentinel-3b"), ("C", "sentinel-3c"))}'
+          - '{{"platformSerialIdentifier": "{platform#replace_str(r"^sentinel-3([a-c])$", r"\1")#to_upper}"}}'
+          - '{$.properties.metadata.platformSerialIdentifier#to_lower#replace_str(r"^([a-c])$", r"sentinel-3\1")}'
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
           - '{$.properties.metadata.instrumentShortName#split(,)}'

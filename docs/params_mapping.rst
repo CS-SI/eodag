@@ -44,6 +44,21 @@ which is built based on how its metadata are set in the provider configuration. 
          publicationDate: '{$.data.timestamp#to_iso_utc_datetime_from_milliseconds}'
          ...
 
+Converters can be chained using ``#``. They are applied from left to right, passing
+each result directly to the next converter. Chaining works both when building
+search queries and when extracting metadata from JSON or XML results. For example:
+
+.. code-block:: yaml
+
+   platform:
+      - '{{"platformSerialIdentifier": "{platform#replace_str(r"^sentinel-1([a-c])$", r"\1")#to_upper}"}}'
+      - '{$.properties.metadata.platformSerialIdentifier#to_lower#replace_str(r"^([a-c])$", r"sentinel-1\1")}'
+
+This maps ``sentinel-1a`` to ``A`` for a search and ``A`` back to ``sentinel-1a``
+in returned metadata, likewise for ``b`` and ``c``. A ``#`` inside converter
+arguments is treated as part of the argument, not as a chain separator. If a
+value is ``None``, the remaining converters are skipped.
+
 The following converters can be used to transform the values collected from the provider:
 
 .. autofunction:: eodag.api.product.metadata_mapping.format_metadata
