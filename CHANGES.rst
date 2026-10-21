@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.10.2 (2026-10-21)
+====================
+
+Bug Fixes
+---------
+
+* **collections**: Correct bbox extent of some SPACENET collections (`#2393`_, `050dcb2`_)
+
+.. _#2393: https://github.com/CS-SI/eodag/pull/2393
+.. _050dcb2: https://github.com/CS-SI/eodag/commit/050dcb2d3a687503ac0912409ac74f7d55633b6f
+
+
 v4.10.1 (2026-10-19)
 ====================
 
