@@ -853,7 +853,9 @@ class HTTPDownload(Download):
                     )
 
                     # do not use global size if one of the assets has no size
-                    missing_length = any(not (asset.size) for asset in assets_values)
+                    missing_length = any(
+                        not asset.get("file:size") for asset in assets_values
+                    )
 
                     zip_stream = (
                         ZipStream(sized=True) if not missing_length else ZipStream()
@@ -976,6 +978,7 @@ class HTTPDownload(Download):
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Unpack[DownloadConf],
     ) -> None:
         """
         Order product and poll to check its status
@@ -985,6 +988,7 @@ class HTTPDownload(Download):
         :param wait: (optional) Wait time in minutes between two order status check
         :param timeout: (optional) Maximum time in minutes before stop checking
                         order status
+        :param kwargs: `asset` (str) regex filter to identify assets to order
         """
         self._order_download_retry(product, wait, timeout)(self._order_request)(
             product, auth
@@ -1253,7 +1257,7 @@ class HTTPDownload(Download):
                     content=asset_chunks,
                     filename=getattr(asset, "filename", None),
                     arcname=getattr(asset, "rel_path", None),
-                    size=getattr(asset, "size", 0) or None,
+                    size=asset.get("file:size") or None,
                 )
             )
 
@@ -1484,20 +1488,19 @@ class HTTPDownload(Download):
                     logger.debug(f"HEAD request failed: {str(e)}")
                     asset_headers = CaseInsensitiveDict()
 
-                if not getattr(asset, "size", 0):
-                    # size from HEAD header / Content-Length
-                    asset.size = int(asset_headers.get("Content-Length", 0))
+                # size from HEAD header / Content-Length
+                size = int(asset_headers.get("Content-Length", 0))
 
                 header_content_disposition = Message()
-                if not getattr(asset, "size", 0) or not getattr(asset, "filename", 0):
+                if not size or not getattr(asset, "filename", 0):
                     # header Content-Disposition
                     header_content_disposition = parse_header(
                         asset_headers.get("Content-Disposition", "")
                     )
-                if not getattr(asset, "size", 0):
+                if not size:
                     # size from HEAD header / Content-Disposition / size
                     size_str = str(header_content_disposition.get_param("size", 0))
-                    asset.size = int(size_str) if size_str.isdigit() else 0
+                    size = int(size_str) if size_str.isdigit() else 0
                 if not getattr(asset, "filename", 0):
                     # filename from HEAD header / Content-Disposition / size
                     asset_filename = header_content_disposition.get_param(
@@ -1505,7 +1508,7 @@ class HTTPDownload(Download):
                     )
                     asset.filename = str(asset_filename) if asset_filename else None
 
-                if not getattr(asset, "size", 0):
+                if not size:
                     # GET request for size
                     with requests.get(
                         asset["href"],
@@ -1517,17 +1520,19 @@ class HTTPDownload(Download):
                         verify=ssl_verify,
                     ) as stream:
                         # size from GET header / Content-length
-                        asset.size = int(stream.headers.get("Content-Length", 0))
-                        if not getattr(asset, "size", 0):
+                        size = int(stream.headers.get("Content-Length", 0))
+                        if not size:
                             # size from GET header / Content-Disposition / size
                             size_str = str(
                                 parse_header(
                                     stream.headers.get("Content-Disposition", "")
                                 ).get_param("size", 0)
                             )
-                            asset.size = int(size_str) if size_str.isdigit() else 0
+                            size = int(size_str) if size_str.isdigit() else 0
 
-                total_size += asset.size
+                if size:
+                    asset["file:size"] = size
+                total_size += size
 
         # use parallelization if possible
         # when products are already downloaded in parallel but the executor has only one worker,

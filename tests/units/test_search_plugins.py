@@ -3689,7 +3689,10 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         """Registering a product with no S3 objects must leave assets empty."""
         product = self._get_search_results(mock_request).data[0]
         product.driver = None
+        # remote location is proxied from the download_link asset, keep it without assets
+        remote_location = product.remote_location
         product.assets = AssetsDict(product)
+        product.remote_location = remote_location
 
         self._register_product_with_stubbed_s3_objects(product, [])
 
