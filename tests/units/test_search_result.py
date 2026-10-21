@@ -44,6 +44,68 @@ class TestSearchResult(unittest.TestCase):
             ]
         )
 
+    def test_search_result_init(self):
+        """SearchResult.init must initialize attributes and federation metadata if given"""
+        # product with federation:backends
+        product = EOProduct(
+            provider=None,
+            properties={
+                "geometry": "POINT (0 0)",
+                "federation:backends": ["backend-1"],
+            },
+        )
+
+        search_result = SearchResult(
+            [product],
+            number_matched=42,
+            errors=[("provider", Exception("boom"))],
+            search_params={"start_datetime": "2025-01-01T00:00:00Z"},
+            next_page_token="token",
+            next_page_token_key="pageToken",
+            raise_errors=True,
+        )
+
+        self.assertEqual(search_result.number_matched, 42)
+        self.assertEqual(len(search_result.errors), 1)
+        self.assertEqual(search_result.errors[0][0], "provider")
+        self.assertIsInstance(search_result.errors[0][1], Exception)
+        self.assertEqual(
+            search_result.search_params,
+            {
+                "start_datetime": "2025-01-01T00:00:00Z",
+                "federation:backends": "backend-1",
+            },
+        )
+        self.assertEqual(search_result.next_page_token, "token")
+        self.assertEqual(search_result.next_page_token_key, "pageToken")
+        self.assertTrue(search_result.raise_errors)
+
+        # product without federation:backends
+        product = EOProduct(
+            provider=None,
+            properties={
+                "geometry": "POINT (0 0)",
+                "instruments": ["i1"],
+            },
+        )
+
+        search_result = SearchResult(
+            [product],
+            number_matched=42,
+            errors=[],
+            search_params={"page": 2},
+            next_page_token="token",
+            next_page_token_key="pageToken",
+            raise_errors=False,
+        )
+
+        self.assertEqual(search_result.number_matched, 42)
+        self.assertEqual(len(search_result.errors), 0)
+        self.assertEqual(search_result.search_params, {"page": 2})
+        self.assertEqual(search_result.next_page_token, "token")
+        self.assertEqual(search_result.next_page_token_key, "pageToken")
+        self.assertFalse(search_result.raise_errors)
+
     def test_search_result_filter_online(self):
         """SearchResult.filter_online must only keep online results"""
         filtered_products = self.search_result2.filter_online()

@@ -83,6 +83,19 @@ class SearchResult(UserList[EOProduct]):
         self.next_page_token_key = next_page_token_key
         self.raise_errors = raise_errors
         self._dag: Optional["EODataAccessGateway"] = None
+        # add federation:backends to search_params so that it can be used in next_page()
+        # we assume that there is one backend which is the same for all products
+        if products and (
+            federation_backends := products[0].properties.get("federation:backends")
+        ):
+            if self.search_params is None:
+                self.search_params = {}
+            if isinstance(federation_backends, list):
+                self.search_params["federation:backends"] = federation_backends[0]
+            else:
+                logger.warning(
+                    "federation:backends cannot be added to search_params because it is not a list as expected"
+                )
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
