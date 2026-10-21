@@ -1299,6 +1299,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin.__dict__.pop("_raw_stream_download", None)
 
         self.product.assets = mock.Mock()
+        self.product.assets.get.return_value = None
         self.product.assets.get_values.return_value = []
         self.product.assets.__len__ = lambda self=self.product.assets: 0
         self.product.location = self.product.remote_location = "http://somewhere"
