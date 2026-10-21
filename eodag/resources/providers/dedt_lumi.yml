@@ -31,10 +31,6 @@ dedt_lumi:
       qs: $.qs
       eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
-    DT_CLIMATE_ADAPTATION:
-      discover_queryables:
-        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}.json"
-      dataset: climate-dt
     DT_EXTREMES:
       discover_queryables:
         constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}.json"
