@@ -389,6 +389,85 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         self.assertEqual(asset["file:local_path"], str(existing_file))
         self.assertTrue(os.path.isfile(statement_file))
 
+    def test_plugins_download_base_legacy_record_migration(self):
+        """Download.check_cache must migrate legacy product records to download_link statements"""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.clear()
+        self.product.remote_location = "http://somewhere/product.zip"
+        asset = self.product.assets["download_link"]
+        _, statement_dir = plugin._prepare_directories(output_dir=self.output_dir)
+        statement_file = plugin._get_statement_path(asset, statement_dir)
+        product_dir = Path(self.output_dir) / "dummy_product"
+        archive = Path(self.output_dir) / "dummy_product.zip"
+        legacy_records = {
+            "product hash": Path(statement_dir)
+            / plugin.generate_record_hash(self.product),
+            "url hash": Path(statement_dir)
+            / hashlib.md5(asset["href"].encode("utf-8")).hexdigest(),
+        }
+
+        for name, record in legacy_records.items():
+            for data_path in (product_dir, archive):
+                with self.subTest(record=name, data_path=data_path.name):
+                    if data_path.suffix:
+                        data_path.touch()
+                    else:
+                        data_path.mkdir()
+                    record.write_text(asset["href"])
+
+                    statements = plugin.check_cache(asset, output_dir=self.output_dir)
+
+                    self.assertEqual(statements["file:local_path"], str(data_path))
+                    self.assertEqual(asset["file:local_path"], str(data_path))
+                    self.assertTrue(os.path.isfile(statement_file))
+                    self.assertFalse(record.exists())
+
+                    os.remove(statement_file)
+                    asset.data.pop("file:local_path")
+                    if data_path.is_dir():
+                        shutil.rmtree(data_path)
+                    else:
+                        data_path.unlink()
+
+        # legacy record without data
+        legacy_records["product hash"].write_text(asset["href"])
+        self.assertIsNone(plugin.check_cache(asset, output_dir=self.output_dir))
+        self.assertFalse(legacy_records["product hash"].exists())
+        self.assertFalse(os.path.isfile(statement_file))
+
+        # legacy records are only used for download_link
+        self.product.assets.update({"foo": {"href": "http://somewhere/foo"}})
+        legacy_records["product hash"].write_text(asset["href"])
+        product_dir.mkdir()
+        self.assertIsNone(
+            plugin.check_cache(self.product.assets["foo"], output_dir=self.output_dir)
+        )
+        self.assertTrue(legacy_records["product hash"].exists())
+
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True
+    )
+    def test_plugins_download_base_legacy_record_download(self, mock_stream_download):
+        """HTTPDownload.download must not download again a product having a legacy record"""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.clear()
+        self.product.remote_location = "http://somewhere/product.zip"
+        _, statement_dir = plugin._prepare_directories(output_dir=self.output_dir)
+        (Path(statement_dir) / plugin.generate_record_hash(self.product)).write_text(
+            self.product.remote_location
+        )
+        product_dir = Path(self.output_dir) / "dummy_product"
+        product_dir.mkdir()
+        (product_dir / "file.txt").touch()
+
+        with self.assertLogs(level="INFO") as cm:
+            path = plugin.download(self.product, output_dir=self.output_dir)
+
+        self.assertIn("Product already downloaded", str(cm.output))
+        self.assertEqual(path, str(product_dir))
+        self.assertEqual(self.product.location, path_to_uri(str(product_dir)))
+        mock_stream_download.assert_not_called()
+
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
     """Test cases for the HTTP download plugin."""
@@ -540,6 +619,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_stream_download.assert_called_once_with(
             plugin,
             self.product,
+            self.product.assets["download_link"],
             None,
             progress_callback,
             output_dir=self.output_dir,
@@ -599,6 +679,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_stream_download.assert_called_once_with(
             plugin,
             product,
+            product.assets["download_link"],
             None,
             progress_callback,
             output_dir=self.output_dir,
@@ -610,17 +691,19 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch("eodag.api.product._product.EOProduct._stream", create=True)
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
-    def test_plugins_download_http_ignore_assets(
+    def test_plugins_download_http_download_link_only(
         self, mock_requests_get, mock_requests_head, mock_stream, mock_stream_download
     ):
-        """HTTPDownload.download() must ignore assets if configured to."""
+        """HTTPDownload.download() must only download download_link asset if it exists and no filter is used."""
         plugin = self.get_download_plugin(self.product)
-        self.product.location = self.product.remote_location = (
-            "http://somewhere/download_from_location"
-        )
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
-        self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
+        self.product.assets.update(
+            {
+                "download_link": {"href": "http://somewhere/download_from_location"},
+                "foo": {"href": "http://somewhere/download_asset"},
+            }
+        )
         mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
             b"some content"
         )
@@ -628,39 +711,19 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_stream_download.return_value = [b"a"]
         self.product.filename = "dummy_product.nc"
 
-        # download asset if ignore_assets = False
-        plugin.config.ignore_assets = False
-        path = plugin.download(self.product, output_dir=self.output_dir)
-        mock_requests_get.assert_called_once_with(
-            self.product.assets["foo"]["href"],
-            stream=True,
-            auth=None,
-            params=getattr(plugin.config, "dl_url_params", {}),
-            headers=USER_AGENT,
-            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            verify=True,
-        )
-        mock_stream_download.assert_not_called()
-        # re-enable product download
-        self.product.location = self.product.remote_location
-        shutil.rmtree(path)
-        mock_requests_get.reset_mock()
-        mock_stream_download.reset_mock()
-
-        # download using remote_location if ignore_assets = True
-        plugin.config.ignore_assets = True
+        # download_link only without filter
         path = plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_get.assert_not_called()
         mock_stream_download.assert_called_once()
-        # re-enable product download
-        self.product.location = self.product.remote_location
+        self.assertEqual(
+            mock_stream_download.call_args.args[2], self.product.assets["download_link"]
+        )
         shutil.rmtree(path)
         mock_requests_get.reset_mock()
         mock_stream_download.reset_mock()
 
-        # download asset if ignore_assets unset
-        del plugin.config.ignore_assets
-        plugin.download(self.product, output_dir=self.output_dir)
+        # filtered asset download
+        plugin.download(self.product, output_dir=self.output_dir, asset="foo")
         mock_requests_get.assert_called_once_with(
             self.product.assets["foo"]["href"],
             stream=True,
@@ -674,14 +737,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
-    def test_plugins_download_http_ignore_assets_without_ssl(
+    def test_plugins_download_http_assets_without_ssl(
         self, mock_requests_get, mock_requests_head
     ):
-        """HTTPDownload.download() must ignore assets if configured to."""
+        """HTTPDownload.download() must not verify ssl when downloading assets if configured to."""
         plugin = self.get_download_plugin(self.product)
-        self.product.location = self.product.remote_location = (
-            "http://somewhere/download_from_location"
-        )
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
@@ -691,7 +751,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # download asset if ssl_verify = False
         plugin.config.ssl_verify = False
 
-        plugin.download(self.product, output_dir=self.output_dir)
+        try:
+            plugin.download(self.product, output_dir=self.output_dir)
+        finally:
+            del plugin.config.ssl_verify
         mock_requests_head.assert_called_once_with(
             self.product.assets["foo"]["href"],
             auth=None,
@@ -709,81 +772,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=False,
         )
-        del plugin.config.ssl_verify
-
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._download_assets", autospec=True
-    )
-    @mock.patch("eodag.api.product._product.EOProduct._stream", create=True)
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True
-    )
-    def test_plugins_download_http_ignore_assets_product_config_true(
-        self, mock_stream_download, mock_stream, mock_download_assets
-    ):
-        """HTTPDownload.download() must support product-level ignore_assets=True."""
-        product = self._dummy_downloadable_product(
-            "dummy_provider",
-            {
-                "geometry": "POINT (0 0)",
-                "title": "dummy_product",
-                "id": "someproduct",
-            },
-            "foo_collection",
-        )
-        plugin = product.downloader
-        product.collection = "foo_collection"
-        product.location = product.remote_location = (
-            "http://somewhere/download_from_location"
-        )
-        product.assets.clear()
-        product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
-        mock_stream_download.return_value = [b"a"]
-        product.filename = "dummy_product.nc"
-
-        plugin.config.ignore_assets = False
-        plugin.config.products = {"foo_collection": {"ignore_assets": True}}
-
-        plugin.download(product, output_dir=self.output_dir)
-        mock_download_assets.assert_not_called()
-        mock_stream_download.assert_called_once()
-
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._download_assets", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True
-    )
-    def test_plugins_download_http_ignore_assets_product_config_false(
-        self, mock_stream_download, mock_download_assets
-    ):
-        """HTTPDownload.download() must support product-level ignore_assets=False."""
-        product = self._dummy_downloadable_product(
-            "dummy_provider",
-            {
-                "geometry": "POINT (0 0)",
-                "title": "dummy_product",
-                "id": "someproduct",
-            },
-            "foo_collection",
-        )
-        plugin = product.downloader
-        product.collection = "foo_collection"
-        product.location = product.remote_location = (
-            "http://somewhere/download_from_location"
-        )
-        product.assets.clear()
-        product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
-        mock_download_assets.return_value = os.path.join(
-            self.output_dir, "dummy_product"
-        )
-
-        plugin.config.ignore_assets = True
-        plugin.config.products = {"foo_collection": {"ignore_assets": False}}
-
-        plugin.download(product, output_dir=self.output_dir)
-        mock_download_assets.assert_called_once()
-        mock_stream_download.assert_not_called()
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
@@ -896,9 +884,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         result = plugin._download_assets(
             self.product,
-            fs_dir_path,
-            None,
+            [self.product.assets["foo"]],
             progress_callback=ProgressCallback(disable=True),
+            output_dir=self.output_dir,
         )
 
         asset = self.product.assets["foo"]
@@ -941,8 +929,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         ):
             plugin._download_assets(
                 self.product,
-                fs_dir_path,
-                None,
+                list(self.product.assets.values()),
                 progress_callback=ProgressCallback(disable=True),
                 executor=executor,
                 output_dir=self.output_dir,
@@ -991,7 +978,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             with mock.patch.object(executor, "submit", wraps=executor.submit) as submit:
                 plugin._download_assets(
                     self.product,
-                    fs_dir_path,
+                    list(self.product.assets.values()),
                     None,
                     progress_callback=ProgressCallback(disable=True),
                     executor=executor,
@@ -1081,7 +1068,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(progress_callback_exception, cm.exception)
         # Product location not changed
         self.assertEqual(self.product.location, "http://somewhere")
-        self.assertEqual(self.product.remote_location, "http://somewhere")
         # Temp file created
         self.assertTrue(
             os.path.exists(
@@ -1126,7 +1112,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Interrupted download
         # Product location not changed
         self.assertEqual(self.product.location, "http://somewhere")
-        self.assertEqual(self.product.remote_location, "http://somewhere")
 
     @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -1163,7 +1148,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload.stream_download() must return a response with a single asset."""
         plugin = self.get_download_plugin(self.product)
 
-        asset = mock.Mock()
+        asset = mock.MagicMock()
         asset.filename = "myfile.txt"
         asset.headers = {}
         asset.get.return_value = None
@@ -1190,10 +1175,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload.stream_download() must return a zipped response with multiple assets."""
         plugin = self.get_download_plugin(self.product)
 
-        asset1 = mock.Mock(filename="file1.txt")
-        asset2 = mock.Mock(filename="file2.txt")
-        asset1.get.return_value = "text/plain"
-        asset2.get.return_value = "text/plain"
+        asset1 = mock.MagicMock(filename="file1.txt")
+        asset2 = mock.MagicMock(filename="file2.txt")
+        asset1.get.side_effect = asset2.get.side_effect = lambda key, default=None: (
+            "text/plain" if key == "type" else default
+        )
 
         self.product.assets = mock.Mock()
         self.product.assets.get.return_value = None
@@ -1278,19 +1264,21 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(response.size, len(b"chunk1"))
         self.assertEqual(response.content, [b"chunk1"])
 
-    def test_stream_download_fallback_to_product(self):
-        """HTTPDownload.stream_download() must return a response with product headers if no asset headers."""
+    def test_stream_download_download_link(self):
+        """HTTPDownload.stream_download() must stream download_link asset with product headers."""
         plugin = self.get_download_plugin(self.product)
 
-        self.product.assets = mock.Mock()
-        self.product.assets.get_values.return_value = []
-        self.product.assets.__len__ = lambda self=self.product.assets: 0
+        self.product.assets.clear()
+        self.product.remote_location = "http://somewhere"
         self.product.headers = {}
 
         chunk_iter = iter([b"first_chunk", b"second_chunk"])
         plugin._raw_stream_download = mock.Mock(return_value=chunk_iter)
 
-        response = plugin.stream_download(self.product, output_dir=self.output_dir)
+        try:
+            response = plugin.stream_download(self.product, output_dir=self.output_dir)
+        finally:
+            del plugin._raw_stream_download
 
         self.assertEqual(list(response.content), [b"first_chunk", b"second_chunk"])
         self.assertEqual(response.headers, self.product.headers)
@@ -1302,11 +1290,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # plugin instances are cached per provider, remove any leftover mock from other tests
         plugin.__dict__.pop("_raw_stream_download", None)
 
-        self.product.assets = mock.Mock()
-        self.product.assets.get.return_value = None
-        self.product.assets.get_values.return_value = []
-        self.product.assets.__len__ = lambda self=self.product.assets: 0
-        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.assets.clear()
+        self.product.remote_location = "http://somewhere"
 
         fake_response = mock.Mock()
         fake_response.headers = CaseInsensitiveDict(
@@ -1348,18 +1333,20 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertIn("foo.zip", response.headers["Content-Disposition"])
 
     def test_stream_download_product_empty_raises(self):
-        """HTTPDownload.stream_download() must raise NotAvailableError if no asset and no product headers."""
+        """HTTPDownload.stream_download() must raise NotAvailableError if download_link is empty."""
         plugin = self.get_download_plugin(self.product)
 
-        self.product.assets = mock.Mock()
-        self.product.assets.get_values.return_value = []
-        self.product.assets.__len__ = lambda self=self.product.assets: 0
+        self.product.assets.clear()
+        self.product.remote_location = "http://somewhere"
         self.product.headers = {}
 
         plugin._raw_stream_download = mock.Mock(return_value=iter([]))
 
-        with self.assertRaises(NotAvailableError) as cm:
-            plugin.stream_download(self.product, output_dir=self.output_dir)
+        try:
+            with self.assertRaises(NotAvailableError) as cm:
+                plugin.stream_download(self.product, output_dir=self.output_dir)
+        finally:
+            del plugin._raw_stream_download
 
         self.assertIn(self.product.properties.get("id", ""), str(cm.exception))
 
@@ -1482,7 +1469,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertTrue(os.path.isfile(product_output_dir / "somethingelse"))
 
         # Another download() call without asset specified: should only download remaining asset ------------------------
-        self.product.location = self.product.remote_location = "http://foo"
         plugin.download(self.product, output_dir=self.output_dir)
 
         # 2 more requests.get calls for 'somewhere' asset:
@@ -2352,6 +2338,50 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 asset=self.product.assets["download_link"], auth=None
             )
 
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._raw_stream_download_assets",
+        autospec=True,
+    )
+    def test_plugins_download_http_order_filtered_assets(
+        self, mock_raw_stream_download_assets
+    ):
+        """HTTPDownload.download() must order filtered assets before downloading them"""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "download_link": {"eodag:order_link": "http://somewhere/order"},
+                "foo": {"eodag:order_link": "http://somewhere/order-foo"},
+            }
+        )
+
+        def order(asset, auth=None):
+            asset["href"] = "http://somewhere/foo"
+            asset["order:status"] = ONLINE_STATUS
+
+        mock_raw_stream_download_assets.side_effect = (
+            lambda _self, _product, _executor, _auth, _cb, assets_values, **kw: [
+                StreamResponse(content=iter([b"content"]), arcname=asset.key)
+                for asset in assets_values
+            ]
+        )
+        with mock.patch.object(
+            plugin, "_order", autospec=True, side_effect=order
+        ) as mock_order:
+            path = plugin.download(
+                self.product,
+                output_dir=self.output_dir,
+                asset="foo",
+                wait=0.001 / 60,
+                timeout=0.2 / 60,
+            )
+
+        mock_order.assert_called_once_with(asset=self.product.assets["foo"], auth=None)
+        self.assertTrue(os.path.isfile(os.path.join(path, "foo")))
+        self.assertEqual(
+            self.product.assets["download_link"]["order:status"], OFFLINE_STATUS
+        )
+
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
     """Test cases for the HTTP download plugin with retry logic."""
@@ -2527,13 +2557,11 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                 geometry="POINT (0 0)",
                 title="dummy_product",
                 id="dummy",
+                **{"eodag:download_link": "s3://sentinel-s2-l2a/123"},
             ),
             collection="S2_MSI_L2A",
         )
-        self.product.properties["eodag:download_link"] = "s3://sentinel-s2-l2a/123"
-        self.product.location = self.product.remote_location = (
-            "http://somebucket.somehost.com/path/to/some/product"
-        )
+        self.product.location = "http://somebucket.somehost.com/path/to/some/product"
 
     def test_plugins_download_aws_ignore_assets_product_config_true(self):
         """AwsDownload must support product-level ignore_assets=True"""
@@ -2551,6 +2579,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.config.ignore_assets = True
         plugin.config.products[self.product.collection]["ignore_assets"] = False
 
+        # download_link asset forces whole product download
+        self.assertTrue(plugin._should_ignore_assets(self.product))
+        self.product.assets.clear()
         self.assertFalse(plugin._should_ignore_assets(self.product))
 
     def test_plugins_download_aws_get_bucket_names_and_prefixes_asset_filter(self):
@@ -3814,7 +3845,6 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
                 id="dummy",
             ),
         )
-        product.location = product.remote_location = "a"
         assets = {
             "a1": {"title": "a1", "href": "s3://eodata/a/a1"},
             "a2": {"title": "a2", "href": "s3://eodata/a/a2"},

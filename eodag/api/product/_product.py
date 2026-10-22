@@ -174,9 +174,10 @@ class EOProduct:
             or properties.pop("collection", None)
             or properties.get("_collection")
         )
-        self._remote_location: str = properties.get("eodag:download_link", "")
         self._location: Optional[str] = None
         self.assets = AssetsDict(self)
+        if download_link_href := properties.get("eodag:download_link"):
+            self.remote_location = download_link_href
         self.links = []
         self.properties = {
             key: value
@@ -245,22 +246,25 @@ class EOProduct:
 
     @property
     def remote_location(self) -> str:
-        """The remote path to the product: ``href`` of its ``download_link`` asset if any.
+        """The remote path to the product: ``href`` of its ``download_link`` asset.
+
+        Setting it creates the ``download_link`` asset if missing.
 
         .. deprecated:: v5.0.0
             Use ``product.assets["download_link"]["href"]`` instead.
         """
         download_link = self.assets.get("download_link")
-        if download_link is not None and download_link.get("href"):
-            return download_link["href"]
-        return self._remote_location
+        return download_link.get("href", "") if download_link is not None else ""
 
     @remote_location.setter
     def remote_location(self, value: str) -> None:
         if (download_link := self.assets.get("download_link")) is not None:
             download_link["href"] = value
         else:
-            self._remote_location = value
+            self.assets["download_link"] = {
+                "href": value,
+                "roles": ["archive", "data"],
+            }
 
     @property
     def location(self) -> str:
