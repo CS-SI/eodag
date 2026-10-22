@@ -920,16 +920,15 @@ class Download(PluginTopic):
 
     @staticmethod
     def _get_order_status(product: EOProduct, asset: Optional[Asset] = None) -> str:
-        """Get the asset ``order:status``, falling back on the product one
+        """Get the asset ``order:status``
 
         :param product: The EO product
         :param asset: (optional) The asset carrying the order state
         :returns: The order status, ``succeeded`` if not set
         """
-        if asset is not None and "order:status" in asset:
-            return asset["order:status"]
-        # product-level order:status is still mapped by some providers
-        return product.properties.get("order:status", ONLINE_STATUS)
+        if asset is None:
+            return ONLINE_STATUS
+        return asset.get("order:status", ONLINE_STATUS)
 
     def _order_download_retry(
         self,
@@ -1030,9 +1029,7 @@ class Download(PluginTopic):
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:
                         order_status = self._get_order_status(product, asset)
-                        if "order:status" not in product.properties and (
-                            asset is None or "order:status" not in asset
-                        ):
+                        if asset is None or "order:status" not in asset:
                             order_status = "N/A status"
                         logger.info(not_available_info)
                         raise NotAvailableError(

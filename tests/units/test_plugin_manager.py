@@ -231,14 +231,18 @@ class TestPluginManager(unittest.TestCase):
             matching_conf=associated_plugin.config,
         )
 
-        # product with order link
+        # product with offline download_link asset: matches its order link
         get_auth_plugins.return_value = iter([mock.sentinel.auth])
-        product = EOProduct(
-            provider="low",
-            properties={
-                "eodag:order_link": "https://order.example",
-                "order:status": "orderable",
-            },
+        product = EOProduct(provider="low", properties={"id": "test"})
+        product.assets.update(
+            {
+                "quicklook": {"href": "https://quicklook.example"},
+                "download_link": {
+                    "href": "https://download.example",
+                    "eodag:order_link": "https://order.example",
+                    "order:status": "orderable",
+                },
+            }
         )
 
         plugin = self.manager.get_auth_plugin(associated_plugin, product=product)

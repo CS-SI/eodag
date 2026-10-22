@@ -274,7 +274,10 @@ class EndToEndBase(unittest.TestCase):
             results = [
                 prod
                 for prod in results
-                if prod.properties.get("order:status", "") != ONLINE_STATUS
+                if any(
+                    asset.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
+                    for asset in prod.assets.values()
+                )
             ]
         if check_product:
             self.assertGreater(len(results), 0)

@@ -304,7 +304,8 @@ class PluginManager:
 
         The selection follows the provider/auth matching rules in
         :meth:`get_auth_plugins`: auth plugins are matched first using the product
-        URL (asset href, download link or remote location) and then using the
+        URL (``href`` of its ``download_link`` asset, or of its first asset, or the asset
+        ``eodag:order_link`` when it is not online) and then using the
         download/search plugin configuration. If no auth plugin matches, the method
         keeps the provider's own auth plugin as a last resort when the product still
         has a remote location, so product-specific registration can succeed even when
@@ -321,14 +322,15 @@ class PluginManager:
         """
         # matching url from product to download
         if product is not None and len(product.assets) > 0:
-            matching_url = next(iter(product.assets.values()))["href"]
-        elif (
-            product is not None
-            and product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
-        ):
-            matching_url = (
-                product.properties.get("eodag:order_link") or product.remote_location
+            matching_asset = product.assets.get("download_link") or next(
+                iter(product.assets.values())
             )
+            if matching_asset.get(
+                "order:status", ONLINE_STATUS
+            ) != ONLINE_STATUS and matching_asset.get("eodag:order_link"):
+                matching_url = matching_asset["eodag:order_link"]
+            else:
+                matching_url = matching_asset["href"]
         elif product is not None:
             matching_url = (
                 product.properties.get("eodag:download_link") or product.remote_location
