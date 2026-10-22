@@ -625,27 +625,41 @@ class TestCoreSearchResults(EODagTestCase):
         # use given provider and not preferred provider
         self.assertEqual("cop_dataspace", search_results[0].provider)
 
-    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
-    def test_core_search_with_count(self, mock_urlopen):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_core_search_with_count(self, mock_request):
         """The core search must use the count parameter"""
+        count_tpl = self.dag._providers["creodias"].search_config.pagination[
+            "count_tpl"
+        ]
+        search_results_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses/cop_dataspace_search.json"
+        )
+        with open(search_results_file, encoding="utf-8") as f:
+            payload = json.load(f)
+        payload["@odata.count"] = 12
+        fake_response = Response()
+        fake_response.status_code = 200
+        fake_response._content = json.dumps(payload).encode("utf-8")
+        mock_request.return_value = fake_response
 
-        # count disabled by default
+        # count requested by default, at the same time as the search
         search_results = self.dag.search(collection="S2_MSI_L1C", provider="creodias")
-        self.assertNotIn(
-            self.dag._providers["creodias"].search_config.pagination["count_tpl"],
-            mock_urlopen.call_args_list[-1][0][0].full_url,
-        )
-        self.assertIsNone(search_results.number_matched)
+        requested_urls = [call.args[1].url for call in mock_request.call_args_list]
+        self.assertTrue(any(count_tpl in url for url in requested_urls))
+        self.assertTrue(any(count_tpl not in url for url in requested_urls))
+        self.assertEqual(search_results.number_matched, 12)
 
-        # count enabled
+        mock_request.reset_mock()
+
+        # count disabled
         search_results = self.dag.search(
-            collection="S2_MSI_L1C", provider="creodias", count=True
+            collection="S2_MSI_L1C", provider="creodias", count=False
         )
-        self.assertIn(
-            self.dag._providers["creodias"].search_config.pagination["count_tpl"],
-            mock_urlopen.call_args_list[-1][0][0].full_url,
-        )
-        self.assertIsNotNone(search_results.number_matched)
+        mock_request.assert_called_once()
+        self.assertNotIn(count_tpl, mock_request.call_args.args[1].url)
+        self.assertIsNone(search_results.number_matched)
 
     @mock.patch(
         "eodag.utils.stac_reader.fetch_stac_items",
