@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import pathlib
@@ -373,24 +374,23 @@ class TestEOProduct(EODagTestBase):
         # Check that the mocked request was properly called.
         responses.assert_call_count(product.properties["eodag:download_link"], 1)
 
-        # A .downloaded folder should be created, including a text file that
+        # A .downloaded folder should be created, including the download_link asset statements
         download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
         self.assertTrue(download_records_dir.is_dir())
 
-        # lists the downloaded product by their url
         files_in_records_dir = os.listdir(download_records_dir)
         self.assertEqual(len(files_in_records_dir), 1, "Expect one file")
 
         if len(files_in_records_dir) > 0:
 
-            # Cache contains last url downloaded, check it match
+            # Cache contains last url downloaded and local path, check they match
             records_file = files_in_records_dir[0]
-            actual_download_url = ""
             with open(os.path.join(download_records_dir, records_file), "r") as fd:
-                actual_download_url = fd.read()
+                statements = json.load(fd)
             self.assertEqual(
-                actual_download_url, product.properties["eodag:download_link"]
+                statements["href"], product.properties["eodag:download_link"]
             )
+            self.assertEqual(statements["file:local_path"], product_dir_path)
 
             # Since extraction is True by default, check that the returned path is the
             # product's directory.
@@ -412,10 +412,7 @@ class TestEOProduct(EODagTestBase):
             with self.assertLogs(level="INFO") as cm:
                 product.download()
                 self.assertIn("Product already downloaded", str(cm.output))
-                self.assertIn(
-                    "Extraction cancelled, destination directory already exists",
-                    str(cm.output),
-                )
+            responses.assert_call_count(product.properties["eodag:download_link"], 1)
 
     @responses.activate
     def test_eoproduct_download_http_delete_archive(self):
@@ -454,10 +451,7 @@ class TestEOProduct(EODagTestBase):
                 product.download()
                 product.download()
                 self.assertIn("Product already downloaded", str(cm.output))
-                self.assertIn(
-                    "Extraction cancelled, destination directory already exists",
-                    str(cm.output),
-                )
+            responses.assert_call_count(product.properties["eodag:download_link"], 1)
         finally:
             # Teardown
             if product_dir_path is not None:
@@ -753,7 +747,8 @@ class TestEOProduct(EODagTestBase):
                 "foo?o,o": {"href": "foooo.href"},
             }
         )
-        self.assertEqual(len(product.assets.get_values()), 3)
+        # download_link asset created from eodag:download_link property
+        self.assertEqual(len(product.assets.get_values()), 4)
         self.assertEqual(len(product.assets.get_values("foo.*")), 3)
         self.assertEqual(len(product.assets.get_values("foo")), 1)
         self.assertEqual(product.assets.get_values("foo")[0]["href"], "foo.href")

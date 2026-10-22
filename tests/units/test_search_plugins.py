@@ -3686,10 +3686,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_creodias_s3_links_empty(self, mock_request):
-        """Registering a product with no S3 objects must leave assets empty."""
+        """Registering a product with no S3 objects must only keep its download_link asset."""
         product = self._get_search_results(mock_request).data[0]
         product.driver = None
-        # remote location is proxied from the download_link asset, keep it without assets
         remote_location = product.remote_location
         product.assets = AssetsDict(product)
         product.remote_location = remote_location
@@ -3697,7 +3696,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self._register_product_with_stubbed_s3_objects(product, [])
 
         self.assertIsNotNone(product.driver)
-        self.assertEqual(0, len(product.assets))
+        self.assertEqual(["download_link"], list(product.assets))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True

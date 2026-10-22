@@ -231,7 +231,13 @@ class AwsDownload(Download):
         super(AwsDownload, self).__init__(provider, config)
 
     def _should_ignore_assets(self, product: EOProduct) -> bool:
-        """Get ignore_assets value with product-level override support."""
+        """Whether to download the whole product location instead of its assets.
+
+        It is the case without asset filter when a ``download_link`` asset exists, or if
+        configured with ``ignore_assets`` (with product-level override support).
+        """
+        if "download_link" in product.assets:
+            return True
         product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         return product_conf.get(
             "ignore_assets", getattr(self.config, "ignore_assets", False)

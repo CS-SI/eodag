@@ -422,13 +422,13 @@ class Asset(UserDict):
                 f"{self.product} asset {self.key} is unable to order itself due to "
                 "lacking of a download plugin"
             )
-        if not hasattr(downloader, "order"):
+        if (order := getattr(downloader, "order", None)) is None:
             raise NotImplementedError(
                 f"{type(downloader).__name__} plugin does not support ordering"
             )
         downloader_auth = self.product.downloader_auth
         auth = downloader_auth.authenticate() if downloader_auth else None
-        downloader.order(self.product, auth, wait=wait, timeout=timeout, asset=self.key)
+        order(self.product, auth, wait=wait, timeout=timeout, asset=self.key)
 
     def _repr_html_(self):
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>

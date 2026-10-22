@@ -136,9 +136,6 @@ class HTTPDownload(Download):
           default: ``1``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure should be
           flattened; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download using
-          eodag:download_link;
-          default: ``False``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
@@ -168,27 +165,30 @@ class HTTPDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(HTTPDownload, self).__init__(provider, config)
 
-    def _should_ignore_assets(self, product: EOProduct) -> bool:
-        """Get ignore_assets value with product-level override support."""
-        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
-        return product_conf.get(
-            "ignore_assets", getattr(self.config, "ignore_assets", False)
-        )
+    def _order_assets(
+        self,
+        product: EOProduct,
+        assets: list[Asset],
+        auth: Optional[AuthBase],
+        wait: float,
+        timeout: float,
+    ) -> None:
+        """Order the given assets that are orderable and not online yet, and poll their status
 
-    def _use_assets(self, product: EOProduct, **kwargs: Unpack[DownloadConf]) -> bool:
-        """Whether to download product assets instead of its ``download_link``
-
-        :param product: The EO product to download
-        :param kwargs: download additional kwargs
-        :returns: ``True`` if assets must be downloaded one by one
+        :param product: The EO product
+        :param assets: The assets to order
+        :param auth: (optional) authenticated object
+        :param wait: Wait time in minutes between two order status check
+        :param timeout: Maximum time in minutes before stop checking order status
         """
-        if len(product.assets) == 0:
-            return False
-        if kwargs.get("asset") is not None:
-            return True
-        return product.assets.get(
-            "download_link"
-        ) is None and not self._should_ignore_assets(product)
+        for asset in assets:
+            if asset.get("order:status", ONLINE_STATUS) == ONLINE_STATUS or not (
+                "eodag:order_link" in asset or asset.get("eodag:status_link")
+            ):
+                continue
+            self._order_download_retry(product, wait, timeout, asset)(
+                self._order_request
+            )(asset, auth)
 
     def _order(
         self,
@@ -666,9 +666,8 @@ class HTTPDownload(Download):
     ) -> Optional[str]:
         """Download a product using HTTP protocol.
 
-        The downloaded product is assumed to be a Zip file. If it is not,
-        the user is warned, it is renamed to remove the zip extension and
-        no further treatment is done (no extraction)
+        Without asset filter, the ``download_link`` asset is downloaded if it exists (and extracted if it
+        is an archive), otherwise all the product assets are downloaded.
         """
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
@@ -679,39 +678,75 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        fs_path, record_filename = self._prepare_download(
-            product,
-            progress_callback=progress_callback,
-            **kwargs,
-        )
-        if not fs_path or not record_filename:
-            if fs_path:
-                product.location = path_to_uri(fs_path)
+        if fs_path := self._local_product_path(product):
             return fs_path
 
-        # download assets if exist instead of remote_location
-        if self._use_assets(product, **kwargs):
-            try:
-                fs_path = self._download_assets(
-                    product,
-                    fs_path,
-                    record_filename,
-                    auth,
-                    progress_callback,
-                    executor,
-                    **kwargs,
-                )
-                if kwargs.get("asset") is None:
-                    product.location = path_to_uri(fs_path)
-                return fs_path
-            except NotAvailableError as e:
-                if kwargs.get("asset") is not None:
-                    raise NotAvailableError(e).with_traceback(e.__traceback__)
-                else:
-                    pass
+        assets = self._select_assets(product, kwargs.get("asset"))
+        if not assets:
+            raise NotAvailableError(f"No asset available for download in {product}")
 
-        url = product.remote_location
-        download_link = product.assets.get("download_link")
+        if len(assets) == 1 and assets[0].key == "download_link":
+            return self._download_link(
+                product, assets[0], auth, progress_callback, wait, timeout, **kwargs
+            )
+
+        fs_path = self._download_assets(
+            product,
+            assets,
+            auth,
+            progress_callback,
+            executor,
+            wait,
+            timeout,
+            **kwargs,
+        )
+        if kwargs.get("asset") is None:
+            product.location = path_to_uri(fs_path)
+        return fs_path
+
+    def _download_link(
+        self,
+        product: EOProduct,
+        download_link: Asset,
+        auth: Optional[AuthBase],
+        progress_callback: ProgressCallback,
+        wait: float,
+        timeout: float,
+        **kwargs: Unpack[DownloadConf],
+    ) -> str:
+        """Download the ``download_link`` asset as a single file, extracted if it is an archive.
+
+        :param product: The EO product to download
+        :param download_link: The ``download_link`` asset
+        :param auth: (optional) authenticated object
+        :param progress_callback: A progress callback
+        :param wait: If download fails, wait time in minutes between two download tries
+        :param timeout: If download fails, maximum time in minutes before stop retrying
+        :param kwargs: download additional kwargs
+        :returns: The absolute path to the downloaded product
+        """
+        per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
+
+        if statements := self.check_cache(download_link, **per_asset_kwargs):
+            local_path = str(statements["file:local_path"])
+            logger.info(f"Product already downloaded: {local_path}")
+            if os.path.isfile(local_path):
+                local_path = self._finalize(
+                    local_path, progress_callback=progress_callback, **kwargs
+                )
+            if local_path != statements["file:local_path"]:
+                self.set_statements(
+                    download_link,
+                    {**download_link.as_dict(), "file:local_path": local_path},
+                    **per_asset_kwargs,
+                )
+            product.location = path_to_uri(local_path)
+            return local_path
+
+        output_dir, _ = self._prepare_directories(**kwargs)
+        fs_path, _, _ = self._product_output_paths(
+            product, output_dir, self._output_extension(**kwargs)
+        )
 
         @self._order_download_retry(product, wait, timeout, download_link)
         def download_request(
@@ -724,60 +759,54 @@ class HTTPDownload(Download):
         ) -> os.PathLike:
             is_empty = True
             chunk_iterator = self._raw_stream_download(
-                product, auth, progress_callback, **kwargs
+                product, download_link, auth, progress_callback, **kwargs
             )
-            if fs_path is not None:
-                ext = Path(product.filename).suffix
-                path = Path(fs_path).with_suffix(ext)
-                if "ORDERABLE" in path.stem and product.properties.get("title"):
-                    path = path.with_stem(sanitize(product.properties["title"]))
+            ext = Path(product.filename).suffix
+            path = Path(fs_path).with_suffix(ext)
+            if "ORDERABLE" in path.stem and product.properties.get("title"):
+                path = path.with_stem(sanitize(product.properties["title"]))
 
-                with open(path, "wb") as fhandle:
-                    for chunk in chunk_iterator:
-                        is_empty = False
-                        progress_callback(len(chunk))
-                        fhandle.write(chunk)
-                product._stream.close()  # Closing response stream
+            with open(path, "wb") as fhandle:
+                for chunk in chunk_iterator:
+                    is_empty = False
+                    progress_callback(len(chunk))
+                    fhandle.write(chunk)
+            product._stream.close()  # Closing response stream
 
-                if is_empty:
-                    raise DownloadError(f"product {product.properties['id']} is empty")
-                else:
-                    # make sure storage status is online
-                    self._set_order_status(product, download_link, ONLINE_STATUS)
+            if is_empty:
+                raise DownloadError(f"product {product.properties['id']} is empty")
+            # make sure storage status is online
+            download_link["order:status"] = ONLINE_STATUS
 
-                return path
-            else:
-                raise DownloadError(
-                    f"download of product {product.properties['id']} failed"
-                )
+            return path
 
         path = download_request(
             product, auth, progress_callback, wait, timeout, **kwargs
         )
 
-        with open(record_filename, "w") as fh:
-            fh.write(url)
-        logger.debug("Download recorded in %s", record_filename)
-
         if os.path.isfile(path) and not (
             zipfile.is_zipfile(path) or tarfile.is_tarfile(path)
         ):
-            new_fs_path = os.path.join(
+            product_path = os.path.join(
                 os.path.dirname(path),
                 sanitize(product.properties["title"]),
             )
-            if os.path.isfile(new_fs_path):
-                rename_with_version(new_fs_path)
-            if not os.path.isdir(new_fs_path):
-                os.makedirs(new_fs_path)
-            shutil.move(path, new_fs_path)
-            product.location = path_to_uri(new_fs_path)
-            return new_fs_path
+            if os.path.isfile(product_path):
+                rename_with_version(product_path)
+            if not os.path.isdir(product_path):
+                os.makedirs(product_path)
+            shutil.move(path, product_path)
+        else:
+            product_path = self._finalize(
+                str(path),
+                progress_callback=progress_callback,
+                **kwargs,
+            )
 
-        product_path = self._finalize(
-            str(path),
-            progress_callback=progress_callback,
-            **kwargs,
+        self.set_statements(
+            download_link,
+            {**download_link.as_dict(), "file:local_path": product_path},
+            **per_asset_kwargs,
         )
         product.location = path_to_uri(product_path)
         return product_path
@@ -851,82 +880,76 @@ class HTTPDownload(Download):
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
-        # download assets if exist instead of remote_location
-        if self._use_assets(product, **kwargs):
-            executor = ThreadPoolExecutor(
-                max_workers=getattr(self.config, "max_workers", None)
+        assets_values = self._select_assets(product, kwargs.get("asset"))
+        if not assets_values:
+            raise NotAvailableError(f"No asset available for download in {product}")
+
+        if len(assets_values) == 1 and assets_values[0].key == "download_link":
+            chunk_iterator = self._raw_stream_download(
+                product, assets_values[0], auth, None, **kwargs
             )
+
+            # start reading chunks to set product.headers
             try:
-                assets_values = product.assets.get_values(kwargs.get("asset") or "")
-                with executor:
-                    assets_stream_list = self._raw_stream_download_assets(
-                        product,
-                        executor,
-                        auth,
-                        None,
-                        assets_values,
-                        **kwargs,
-                    )
+                first_chunk = next(chunk_iterator)
+            except StopIteration:
+                # product is empty file
+                logger.error("product %s is empty", product.properties["id"])
+                raise NotAvailableError(f"product {product.properties['id']} is empty")
 
-                # single asset
-                if len(assets_stream_list) == 1:
-                    asset_stream = assets_stream_list[0]
-                    if assets_values[0].get("type"):
-                        asset_stream.headers["Content-Type"] = assets_values[0]["type"]
-                    return asset_stream
+            return StreamResponse(
+                content=chain(iter([first_chunk]), chunk_iterator),
+                headers=getattr(product, "headers", {}),
+                filename=getattr(product, "filename", None),
+                size=getattr(product, "size", None),
+            )
 
-                # multiple assets in zip
-                else:
-                    outputs_filename = (
-                        sanitize(product.properties["title"])
-                        if "title" in product.properties
-                        else sanitize(product.properties.get("id", "download"))
-                    )
+        self._order_assets(product, assets_values, auth, wait, timeout)
+        executor = ThreadPoolExecutor(
+            max_workers=getattr(self.config, "max_workers", None)
+        )
+        with executor:
+            assets_stream_list = self._raw_stream_download_assets(
+                product,
+                executor,
+                auth,
+                None,
+                assets_values,
+                **kwargs,
+            )
 
-                    # do not use global size if one of the assets has no size
-                    missing_length = any(
-                        not asset.get("file:size") for asset in assets_values
-                    )
+        # single asset
+        if len(assets_stream_list) == 1:
+            asset_stream = assets_stream_list[0]
+            if assets_values[0].get("type"):
+                asset_stream.headers["Content-Type"] = assets_values[0]["type"]
+            return asset_stream
 
-                    zip_stream = (
-                        ZipStream(sized=True) if not missing_length else ZipStream()
-                    )
-                    for asset_stream in assets_stream_list:
-                        zip_stream.add(
-                            asset_stream.content,
-                            arcname=asset_stream.arcname,
-                            size=asset_stream.size,
-                        )
+        # multiple assets in zip
+        outputs_filename = (
+            sanitize(product.properties["title"])
+            if "title" in product.properties
+            else sanitize(product.properties.get("id", "download"))
+        )
 
-                    zip_length = len(zip_stream) if not missing_length else None
+        # do not use global size if one of the assets has no size
+        missing_length = any(not asset.get("file:size") for asset in assets_values)
 
-                    return StreamResponse(
-                        content=zip_stream,
-                        media_type="application/zip",
-                        filename=f"{outputs_filename}.zip",
-                        size=zip_length,
-                    )
-            except NotAvailableError as e:
-                if kwargs.get("asset") is not None:
-                    raise NotAvailableError(e).with_traceback(e.__traceback__)
-                else:
-                    pass
+        zip_stream = ZipStream(sized=True) if not missing_length else ZipStream()
+        for asset_stream in assets_stream_list:
+            zip_stream.add(
+                asset_stream.content,
+                arcname=asset_stream.arcname,
+                size=asset_stream.size,
+            )
 
-        chunk_iterator = self._raw_stream_download(product, auth, None, **kwargs)
-
-        # start reading chunks to set product.headers
-        try:
-            first_chunk = next(chunk_iterator)
-        except StopIteration:
-            # product is empty file
-            logger.error("product %s is empty", product.properties["id"])
-            raise NotAvailableError(f"product {product.properties['id']} is empty")
+        zip_length = len(zip_stream) if not missing_length else None
 
         return StreamResponse(
-            content=chain(iter([first_chunk]), chunk_iterator),
-            headers=getattr(product, "headers", {}),
-            filename=getattr(product, "filename", None),
-            size=getattr(product, "size", None),
+            content=zip_stream,
+            media_type="application/zip",
+            filename=f"{outputs_filename}.zip",
+            size=zip_length,
         )
 
     def _check_auth_exception(self, e: Optional[RequestException]) -> None:
@@ -1026,25 +1049,28 @@ class HTTPDownload(Download):
                         order status
         :param kwargs: `asset` (str) regex filter to identify assets to order
         """
-        for asset in product.assets.get_values(kwargs.get("asset") or ""):
-            if asset.get("order:status", ONLINE_STATUS) == ONLINE_STATUS:
-                continue
-            self._order_download_retry(product, wait, timeout, asset)(
-                self._order_request
-            )(asset, auth)
+        self._order_assets(
+            product,
+            product.assets.get_values(kwargs.get("asset") or ""),
+            auth,  # type: ignore[arg-type]
+            wait,
+            timeout,
+        )
 
     def _raw_stream_download(
         self,
         product: EOProduct,
+        streamed_asset: Asset,
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         """
-        Fetches a zip file containing the assets of a given product as a stream
-        and returns a generator yielding the chunks of the file
+        Fetches the given asset of a product as a stream and returns a generator yielding
+        the chunks of the file
 
-        :param product: product for which the assets should be downloaded
+        :param product: product for which the asset should be downloaded
+        :param streamed_asset: the asset to download, usually ``download_link``
         :param auth: The configuration of a plugin of type Authentication
         :param progress_callback: A method or a callable object
                                   which takes a current size and a maximum
@@ -1060,24 +1086,20 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
         ordered_message = ""
-        download_link = product.assets.get("download_link")
         # retry handled at download level
-        if download_link is not None:
-            self._order_request(download_link, auth)
+        self._order_request(streamed_asset, auth)
 
         params = kwargs.pop("dl_url_params", None) or getattr(
             self.config, "dl_url_params", {}
         )
 
-        download_method = (
-            download_link.get("eodag:download_method")
-            if download_link is not None
-            else None
+        download_method = streamed_asset.get(
+            "eodag:download_method"
         ) or product.properties.get("eodag:download_method", "")
         req_method = (
             download_method.lower() or getattr(self.config, "method", "GET").lower()
         )
-        url = product.remote_location
+        url = streamed_asset["href"]
         if req_method == "post":
             # separate url & parameters
             parts = urlparse(url)
@@ -1117,7 +1139,7 @@ class HTTPDownload(Download):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
         except RequestException as e:
-            self._process_exception(e, product, ordered_message, download_link)
+            self._process_exception(e, product, ordered_message, streamed_asset)
             raise DownloadError(
                 f"download of {product.properties['id']} is empty"
             ) from e
@@ -1133,9 +1155,9 @@ class HTTPDownload(Download):
             ).get(
                 "http_code"
             ):
-                self._set_order_status(product, download_link, "ORDERED")
-                self._process_exception(None, product, ordered_message, download_link)
-            stream_size = self._check_stream_size(product, download_link) or None
+                streamed_asset["order:status"] = "ORDERED"
+                self._process_exception(None, product, ordered_message, streamed_asset)
+            stream_size = self._check_stream_size(product, streamed_asset) or None
 
             product.headers = CaseInsensitiveDict(
                 {
@@ -1311,17 +1333,34 @@ class HTTPDownload(Download):
     def _download_assets(
         self,
         product: EOProduct,
-        fs_dir_path: str,
-        record_filename: str,
+        assets: list[Asset],
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         executor: Optional[ThreadPoolExecutor] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Any,
     ) -> str:
-        """Download product assets if they exist"""
+        """Download the given product assets in the product directory
+
+        :param product: The EO product to download
+        :param assets: The assets to download
+        :param auth: (optional) authenticated object
+        :param progress_callback: (optional) A progress callback
+        :param executor: (optional) An executor to download assets in parallel
+        :param wait: (optional) If order is needed, wait time in minutes between two order status check
+        :param timeout: (optional) If order is needed, maximum time in minutes before stop checking
+        :param kwargs: download additional kwargs
+        :returns: The absolute path to the product directory
+        """
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
+
+        output_dir, _ = self._prepare_directories(**kwargs)
+        _, fs_dir_path, _ = self._product_output_paths(
+            product, output_dir, self._output_extension(**kwargs)
+        )
 
         # create an executor if not given and anticipate the possible need to shut it down
         executor, shutdown_executor = (
@@ -1329,23 +1368,21 @@ class HTTPDownload(Download):
         )
         self._config_executor(executor)
 
-        assets_urls = [
-            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
-        ]
-        if not assets_urls:
-            raise NotAvailableError("No assets available for %s" % product)
-
-        all_assets_values = product.assets.get_values(kwargs.get("asset") or "")
-
         # only keep assets that need to be downloaded (not cached)
         assets_values: list[Asset] = []
         per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
-        for asset in all_assets_values:
+        for asset in assets:
             if statements := self.check_cache(asset, **per_asset_kwargs):
                 # update asset with cached statements
                 asset.update(statements)
             else:
                 assets_values.append(asset)
+
+        self._order_assets(product, assets_values, auth, wait, timeout)
+
+        assets_urls = [a["href"] for a in assets if a.get("href")]
+        if not assets_urls:
+            raise NotAvailableError("No assets available for %s" % product)
 
         assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
