@@ -325,7 +325,6 @@ class CopGhslSearch(Search):
         current_index = 0
         for year in list_years:
             properties = deepcopy(params)
-            properties["order:status"] = "succeeded"
             properties["start_datetime"] = to_iso_utc_string(
                 dt.datetime(year=int(year), month=1, day=1)
             )
@@ -417,7 +416,6 @@ class CopGhslSearch(Search):
         ]
         properties = {}
         properties["geometry"] = default_geometry[1]
-        properties["order:status"] = "succeeded"
         if "proj:code" in filters:
             filters["proj:code"] = filters["proj:code"].replace("EPSG:", "")
         # assets & download link

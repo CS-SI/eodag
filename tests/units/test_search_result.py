@@ -31,27 +31,33 @@ class TestSearchResult(unittest.TestCase):
     def setUp(self):
         super(TestSearchResult, self).setUp()
         self.search_result = SearchResult([])
-        self.search_result2 = SearchResult(
-            [
-                EOProduct(
-                    provider=None,
-                    properties={"geometry": "POINT (0 0)", "order:status": "succeeded"},
-                ),
-                EOProduct(
-                    provider=None,
-                    properties={"geometry": "POINT (0 0)", "order:status": "orderable"},
-                ),
-            ]
-        )
 
     def test_search_result_filter_online(self):
-        """SearchResult.filter_online must only keep online results"""
-        filtered_products = self.search_result2.filter_online()
-        origin_size = len(self.search_result2)
-        filtered_size = len(filtered_products)
-        self.assertFalse(origin_size == filtered_size)
-        for product in filtered_products:
-            assert product.properties["order:status"] == "succeeded"
+        """SearchResult.filter_online must only keep products whose assets are all online"""
+        statuses = {
+            "online": {"download_link": "succeeded", "quicklook": None},
+            "offline": {"download_link": "orderable"},
+            "partially_online": {"download_link": "succeeded", "foo": "ordered"},
+            "no_asset": {},
+        }
+        products = []
+        for product_id, assets_statuses in statuses.items():
+            product = EOProduct(
+                provider=None, properties={"geometry": "POINT (0 0)", "id": product_id}
+            )
+            for key, order_status in assets_statuses.items():
+                asset = {"href": f"http://somewhere/{key}"}
+                if order_status is not None:
+                    asset["order:status"] = order_status
+                product.assets[key] = asset
+            products.append(product)
+
+        filtered_products = SearchResult(products).filter_online()
+
+        self.assertIsInstance(filtered_products, SearchResult)
+        self.assertListEqual(
+            [p.properties["id"] for p in filtered_products], ["online", "no_asset"]
+        )
 
     def test_search_result_geo_interface(self):
         """SearchResult must provide a FeatureCollection geo-interface"""

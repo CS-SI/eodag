@@ -304,11 +304,9 @@ class PluginManager:
 
         The selection follows the provider/auth matching rules in
         :meth:`get_auth_plugins`: auth plugins are matched first using the product
-        asset URLs in order, stopping at the first matching auth plugin. For products
-        without assets, the order/download link or remote location is used; search
-        authentication uses the associated plugin's API endpoint. Each candidate URL
-        is checked alongside the associated plugin configuration, and either can
-        select an auth plugin. If no auth plugin matches, the method
+        asset URLs in order, stopping at the first matching auth plugin (assets ``href``
+        or ``eodag:order_link`` when it is not online). Then using the
+        download/search plugin configuration. If no auth plugin matches, the method
         keeps the provider's own auth plugin as a last resort when the product still
         has a remote location, so product-specific registration can succeed even when
         the asset list is temporarily empty.
@@ -324,16 +322,16 @@ class PluginManager:
         """
         # Collect candidate URLs; a technical asset may precede assets requiring auth.
         if product is not None and len(product.assets) > 0:
-            matching_urls: list[Optional[str]] = [
-                asset["href"] for asset in product.assets.values() if asset.get("href")
-            ] or [None]
-        elif (
-            product is not None
-            and product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
-        ):
-            matching_urls = [
-                product.properties.get("eodag:order_link") or product.remote_location
-            ]
+            matching_urls: list[Optional[str]] = []
+            for matching_asset in product.assets.values():
+                # use the order link if the asset is not online, otherwise use the href
+                if matching_asset.get(
+                    "order:status", ONLINE_STATUS
+                ) != ONLINE_STATUS and matching_asset.get("eodag:order_link"):
+                    matching_urls.append(matching_asset["eodag:order_link"])
+                else:
+                    matching_urls.append(matching_asset["href"])
+            matching_urls = matching_urls or [None]
         elif product is not None:
             matching_urls = [
                 product.properties.get("eodag:download_link") or product.remote_location
