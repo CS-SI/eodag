@@ -53,6 +53,7 @@ from eodag.utils import (
     ProgressCallback,
     StreamResponse,
     guess_extension,
+    path_to_uri,
     sanitize,
     uri_to_path,
 )
@@ -493,97 +494,72 @@ class Download(PluginTopic):
                 return fs_path
         return None
 
-    def _prepare_download(
+    def _product_output_path(
+        self, product: EOProduct, **kwargs: Unpack[DownloadConf]
+    ) -> str:
+        """Get the output file path of the product ``download_link``, creating the output directory.
+
+        :param product: The EO product to download
+        :param kwargs: download additional kwargs
+        :returns: The output file path
+        """
+        output_dir, _ = self._prepare_directories(**kwargs)
+        fs_path, _, _ = self._product_output_paths(
+            product, output_dir, self._output_extension(**kwargs)
+        )
+        return fs_path
+
+    def _cached_download_link(
         self,
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> tuple[Optional[str], Optional[str]]:
-        """Check if file has already been downloaded, and prepare product download
+    ) -> Optional[str]:
+        """Get the local path of the product if its ``download_link`` asset was already downloaded.
+
+        A cached archive is finalized (extracted if configured) and ``product.location`` is updated.
 
         :param product: The EO product to download
         :param progress_callback: (optional) A progress callback
-        :returns: fs_path, record_filename
+        :param kwargs: download additional kwargs
+        :returns: The product local path, or ``None`` if it was not downloaded yet
         """
         if fs_path := self._local_product_path(product):
-            # Do not download data if we are on site. Instead give back the absolute path to the data
-            return fs_path, None
+            return fs_path
+        if (download_link := product.assets.get("download_link")) is None:
+            return None
+        per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
+        if not (statements := self.check_cache(download_link, **per_asset_kwargs)):
+            return None
 
-        url = product.remote_location
-
-        output_dir = (
-            kwargs.pop("output_dir", None)
-            or getattr(self.config, "output_dir", tempfile.gettempdir())
-            or tempfile.gettempdir()
-        )
-        output_extension = self._output_extension(**kwargs)
-
-        prefix = os.path.abspath(output_dir)
-        fs_path, fs_dir_path, fs_dir_path_without_suffix = self._product_output_paths(
-            product, output_dir, output_extension
-        )
-
-        download_records_dir = os.path.join(prefix, ".downloaded")
-        try:
-            os.makedirs(download_records_dir)
-        except OSError as exc:
-            import errno
-
-            if exc.errno != errno.EEXIST:  # Skip error if dir exists
-                import traceback as tb
-
-                logger.warning(
-                    f"Unable to create records directory. Got:\n{tb.format_exc()}",
-                )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        old_record_filename = os.path.join(download_records_dir, url_hash)
-        record_filename = os.path.join(
-            download_records_dir, self.generate_record_hash(product)
-        )
-        if os.path.isfile(old_record_filename):
-            os.rename(old_record_filename, record_filename)
-
-        # path with or without extension
-        path_obj = Path(fs_path)
-        matched_paths = list(path_obj.parent.glob(f"{path_obj.stem}.*"))
-        fs_path_with_ext = matched_paths[0] if matched_paths else fs_path
-        if (
-            os.path.isfile(record_filename)
-            and fs_path_with_ext
-            and os.path.isfile(fs_path_with_ext)
-        ):
-            logger.info(
-                f"Product already downloaded: {fs_path_with_ext}",
+        local_path = str(statements["file:local_path"])
+        logger.info(f"Product already downloaded: {local_path}")
+        if os.path.isfile(local_path):
+            local_path = self._finalize(
+                local_path, progress_callback=progress_callback, **kwargs
             )
-            return (
-                self._finalize(
-                    str(fs_path_with_ext), progress_callback=progress_callback, **kwargs
-                ),
-                None,
-            )
-        elif os.path.isfile(record_filename) and (
-            os.path.isdir(fs_dir_path) or os.path.isdir(fs_dir_path_without_suffix)
-        ):
-            logger.info(
-                f"Product already downloaded: {fs_dir_path}",
-            )
-            return (
-                self._finalize(
-                    fs_dir_path, progress_callback=progress_callback, **kwargs
-                ),
-                None,
-            )
-        # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
-        elif os.path.isfile(record_filename):
-            logger.debug(
-                f"Record file found ({record_filename}) but not the actual file",
-            )
-            logger.debug(
-                f"Removing record file : {record_filename}",
-            )
-            os.remove(record_filename)
+        if local_path != statements["file:local_path"]:
+            self._record_download_link(product, local_path, **kwargs)
+        product.location = path_to_uri(local_path)
+        return local_path
 
-        return fs_path, record_filename
+    def _record_download_link(
+        self, product: EOProduct, product_path: str, **kwargs: Unpack[DownloadConf]
+    ) -> None:
+        """Record the local path of the downloaded product ``download_link`` asset.
+
+        :param product: The downloaded EO product
+        :param product_path: The product local path
+        :param kwargs: download additional kwargs
+        """
+        if (download_link := product.assets.get("download_link")) is not None:
+            per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
+            self.set_statements(
+                download_link,
+                {**download_link.as_dict(), "file:local_path": product_path},
+                **per_asset_kwargs,
+            )
+        product.location = path_to_uri(product_path)
 
     def generate_record_hash(self, product: EOProduct) -> str:
         """Generate the record hash of the given product.
