@@ -725,28 +725,11 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :returns: The absolute path to the downloaded product
         """
-        per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
-
-        if statements := self.check_cache(download_link, **per_asset_kwargs):
-            local_path = str(statements["file:local_path"])
-            logger.info(f"Product already downloaded: {local_path}")
-            if os.path.isfile(local_path):
-                local_path = self._finalize(
-                    local_path, progress_callback=progress_callback, **kwargs
-                )
-            if local_path != statements["file:local_path"]:
-                self.set_statements(
-                    download_link,
-                    {**download_link.as_dict(), "file:local_path": local_path},
-                    **per_asset_kwargs,
-                )
-            product.location = path_to_uri(local_path)
-            return local_path
-
-        output_dir, _ = self._prepare_directories(**kwargs)
-        fs_path, _, _ = self._product_output_paths(
-            product, output_dir, self._output_extension(**kwargs)
-        )
+        if cached_path := self._cached_download_link(
+            product, progress_callback=progress_callback, **kwargs
+        ):
+            return cached_path
+        fs_path = self._product_output_path(product, **kwargs)
 
         @self._order_download_retry(product, wait, timeout, download_link)
         def download_request(
@@ -803,12 +786,7 @@ class HTTPDownload(Download):
                 **kwargs,
             )
 
-        self.set_statements(
-            download_link,
-            {**download_link.as_dict(), "file:local_path": product_path},
-            **per_asset_kwargs,
-        )
-        product.location = path_to_uri(product_path)
+        self._record_download_link(product, product_path, **kwargs)
         return product_path
 
     def _check_stream_size(

@@ -24,7 +24,7 @@ import tarfile
 import unittest
 import zipfile
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Any
 from unittest import mock
 
@@ -118,8 +118,8 @@ class BaseDownloadPluginTest(unittest.TestCase):
 class TestDownloadPluginBase(BaseDownloadPluginTest):
     """Test cases for the base download plugin."""
 
-    def test_plugins_download_base_prepare_download_existing(self):
-        """Download._prepare_download must detect if product destination already exists."""
+    def test_plugins_download_base_cached_download_link_existing(self):
+        """Download._cached_download_link must detect if product destination already exists."""
         product_file = NamedTemporaryFile()
         self.product.location = path_to_uri(product_file.name)
         Path(product_file.name).touch()
@@ -128,25 +128,21 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
 
         with self.assertLogs(level="INFO") as cm:
-            fs_path, record_filename = plugin._prepare_download(self.product)
+            fs_path = plugin._cached_download_link(self.product)
             self.assertEqual(fs_path, product_file.name)
-            self.assertIsNone(record_filename)
             self.assertIn("Product already present on this platform", str(cm.output))
 
-    def test_plugins_download_base_prepare_download_record_file(self):
-        """Download._prepare_download must check existing record files."""
-        self.product.location = self.product.remote_location = "http://foo.bar"
+    def test_plugins_download_base_cached_download_link(self):
+        """Download._cached_download_link must check download_link statements and legacy records."""
+        self.product.remote_location = "http://foo.bar"
         self.product.collection = "foo"
+        download_link = self.product.assets["download_link"]
 
         with TemporaryDirectory() as output_dir:
             download_kwargs = dict(output_dir=output_dir)
             product_path_dir = Path(output_dir) / self.product.properties["title"]
             recordfile_dir = Path(output_dir) / ".downloaded"
             recordfile_dir.mkdir()
-
-            recordfile_path = (
-                recordfile_dir / hashlib.md5("foo-dummy".encode("utf-8")).hexdigest()
-            )
             old_recordfile_path = (
                 recordfile_dir
                 / hashlib.md5("http://foo.bar".encode("utf-8")).hexdigest()
@@ -154,46 +150,36 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
             plugin = self.get_download_plugin(self.product)
 
-            # < v3.0.0b1 formatted record file and product path exist, record file moved to new format
+            # not downloaded
+            self.assertIsNone(
+                plugin._cached_download_link(self.product, **download_kwargs)
+            )
+
+            # < v3.0.0b1 formatted record file and product path exist, record migrated to statements
             product_path_dir.mkdir()
-            file_in_dir = product_path_dir / "foo"
-            file_in_dir.touch()
+            (product_path_dir / "foo").touch()
             old_recordfile_path.touch()
             with self.assertLogs(level="INFO") as cm:
-                plugin._prepare_download(self.product, **download_kwargs)
-                self.assertTrue(os.path.isfile(recordfile_path))
-                self.assertFalse(os.path.isfile(old_recordfile_path))
+                fs_path = plugin._cached_download_link(self.product, **download_kwargs)
                 self.assertIn("Product already downloaded", str(cm.output))
+            self.assertEqual(fs_path, str(product_path_dir))
+            self.assertFalse(old_recordfile_path.exists())
+            self.assertEqual(download_link["file:local_path"], str(product_path_dir))
+            self.assertEqual(self.product.location, path_to_uri(str(product_path_dir)))
 
-            # new formatted record file and product path exist
+            # statements exist
+            download_link.data.pop("file:local_path")
+            self.product.location = self.product.remote_location
             with self.assertLogs(level="INFO") as cm:
-                plugin._prepare_download(self.product, **download_kwargs)
-                self.assertTrue(os.path.isfile(recordfile_path))
+                fs_path = plugin._cached_download_link(self.product, **download_kwargs)
                 self.assertIn("Product already downloaded", str(cm.output))
+            self.assertEqual(fs_path, str(product_path_dir))
 
-            # already downloaded product without extension
-            file_in_dir.unlink()
-            product_path_dir.rmdir()
-            product_path_dir.touch()
-            with self.assertLogs(level="INFO") as cm:
-                plugin._prepare_download(self.product, **download_kwargs)
-                self.assertIn("Product already downloaded", str(cm.output))
-                self.assertIn(
-                    "Remove existing partially downloaded file", str(cm.output)
-                )
-
-            # already downloaded product with extension
-            product_path_with_ext = product_path_dir.with_suffix(".xyz")
-            product_path_with_ext.touch()
-            with self.assertLogs(level="INFO") as cm:
-                plugin._prepare_download(self.product, **download_kwargs)
-                self.assertIn("Product already downloaded", str(cm.output))
-
-    def test_plugins_download_base_prepare_download_record_file_collision_dir(self):
-        """Download._prepare_download must detect already-downloaded dir without collision suffix."""
+    def test_plugins_download_base_cached_download_link_collision_dir(self):
+        """Download._cached_download_link must detect already-downloaded dir without collision suffix."""
         self.product.properties["title"] = "title to sanitïze"
         self.product.properties["id"] = "id alsô"
-        self.product.location = self.product.remote_location = "http://foo.bar"
+        self.product.remote_location = "http://foo.bar"
         self.product.collection = "foo"
 
         with TemporaryDirectory() as output_dir:
@@ -214,38 +200,36 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             plugin = self.get_download_plugin(self.product)
 
             with self.assertLogs(level="INFO") as cm:
-                fs_path, _ = plugin._prepare_download(self.product, **download_kwargs)
+                fs_path = plugin._cached_download_link(self.product, **download_kwargs)
                 self.assertIn("Product already downloaded", str(cm.output))
-                self.assertEqual(
-                    fs_path, str(Path(output_dir) / "title_to_sanitize-id_also")
-                )
+                self.assertEqual(fs_path, str(product_path_dir))
 
-    def test_plugins_download_base_prepare_download_collision_avoidance(self):
-        """Download._prepare_download must use collision avoidance suffix."""
+    def test_plugins_download_base_product_output_path_collision_avoidance(self):
+        """Download._product_output_path must use collision avoidance suffix."""
         self.product.properties["title"] = "needs sanitïze"
         self.product.properties["id"] = "alsô.zip"
-        self.product.location = self.product.remote_location = "somewhere"
 
         plugin = self.get_download_plugin(self.product)
 
-        fs_path, _ = plugin._prepare_download(self.product)
+        fs_path = plugin._product_output_path(self.product, output_dir=self.output_dir)
 
-        self.assertEqual(fs_path, os.path.join(gettempdir(), "needs_sanitize-also.zip"))
+        self.assertEqual(
+            fs_path, os.path.join(self.output_dir, "needs_sanitize-also.zip")
+        )
 
-    def test_plugins_download_base_prepare_download_dir_permission(self):
-        """Download._prepare_download must check output directory permissions."""
+    def test_plugins_download_base_product_output_path_dir_permission(self):
+        """Download._product_output_path must check output directory permissions."""
         if os.name == "nt":
             self.skipTest("windows permissions too complex to set for this test")
 
         plugin = self.get_download_plugin(self.product)
-        self.product.location = self.product.remote_location = "somewhere"
         # read only output dir
         outdir = TemporaryDirectory()
         os.chmod(outdir.name, stat.S_IREAD)
 
         with self.assertLogs(level="WARNING") as cm:
-            fs_path, _ = plugin._prepare_download(self.product, output_dir=outdir.name)
-            self.assertIn("Unable to create records directory", str(cm.output))
+            plugin._product_output_path(self.product, output_dir=outdir.name)
+            self.assertIn("Unable to create download directory", str(cm.output))
 
     def test_plugins_download_base_finalize_extract_not_complete(self):
         """Download._finalize must not delete archive if extract is True but file is not an archive."""
@@ -2500,29 +2484,8 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
         self.product.location = "http://somebucket.somehost.com/path/to/some/product"
 
-    def test_plugins_download_aws_ignore_assets_product_config_true(self):
-        """AwsDownload must support product-level ignore_assets=True"""
-
-        plugin = self.get_download_plugin(self.product)
-        plugin.config.ignore_assets = False
-        plugin.config.products[self.product.collection]["ignore_assets"] = True
-
-        self.assertTrue(plugin._should_ignore_assets(self.product))
-
-    def test_plugins_download_aws_ignore_assets_product_config_false(self):
-        """AwsDownload must support product-level ignore_assets=False"""
-
-        plugin = self.get_download_plugin(self.product)
-        plugin.config.ignore_assets = True
-        plugin.config.products[self.product.collection]["ignore_assets"] = False
-
-        # download_link asset forces whole product download
-        self.assertTrue(plugin._should_ignore_assets(self.product))
-        self.product.assets.clear()
-        self.assertFalse(plugin._should_ignore_assets(self.product))
-
-    def test_plugins_download_aws_get_bucket_names_and_prefixes_asset_filter(self):
-        """AwsDownload._get_bucket_names_and_prefixes() must filter assets if no assets values are given"""
+    def test_plugins_download_aws_get_bucket_names_and_prefixes(self):
+        """AwsDownload._get_bucket_names_and_prefixes() must return the given assets buckets and prefixes"""
 
         plugin = self.get_download_plugin(self.product)
         self.product.assets.clear()
@@ -2534,22 +2497,19 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
 
         self.assertEqual(
-            plugin._get_bucket_names_and_prefixes(self.product, "some.*", False, []),
-            [("eodata", "somewhere/something")],
-        )
-        # given assets values take precedence over asset filter
-        self.assertEqual(
             plugin._get_bucket_names_and_prefixes(
-                self.product,
-                "some.*",
-                False,
-                [],
-                [self.product.assets["elsewhere"]],
+                self.product, [self.product.assets["elsewhere"]], []
             ),
             [("eodata", "elsewhere/anything")],
         )
+        self.assertEqual(
+            plugin._get_bucket_names_and_prefixes(
+                self.product, plugin._select_assets(self.product, "some.*"), []
+            ),
+            [("eodata", "somewhere/something")],
+        )
         with self.assertRaises(NotAvailableError):
-            plugin._get_bucket_names_and_prefixes(self.product, "nothing", False, [])
+            plugin._select_assets(self.product, "nothing")
 
     def test_plugins_download_aws_get_bucket_prefix(self):
         """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location."""
@@ -2701,9 +2661,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                         plugin.config, "flatten_top_dirs", provider_flatten, create=True
                     ),
                     mock.patch.object(
-                        plugin,
-                        "_download_preparation",
-                        return_value=(product_path, os.path.join(output_dir, "record")),
+                        plugin, "_create_product_dir", return_value=product_path
                     ),
                     mock.patch.object(
                         auth_plugin, "authenticate_objects", return_value={}
@@ -2760,9 +2718,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                         plugin.config, "flatten_top_dirs", True, create=True
                     ),
                     mock.patch.object(
-                        plugin,
-                        "_download_preparation",
-                        return_value=(product_path, os.path.join(output_dir, "record")),
+                        plugin, "_create_product_dir", return_value=product_path
                     ),
                     mock.patch.object(
                         auth_plugin, "authenticate_objects", return_value={}
@@ -2781,9 +2737,14 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                     )
 
                 self.assertEqual(self.product.location, path_to_uri(result))
+                self.assertEqual(
+                    self.product.assets["download_link"]["file:local_path"], result
+                )
                 if extract:
                     self.assertEqual(result, product_path)
-                    self.assertCountEqual(os.listdir(output_dir), ["product", "record"])
+                    self.assertCountEqual(
+                        os.listdir(output_dir), ["product", ".downloaded"]
+                    )
                     self.assertEqual(os.listdir(product_path), ["manifest.safe"])
                 else:
                     self.assertEqual(result, product_path + ".zip")
@@ -2859,8 +2820,6 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         product_chunks = plugin._get_unique_products(
             [("somebucket", "path/to/some/product")],
             {"somebucket": bucket_objects},
-            None,
-            False,
             self.product,
         )
 
@@ -2890,8 +2849,6 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         product_chunks = plugin._get_unique_products(
             [("somebucket", "path/to/some/product")],
             {"somebucket": bucket_objects},
-            None,
-            False,
             self.product,
         )
 
@@ -2911,8 +2868,6 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         product_chunks = plugin._get_unique_products(
             [("somebucket", "path/to/some/product")],
             {"somebucket": bucket_objects},
-            None,
-            False,
             self.product,
         )
 
@@ -3273,6 +3228,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
+        self.product.remote_location = (
+            "http://somebucket.somehost.com/path/to/some/product"
+        )
 
         # no SAFE build and no flatten_top_dirs
         plugin.config.products[self.product.collection]["build_safe"] = False
@@ -3327,6 +3285,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
+        self.product.remote_location = (
+            "http://somebucket.somehost.com/path/to/some/product"
+        )
 
         # no SAFE build and flatten_top_dirs
         plugin.config.products[self.product.collection]["build_safe"] = False
@@ -3504,6 +3465,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
+        self.product.remote_location = (
+            "http://somebucket.somehost.com/path/to/some/product"
+        )
         self.product.properties["eodag:product_info"] = (
             "http://example.com/productInfo.json"
         )

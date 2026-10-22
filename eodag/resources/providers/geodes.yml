@@ -134,7 +134,6 @@ geodes:
       _collection: '{collection}'
   download:
     type: HTTPDownload
-    ignore_assets: true
     archive_depth: 2
     auth_error_code:
       - 401

@@ -557,7 +557,6 @@ eumetsat_ds:
   download:
     type: HTTPDownload
     extract: true
-    ignore_assets: True
     ssl_verify: true
   auth:
     type: TokenAuth

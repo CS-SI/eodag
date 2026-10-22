@@ -47,7 +47,6 @@ from eodag.utils import (
     USER_AGENT,
     ProgressCallback,
     format_dict_items,
-    path_to_uri,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -315,15 +314,11 @@ class UsgsApi(Api):
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
 
-        fs_path, record_filename = self._prepare_download(
-            product,
-            progress_callback=progress_callback,
-            **kwargs,
-        )
-        if not fs_path or not record_filename:
-            if fs_path:
-                product.location = path_to_uri(fs_path)
-            return fs_path
+        if cached_path := self._cached_download_link(
+            product, progress_callback=progress_callback, **kwargs
+        ):
+            return cached_path
+        fs_path = self._product_output_path(product, **kwargs)
 
         self.authenticate()
 
@@ -375,7 +370,9 @@ class UsgsApi(Api):
         logger.debug(f"Downloading {req_url}")
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
-        @self._order_download_retry(product, wait, timeout)
+        @self._order_download_retry(
+            product, wait, timeout, product.assets.get("download_link")
+        )
         def download_request(
             product: EOProduct,
             fs_path: str,
@@ -419,10 +416,6 @@ class UsgsApi(Api):
 
         download_request(product, fs_path, progress_callback, **kwargs)
 
-        with open(record_filename, "w") as fh:
-            fh.write(product.properties["eodag:download_link"])
-        logger.debug(f"Download recorded in {record_filename}")
-
         api.logout()
 
         # Check downloaded file format
@@ -434,29 +427,24 @@ class UsgsApi(Api):
                 progress_callback=progress_callback,
                 **kwargs,
             )
-            product.location = path_to_uri(product_path)
-            return product_path
         elif tarfile.is_tarfile(fs_path):
             logger.info(
                 "Downloaded product detected as a tar File, but was was expected to be a zip file"
             )
-            new_fs_path = fs_path[: fs_path.index(output_extension)] + ".tar.gz"
-            shutil.move(fs_path, new_fs_path)
-            product.location = path_to_uri(new_fs_path)
-            return new_fs_path
+            product_path = fs_path[: fs_path.index(output_extension)] + ".tar.gz"
+            shutil.move(fs_path, product_path)
         elif zipfile.is_zipfile(fs_path):
             logger.info(
                 "Downloaded product detected as a zip File, but was was expected to be a tar file"
             )
-            new_fs_path = fs_path[: fs_path.index(output_extension)] + ".zip"
-            shutil.move(fs_path, new_fs_path)
-            product.location = path_to_uri(new_fs_path)
-            return new_fs_path
+            product_path = fs_path[: fs_path.index(output_extension)] + ".zip"
+            shutil.move(fs_path, product_path)
         else:
             logger.warning(
                 "Downloaded product is not a tar or a zip File. Please check its file type before using it"
             )
-            new_fs_path = fs_path[: fs_path.index(output_extension)]
-            shutil.move(fs_path, new_fs_path)
-            product.location = path_to_uri(new_fs_path)
-            return new_fs_path
+            product_path = fs_path[: fs_path.index(output_extension)]
+            shutil.move(fs_path, product_path)
+
+        self._record_download_link(product, product_path, **kwargs)
+        return product_path
