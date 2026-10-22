@@ -3574,9 +3574,9 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             download_asset["href"],
             f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
-        # check download_link asset order_link
+        # check download_link asset eodag:order_link
         self.assertEqual(
-            download_asset["order_link"],
+            download_asset["eodag:order_link"],
             f"{endpoint}?"
             + json.dumps(
                 {
@@ -3980,7 +3980,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
         )
-        assert eoproduct.assets["download_link"]["order_link"].startswith("http")
+        assert eoproduct.assets["download_link"]["eodag:order_link"].startswith("http")
         assert eoproduct.location == ""
 
     def test_plugins_search_ecmwfsearch_with_collection(self):
@@ -6170,7 +6170,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
         default_config = load_provider_configs()["wekeo_main"]
-        # order_link is defined once at the provider-level assets_mapping
+        # eodag:order_link is defined once at the provider-level assets_mapping
         # (no per-product eodag:order_link in metadata_mapping anymore)
         self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
         self.assertNotIn(
@@ -6178,7 +6178,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             default_config.products["S1_SAR_GRD"].get("metadata_mapping", {}),
         )
         self.assertIn(
-            "order_link",
+            "eodag:order_link",
             default_config.search.assets_mapping["download_link"],
         )
 

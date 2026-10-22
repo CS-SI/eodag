@@ -157,7 +157,7 @@ class TestAssetLocationAndOrder(unittest.TestCase):
         """Only assets that are not online must be ordered"""
         self.product.assets.update(
             {
-                "download_link": {"order_link": "http://somewhere/order"},
+                "download_link": {"eodag:order_link": "http://somewhere/order"},
                 "online": {
                     "href": "http://somewhere/online",
                     "order:status": ONLINE_STATUS,
@@ -181,7 +181,7 @@ class TestAssetLocationAndOrder(unittest.TestCase):
 
     def test_asset_order_errors(self):
         """Asset order must fail without a downloader supporting it"""
-        self.product.assets["foo"] = {"order_link": "http://somewhere/order"}
+        self.product.assets["foo"] = {"eodag:order_link": "http://somewhere/order"}
         self.product.downloader = mock.Mock(spec=[])
         with self.assertRaises(NotImplementedError):
             self.product.assets["foo"].order()
@@ -190,11 +190,11 @@ class TestAssetLocationAndOrder(unittest.TestCase):
             self.product.assets["foo"].order()
 
     def test_register_downloader_resolves_assets(self):
-        """register_downloader must resolve asset href and order_link"""
+        """register_downloader must resolve asset href and eodag:order_link"""
         self.product.assets.update(
             {
                 "foo": {"href": "%(base_uri)s/foo"},
-                "bar": {"order_link": "%(base_uri)s/order"},
+                "bar": {"eodag:order_link": "%(base_uri)s/order"},
             }
         )
         downloader = mock.Mock()
@@ -202,5 +202,5 @@ class TestAssetLocationAndOrder(unittest.TestCase):
         self.product.register_downloader(downloader, None)
         self.assertEqual(self.product.assets["foo"]["href"], "http://somewhere/foo")
         self.assertEqual(
-            self.product.assets["bar"]["order_link"], "http://somewhere/order"
+            self.product.assets["bar"]["eodag:order_link"], "http://somewhere/order"
         )

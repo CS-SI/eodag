@@ -554,7 +554,7 @@ class EOProduct:
                     )
 
         for asset in self.assets.values():
-            for k in ("href", "order_link"):
+            for k in ("href", "eodag:order_link"):
                 v = asset.get(k)
                 if isinstance(v, str) and "%(" in v:
                     try:
