@@ -55,6 +55,14 @@ earth_search:
         - '{{"query":{{"grid:code":{{"eq":"{grid:code}"}}}}}}'
         - '$.properties.grid:code'
       assets: '{$.assets#dict_filter($[?(href=~"^s3.*")])}'
+  assets_mapping:
+    download_link:
+      title: "downloadlink"
+      href: '$.links[?(@.rel="self")].href'
+      roles: '["archive", "data"]'
+      type: 'aplication/json'
+      # order:status set to succeeded for consistency between providers
+      order:status: 'succeeded'
   products:
     S1_SAR_GRD:
       _collection: sentinel-1-grd

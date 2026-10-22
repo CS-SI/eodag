@@ -46,13 +46,34 @@ earth_search_gcs:
         mgrs:utm_zone: '$.properties."sentinel:utm_zone"'
         mgrs:latitude_band: '$.properties."sentinel:latitude_band"'
         mgrs:grid_square: '$.properties."sentinel:grid_square"'
-        eodag:download_link: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
+      assets_mapping:
+        download_link:
+          href: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
+          order:status: 'succeeded'
+        quicklook:
+          href: '$.assets.thumbnail.href'
+          title: "thumbnail"
+          roles: '["overwiev"]'
+          type: '$.assets.thumbnail.type'
+        thumbnail:
+          href: '$.assets.thumbnail.href'
+          title: "thumbnail"
+          roles: '["thumbnail"]'
+          type: '$.assets.thumbnail.type'
     L8_OLI_TIRS_C1L1:
       _collection: landsat-8-l1-c1
       metadata_mapping:
         wrsPath: '$.properties."landsat:wrs_path"'
         wrsRow: '$.properties."landsat:wrs_row"'
-        eodag:download_link: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
+      assets_mapping_from_product: S2_MSI_L1C
+      assets_mapping:
+        download_link:
+          href: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
+          order:status: 'succeeded'
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download:

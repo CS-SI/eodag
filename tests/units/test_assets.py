@@ -73,18 +73,33 @@ class TestAssetsDict(unittest.TestCase):
 
         assets.update(
             {
-                "z": {"href": "z", "_internal": "remove"},
-                "a": {"href": "a", "_internal": "remove"},
+                "z": {"href": "z", "type": "application/zip", "_internal": "remove"},
+                "a": {"href": "a", "type": "application/json", "_internal": "remove"},
             }
         )
-        assets["m"] = {"href": "m", "_internal": "remove"}
+        assets["m"] = {"href": "m", "type": "application/zip", "_internal": "remove"}
 
         self.assertEqual(list(assets), ["a", "m", "z"])
         self.assertDictEqual(
             {key: dict(asset) for key, asset in assets.items()},
             {
-                "a": {"href": "a"},
-                "m": {"href": "m"},
-                "z": {"href": "z"},
+                "a": {"href": "a", "title": "a", "type": "application/json"},
+                "m": {"href": "m", "title": "m", "type": "application/zip"},
+                "z": {"href": "z", "title": "z", "type": "application/zip"},
             },
         )
+
+    def test_remove_private_fields_from_technical_assets(self):
+        """Remove private fields from technical assets while sorting them first."""
+        assets = AssetsDict(object())
+
+        assets.update(
+            {
+                "thumbnail": {"href": "thumbnail", "_internal": "remove"},
+                "download_link": {"href": "download", "_internal": "remove"},
+                "quicklook": {"href": "quicklook", "_internal": "remove"},
+            }
+        )
+
+        self.assertEqual(list(assets), ["download_link", "quicklook", "thumbnail"])
+        self.assertTrue(all("_internal" not in asset for asset in assets.values()))
