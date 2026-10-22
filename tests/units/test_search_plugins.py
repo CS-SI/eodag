@@ -4435,6 +4435,14 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertEqual(product.properties["ecmwf:day"], ["01"])
         self.assertEqual(product.properties["ecmwf:time"], ["00:00"])
         self.assertEqual(product.collection, "ERA5_SL")
+        download_link = product.assets["download_link"]
+        self.assertEqual(download_link["order:id"], "123")
+        self.assertEqual(download_link["eodag:order_status"], "accepted")
+        self.assertEqual(download_link["order:status"], "ordered")
+        self.assertTrue(
+            download_link["eodag:status_link"].endswith("/jobs/123?request=true")
+        )
+        self.assertNotIn("eodag:order_id", product.properties)
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""
