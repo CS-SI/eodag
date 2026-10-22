@@ -35,7 +35,7 @@ dedt_lumi:
         href: ''
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
-        order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{"verb": "retrieve", "request": {qs#to_geojson} }'
+        eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{"verb": "retrieve", "request": {qs#to_geojson} }'
         order:status: 'orderable'
   products:
     DT_CLIMATE_ADAPTATION:
