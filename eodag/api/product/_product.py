@@ -23,6 +23,7 @@ import logging
 import os
 import re
 import tempfile
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -176,8 +177,6 @@ class EOProduct:
         )
         self._location: Optional[str] = None
         self.assets = AssetsDict(self)
-        if download_link_href := properties.get("eodag:download_link"):
-            self.remote_location = download_link_href
         self.links = []
         self.properties = {
             key: value
@@ -1126,6 +1125,16 @@ class EOProduct:
         obj = cls(provider, properties, collection=collection)
         obj.search_intersection = geometry.shape(search_intersection)
         obj.assets.update(feature.get("assets", {}))
+        # v5 compatibility for results serialized with the removed property
+        if download_link_href := obj.properties.pop("eodag:download_link", None):
+            warnings.warn(
+                "'eodag:download_link' product property is deprecated and will not be "
+                "converted any more in v6, it is replaced by the 'download_link' asset.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if "download_link" not in obj.assets:
+                obj.remote_location = download_link_href
         obj.links = feature.get("links", [])
 
         if plugins_manager is not None:

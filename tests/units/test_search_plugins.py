@@ -3290,7 +3290,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
     def test_plugins_search_geodes_get_availability_skips_missing_fields(
         self, mock__request
     ):
-        """Products without eodag:download_link or geodes:endpoint_url must be skipped
+        """Products without download_link href or geodes:endpoint_url must be skipped
         in the availability request body"""
         mock_response = mock.Mock()
         mock_response.json.return_value = {"products": []}
@@ -3302,7 +3302,6 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "id": "PROD2",
                 "geometry": "POINT (0 0)",
-                "eodag:download_link": "https://geodes.example/data/PROD2/file.tif",
             },
         )
         p_no_url.assets["download_link"] = {
@@ -7384,7 +7383,8 @@ class TestSearchPluginCSWSearch(unittest.TestCase):
         )
         product = plugin._CSWSearch__build_product(record, "collection")
         self.assertEqual(product.location, "preferred")
-        self.assertEqual(product.properties["eodag:download_link"], "preferred")
+        self.assertEqual(product.assets["download_link"]["href"], "preferred")
+        self.assertNotIn("eodag:download_link", product.properties)
         self.assertEqual(product.geometry.bounds, (1.0, 2.0, 3.0, 4.0))
 
     def test_csw_constraints_accept_shapely_geometry(self):

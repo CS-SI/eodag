@@ -536,7 +536,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "platform": platform,
             "instruments": instrument,
             "title": local_filename,
-            "eodag:download_link": download_url,
         }
 
         product = self._dummy_downloadable_product(
@@ -544,6 +543,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             eoproduct_props,
             collection,
         )
+        product.remote_location = download_url
         path = product.download()
 
         expected_path = os.path.join(
@@ -2478,10 +2478,10 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                 geometry="POINT (0 0)",
                 title="dummy_product",
                 id="dummy",
-                **{"eodag:download_link": "s3://sentinel-s2-l2a/123"},
             ),
             collection="S2_MSI_L2A",
         )
+        self.product.remote_location = "s3://sentinel-s2-l2a/123"
         self.product.location = "http://somebucket.somehost.com/path/to/some/product"
 
     def test_plugins_download_aws_get_bucket_names_and_prefixes(self):
@@ -3672,8 +3672,6 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_s3_client: mock.Mock,
     ):
         """AwsDownload.get_rio_env() must return rio env dict."""
-        self.product.properties["eodag:download_link"] = "s3://some-bucket/some/prefix"
-
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.authenticate()

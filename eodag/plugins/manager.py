@@ -331,13 +331,11 @@ class PluginManager:
                 matching_url = matching_asset["eodag:order_link"]
             else:
                 matching_url = matching_asset["href"]
-        elif product is not None:
-            matching_url = (
-                product.properties.get("eodag:download_link") or product.remote_location
-            )
-        else:
+        elif product is None:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)
+        else:
+            matching_url = None
 
         try:
             auth_plugin = next(

@@ -602,20 +602,13 @@ class TestCoreSearch(unittest.TestCase):
             "provider_matching_download_link",
             "https://foo.bar/baz/search",
         )
+        download_link_product = EOProduct(
+            "provider_matching_download_link",
+            dict(geometry="POINT (0 0)", id="a"),
+        )
+        download_link_product.remote_location = "https://somewhere/to/download"
         mock_query.side_effect = [
-            SearchResult(
-                [
-                    EOProduct(
-                        "provider_matching_download_link",
-                        dict(
-                            geometry="POINT (0 0)",
-                            id="a",
-                            **{"eodag:download_link": "https://somewhere/to/download"},
-                        ),
-                    )
-                ],
-                1,
-            ),
+            SearchResult([download_link_product], 1),
         ]
         results = self.dag.search(
             provider="provider_matching_download_link", validate=False
