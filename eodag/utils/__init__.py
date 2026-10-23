@@ -1525,7 +1525,7 @@ def get_bucket_name_and_prefix(
 ) -> tuple[Optional[str], Optional[str]]:
     """Extract bucket name and prefix from URL
 
-    :param url: (optional) URL to use as product.location
+    :param url: URL from which to extract the bucket name and prefix
     :param bucket_path_level: (optional) bucket location index in path.split('/')
     :returns: bucket_name and prefix as str
     """

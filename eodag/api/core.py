@@ -2189,9 +2189,11 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
-        if product.location.startswith("file:/"):
+        download_link = product.assets.get("download_link")
+        location = download_link.location if download_link is not None else ""
+        if location.startswith("file:/"):
             logger.info("Local product detected. Download skipped")
-            return uri_to_path(product.location)
+            return uri_to_path(location)
         self._setup_downloader(product)
         path = product.download(
             progress_callback=progress_callback,

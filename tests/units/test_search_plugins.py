@@ -4017,7 +4017,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             f"{self.product_dataset.upper()}"
         )
         assert eoproduct.assets["download_link"]["eodag:order_link"].startswith("http")
-        assert eoproduct.location == ""
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertIsNone(eoproduct.location)
 
     def test_plugins_search_ecmwfsearch_with_collection(self):
         """ECMWFSearch.query must build a EOProduct from input parameters with predefined collection"""

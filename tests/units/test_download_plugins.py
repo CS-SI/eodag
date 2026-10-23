@@ -126,7 +126,10 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
     def test_plugins_download_base_cached_download_link_existing(self):
         """Download._cached_download_link must detect if product destination already exists."""
         product_file = NamedTemporaryFile()
-        self.product.location = path_to_uri(product_file.name)
+        self.product.assets["download_link"] = {
+            "href": "https://example.test/product",
+            "file:local_path": product_file.name,
+        }
         Path(product_file.name).touch()
         self.assertNotEqual(self.product.location, self.product.remote_location)
 
@@ -174,11 +177,11 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
             # statements exist
             download_link.data.pop("file:local_path")
-            self.product.location = self.product.remote_location
             with self.assertLogs(level="INFO") as cm:
                 fs_path = plugin._cached_download_link(self.product, **download_kwargs)
                 self.assertIn("Product already downloaded", str(cm.output))
             self.assertEqual(fs_path, str(product_path_dir))
+            self.assertEqual(download_link["file:local_path"], str(product_path_dir))
 
     def test_plugins_download_base_cached_download_link_collision_dir(self):
         """Download._cached_download_link must detect already-downloaded dir without collision suffix."""
@@ -992,8 +995,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             plugin.download(self.product, output_dir=self.output_dir)
         # Interrupted download
         self.assertEqual(progress_callback_exception, cm.exception)
-        # Product location not changed
-        self.assertEqual(self.product.location, "http://somewhere")
+        self.assertNotIn("download_link", self.product.assets)
+        self.assertNotIn("file:local_path", self.product.assets["foo"])
         # Temp file created
         self.assertTrue(
             os.path.exists(
@@ -1036,8 +1039,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         with self.assertRaises(DownloadError):
             plugin.stream_download(self.product, output_dir=self.output_dir)
         # Interrupted download
-        # Product location not changed
-        self.assertEqual(self.product.location, "http://somewhere")
+        self.assertNotIn("download_link", self.product.assets)
+        self.assertNotIn("file:local_path", self.product.assets["any"])
 
     @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -2892,7 +2895,6 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             collection="S2_MSI_L2A",
         )
         self.product.remote_location = "s3://sentinel-s2-l2a/123"
-        self.product.location = "http://somebucket.somehost.com/path/to/some/product"
 
     def test_plugins_download_aws_get_bucket_names_and_prefixes(self):
         """AwsDownload._get_bucket_names_and_prefixes() must return the given assets buckets and prefixes"""
@@ -2924,6 +2926,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     def test_plugins_download_aws_get_bucket_prefix(self):
         """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location."""
         plugin = self.get_download_plugin(self.product)
+        self.product.assets["download_link"][
+            "href"
+        ] = "http://somebucket.somehost.com/path/to/some/product"
         plugin.config.products["S2_MSI_L2A"]["default_bucket"] = "default_bucket"
 
         bucket, prefix = plugin.get_product_bucket_name_and_prefix(self.product)
@@ -3495,19 +3500,20 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                 {**asset.as_dict(), "file:local_path": cached_asset_path},
                 output_dir=self.output_dir,
             )
-        remote_location = self.product.location
-
-        # with asset filter: product location is not updated
         path = plugin.download(
             self.product, output_dir=self.output_dir, asset="somewhere"
         )
         self.assertEqual(path, product_local_path)
-        self.assertEqual(self.product.location, remote_location)
+        self.assertNotIn("download_link", self.product.assets)
 
-        # without asset filter: product location is updated
         path = plugin.download(self.product, output_dir=self.output_dir)
         self.assertEqual(path, product_local_path)
-        self.assertEqual(self.product.location, path_to_uri(product_local_path))
+        self.assertNotIn("download_link", self.product.assets)
+        for key, asset in self.product.assets.items():
+            self.assertEqual(
+                asset["file:local_path"],
+                os.path.join(product_local_path, f"{key}_cached"),
+            )
 
         mock_get_authenticated_objects.assert_not_called()
 

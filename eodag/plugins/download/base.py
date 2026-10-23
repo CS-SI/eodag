@@ -53,9 +53,7 @@ from eodag.utils import (
     ProgressCallback,
     StreamResponse,
     guess_extension,
-    path_to_uri,
     sanitize,
-    uri_to_path,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -481,11 +479,10 @@ class Download(PluginTopic):
     @staticmethod
     def _local_product_path(product: EOProduct) -> Optional[str]:
         """Get the product local path if it is already available on the filesystem"""
-        if (
-            product.location.startswith("file:")
-            and product.location != product.remote_location
+        download_link = product.assets.get("download_link")
+        if download_link is not None and (
+            fs_path := download_link.get("file:local_path")
         ):
-            fs_path = uri_to_path(product.location)
             # The fs path of a product is either a file (if 'extract' config is False) or a directory
             if os.path.isfile(fs_path) or os.path.isdir(fs_path):
                 logger.info(
@@ -517,7 +514,7 @@ class Download(PluginTopic):
     ) -> Optional[str]:
         """Get the local path of the product if its ``download_link`` asset was already downloaded.
 
-        A cached archive is finalized (extracted if configured) and ``product.location`` is updated.
+        A cached archive is finalized (extracted if configured) and its asset statements are updated.
 
         :param product: The EO product to download
         :param progress_callback: (optional) A progress callback
@@ -532,6 +529,7 @@ class Download(PluginTopic):
         if not (statements := self.check_cache(download_link, **per_asset_kwargs)):
             return None
 
+        download_link.update(statements)
         local_path = str(statements["file:local_path"])
         logger.info(f"Product already downloaded: {local_path}")
         if os.path.isfile(local_path):
@@ -540,7 +538,6 @@ class Download(PluginTopic):
             )
         if local_path != statements["file:local_path"]:
             self._record_download_link(product, local_path, **kwargs)
-        product.location = path_to_uri(local_path)
         return local_path
 
     def _record_download_link(
@@ -559,7 +556,6 @@ class Download(PluginTopic):
                 {**download_link.as_dict(), "file:local_path": product_path},
                 **per_asset_kwargs,
             )
-        product.location = path_to_uri(product_path)
 
     def generate_record_hash(self, product: EOProduct) -> str:
         """Generate the record hash of the given product.

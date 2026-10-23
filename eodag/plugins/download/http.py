@@ -63,7 +63,6 @@ from eodag.utils import (
     guess_extension,
     guess_file_type,
     parse_header,
-    path_to_uri,
     rename_with_version,
     sanitize,
     string_to_jsonpath,
@@ -716,8 +715,6 @@ class HTTPDownload(Download):
             timeout,
             **kwargs,
         )
-        if kwargs.get("asset") is None:
-            product.location = path_to_uri(fs_path)
         return fs_path
 
     def _download_link(

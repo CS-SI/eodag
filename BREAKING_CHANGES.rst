@@ -59,6 +59,27 @@ Failed assets are not ordered again automatically. Status polling can still
 report the provider error; search again to obtain a fresh asset before retrying
 the order. There is no compatibility conversion for legacy order configurations.
 
+Product location proxies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Reading or assigning ``EOProduct.location`` and ``EOProduct.remote_location`` now
+emits ``DeprecationWarning``. Both return ``None`` instead of an empty string when
+the ``download_link`` asset or its URL is missing. These properties no longer keep
+independent product-level location state.
+
+Use ``product.assets["download_link"]["href"]`` for the remote URL and
+``product.assets["download_link"]["file:local_path"]`` for the downloaded filesystem
+path. ``product.assets["download_link"].location`` returns the local path as a URI,
+falling back to ``href``. Setting the deprecated ``location`` to a local URI writes
+``file:local_path``; setting it to a remote URL updates ``href`` and clears the local
+path. Setting ``remote_location`` updates ``href`` without clearing the local path.
+
+Products without a ``download_link`` asset, including multi-asset downloads, have
+no product-level location. Read local paths from their individual assets and use
+the download method's returned path for the output directory. New saved results
+preserve URLs and local paths in assets; v5 still converts the legacy
+``eodag:download_link`` product property when importing old saved results.
+
 v4.0.0a2
 ++++++++
 
