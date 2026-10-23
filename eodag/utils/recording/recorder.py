@@ -27,7 +27,7 @@ import os
 import tempfile
 import threading
 import warnings
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any, Callable, Iterator, Sequence
 from unittest import mock
@@ -476,7 +476,9 @@ class EodagRecorder:
             "search_all": self._make_search_wrapper("search_all", cls.search_all),
             "download": self._make_download_wrapper(cls.download),
         }
-        with mock.patch.multiple(cls, create=False, **wrappers):
+        with ExitStack() as stack:
+            for name, wrapper in wrappers.items():
+                stack.enter_context(mock.patch.object(cls, name, new=wrapper))
             cls._eodag_recording_active = True  # type: ignore[attr-defined]
             self._patched = True
             try:
