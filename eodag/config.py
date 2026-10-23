@@ -38,7 +38,7 @@ from pydantic import (
     computed_field,
     model_validator,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 from typing_extensions import TypedDict
 
 from eodag.utils import (
@@ -86,6 +86,16 @@ def comma_separated_str_to_list(value: object) -> object:
 
     if not isinstance(value, str):
         return value
+
+    try:
+        decoded = orjson.loads(value)
+    except orjson.JSONDecodeError:
+        decoded = value
+
+    if isinstance(decoded, list):
+        return decoded
+    if isinstance(decoded, str):
+        value = decoded
 
     return [item.strip() for item in value.split(",") if item.strip()]
 
@@ -155,7 +165,7 @@ class EODAGSettings(BaseSettings):
     )
 
     providers_whitelist: Annotated[
-        list[str], BeforeValidator(comma_separated_str_to_list)
+        list[str], NoDecode, BeforeValidator(comma_separated_str_to_list)
     ] = Field(
         default_factory=list,
         description=(

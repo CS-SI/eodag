@@ -350,12 +350,23 @@ class TestConfigFunctions(unittest.TestCase):
 
                 self.assertEqual(set(providers.keys()), {case["expected_provider"]})
 
-    def test_load_config_providers_whitelist(self):
-        """Config must be loaded with only the selected whitelist of providers"""
+    def test_providers_whitelist_environment_values(self):
+        """Provider whitelist accepts simple and previously supported JSON values."""
         try:
+            for value, expected in (
+                ("cop_dataspace", ["cop_dataspace"]),
+                ("cop_dataspace,geodes", ["cop_dataspace", "geodes"]),
+                ('"cop_dataspace"', ["cop_dataspace"]),
+                ('["cop_dataspace", "geodes"]', ["cop_dataspace", "geodes"]),
+            ):
+                with self.subTest(value=value):
+                    os.environ["EODAG_PROVIDERS_WHITELIST"] = value
+                    self.assertEqual(
+                        expected, config.EODAGSettings().providers_whitelist
+                    )
+
             os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
             providers = ProvidersDict.from_configs(config.load_provider_configs())
-
             self.assertEqual({"creodias"}, set(providers.keys()))
         finally:
             os.environ.pop("EODAG_PROVIDERS_WHITELIST", None)
