@@ -206,8 +206,6 @@ class CSWSearch(Search):
             download_url = ref["url"]
             break
         properties = properties_from_xml(rec.xml, self.config.metadata_mapping)
-        if download_url:
-            properties.setdefault("eodag:download_link", download_url)
         if not properties.get("geometry"):
             bbox = rec.bbox_wgs84
             if not bbox:
@@ -228,15 +226,17 @@ class CSWSearch(Search):
         # to be a wkt)
         else:
             properties["geometry"] = wkt.loads(properties["geometry"])
-        return EOProduct(
+        product = EOProduct(
             provider=self.provider,
-            # TODO: EOProduct has no more *args in its __init__ (search_args attribute removed)
-            # Not sure why download_url was here in the first place, needs to be updated,
-            # possibly by having instead 'eodag:download_link' in the properties
-            # download_url,
             properties=properties,
             collection=collection,
         )
+        if download_url:
+            product.assets["download_link"] = {
+                "href": download_url,
+                "roles": ["archive", "data"],
+            }
+        return product
 
     def __convert_query_params(
         self,

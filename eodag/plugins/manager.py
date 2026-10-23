@@ -332,13 +332,11 @@ class PluginManager:
                 else:
                     matching_urls.append(matching_asset["href"])
             matching_urls = matching_urls or [None]
-        elif product is not None:
-            matching_urls = [
-                product.properties.get("eodag:download_link") or product.remote_location
-            ]
-        else:
+        elif product is None:
             # search auth
             matching_urls = [getattr(associated_plugin.config, "api_endpoint", None)]
+        else:
+            matching_urls = [None]
 
         auth_plugin = None
         # Try each candidate until one selects auth; None allows config-only matching.
