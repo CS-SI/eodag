@@ -71,7 +71,7 @@ dedl:
     order_on_response:
       asset_mapping:
         eodag:status_link: '$.json.links[?rel=="self"].href'
-        eodag:order_status: $.json.properties."order:status"
+        order:status: $.json.properties."order:status"
     order_status:
       request:
         method: GET

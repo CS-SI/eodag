@@ -84,10 +84,10 @@ meteoblue:
       request:
         method: GET
       asset_mapping:
-        eodag:order_percent: $.json.percentCompleted
-        eodag:order_status: $.json.status
+        _order_percent: $.json.percentCompleted
+        _order_status: $.json.status
       error:
-        eodag:order_status: error
+        _order_status: error
       on_success:
         asset_mapping:
           order:id: '$.json.id'

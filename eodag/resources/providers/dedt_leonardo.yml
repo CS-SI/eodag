@@ -79,13 +79,13 @@ dedt_leonardo:
         method: GET
         headers:
       asset_mapping:
-        eodag:order_status: $.json.status
+        _order_status: $.json.status
         eodag:order_message: $.json.message
         error_message: $.null
       success:
         http_code: 303
       error:
-        eodag:order_status: failed
+        _order_status: failed
       on_success:
         result_type: json
         asset_mapping:

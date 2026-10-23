@@ -299,7 +299,7 @@ wekeo_ecmwf:
       request:
         method: GET
       asset_mapping:
-        eodag:order_status: $.json.features[0].status
+        _order_status: $.json.features[0].status
         order:date: $.json.features[0].started_at
         eodag:order_message: $.json.features[0].message
         order:id: $.json.features[0]._id
@@ -307,9 +307,9 @@ wekeo_ecmwf:
         created: $.json.features[0].started_at
         ecmwf:dataset: $.json.features[0].dataset_id
       error:
-        eodag:order_status: Error
+        _order_status: Error
       success:
-        eodag:order_status: Done
+        _order_status: Done
       ordered:
         http_code: 202
       on_success:

@@ -41,6 +41,7 @@ from typing_extensions import TypedDict
 from zipstream import ZipStream
 
 from eodag.api.product.metadata_mapping import (
+    FAILED_STATUS,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -264,6 +265,7 @@ class HTTPDownload(Download):
                     QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
                     msg = f"{product.properties['title']} could not be ordered"
                     if e.response is not None and e.response.status_code == 400:
+                        asset["order:status"] = FAILED_STATUS
                         raise ValidationError.from_error(e, msg) from e
                     else:
                         raise DownloadError.from_error(e, msg) from e
@@ -514,8 +516,8 @@ class HTTPDownload(Download):
             )
 
             # display progress percentage
-            if "eodag:order_percent" in status_dict:
-                status_percent = str(status_dict["eodag:order_percent"])
+            if "_order_percent" in status_dict:
+                status_percent = str(status_dict["_order_percent"])
                 if status_percent.isdigit():
                     status_percent += "%"
                 logger.info(
@@ -528,8 +530,7 @@ class HTTPDownload(Download):
                 {key: status_dict[key] for key in status_mm if key in status_dict},
             )
 
-            order_status = status_dict.get("eodag:order_status")
-            asset["eodag:order_status"] = order_status
+            order_status = status_dict.get("_order_status")
 
             status_message = status_dict.get(
                 "eodag:order_message", f"request status: {order_status}"
@@ -538,25 +539,25 @@ class HTTPDownload(Download):
             # handle status error
             errors: dict[str, Any] = status_config.get("error", {})
             if errors and errors.items() <= status_dict.items():
+                asset["order:status"] = FAILED_STATUS
                 raise DownloadError(
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
         asset["order:status"] = STAGING_STATUS
 
-        success_status: dict[str, Any] = status_config.get("success", {}).get(
-            "eodag:order_status"
+        success_status: Optional[str] = status_config.get("success", {}).get(
+            "_order_status"
         )
         # if not success
-        if (
-            success_status and success_status != status_dict.get("eodag:order_status")
-        ) or (success_code and success_code != response.status_code):
+        if (success_status and success_status != status_dict.get("_order_status")) or (
+            success_code and success_code != response.status_code
+        ):
             return None
-
-        asset["order:status"] = ONLINE_STATUS
 
         if not config_on_success:
             # Nothing left to do
+            asset["order:status"] = ONLINE_STATUS
             return None
 
         # need search on success ?
@@ -645,7 +646,21 @@ class HTTPDownload(Download):
                     )
                 else:
                     properties_update = {}
+            asset_update = {
+                key: properties_update[key]
+                for key in on_success_am
+                if key in properties_update
+            }
+            product_update = {
+                key: properties_update[key]
+                for key in on_success_mm
+                if key in properties_update
+            }
+            self._update_from_order(asset, asset_update, product_update)
+            if "href" not in asset_update:
+                self.order_response_process(response, asset)
         except Exception as e:
+            asset["order:status"] = FAILED_STATUS
             if isinstance(e, DownloadError):
                 raise
             logger.debug(e)
@@ -653,19 +668,7 @@ class HTTPDownload(Download):
                 f"Could not parse result after order success. Please search and download {product} again"
             ) from e
 
-        asset_update = {
-            key: properties_update[key]
-            for key in on_success_am
-            if key in properties_update
-        }
-        product_update = {
-            key: properties_update[key]
-            for key in on_success_mm
-            if key in properties_update
-        }
-        self._update_from_order(asset, asset_update, product_update)
-        if "href" not in asset_update:
-            self.order_response_process(response, asset)
+        asset["order:status"] = ONLINE_STATUS
 
     def download(
         self,
@@ -1009,11 +1012,7 @@ class HTTPDownload(Download):
         asset: Asset,
         auth: Optional[AuthBase],
     ) -> None:
-        if (
-            "eodag:order_link" in asset
-            and asset.get("order:status") == OFFLINE_STATUS
-            and not asset.get("eodag:order_status")
-        ):
+        if "eodag:order_link" in asset and asset.get("order:status") == OFFLINE_STATUS:
             self._order(asset=asset, auth=auth)
 
         if (
@@ -1146,7 +1145,7 @@ class HTTPDownload(Download):
             ).get(
                 "http_code"
             ):
-                streamed_asset["order:status"] = "ORDERED"
+                streamed_asset["order:status"] = STAGING_STATUS
                 self._process_exception(None, product, ordered_message, streamed_asset)
             stream_size = self._check_stream_size(product, streamed_asset) or None
 
