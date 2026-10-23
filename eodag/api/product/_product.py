@@ -115,13 +115,11 @@ class EOProduct:
     """A wrapper around an Earth Observation Product originating from a search.
 
     Every Search plugin instance must build an instance of this class for each of
-    the result of its query method, and return a list of such instances. A EOProduct
-    has a `location` attribute that initially points to its remote location, but is
-    later changed to point to its path on the filesystem when the product has been
-    downloaded. It also has a `remote_location` that always points to the remote
-    location, so that the product can be downloaded at anytime if it is deleted from
-    the filesystem. An EOProduct instance also has a reference to the search
-    parameters that led to its creation.
+    the result of its query method, and return a list of such instances. Download
+    URLs and local paths are stored on assets as ``href`` and ``file:local_path``.
+    The deprecated ``location`` and ``remote_location`` properties proxy the
+    ``download_link`` asset. An EOProduct instance also has a reference to the
+    search parameters that led to its creation.
 
     :param provider: The provider from which the product originates
     :param properties: The metadata of the product
@@ -175,7 +173,6 @@ class EOProduct:
             or properties.pop("collection", None)
             or properties.get("_collection")
         )
-        self._location: Optional[str] = None
         self.assets = AssetsDict(self)
         self.links = []
         self.properties = {
@@ -244,19 +241,32 @@ class EOProduct:
         self.downloader_auth: Optional[Authentication] = None
 
     @property
-    def remote_location(self) -> str:
+    def remote_location(self) -> Optional[str]:
         """The remote path to the product: ``href`` of its ``download_link`` asset.
 
-        Setting it creates the ``download_link`` asset if missing.
+        Returns ``None`` without a ``download_link`` asset. Setting it creates
+        the asset if missing.
 
         .. deprecated:: v5.0.0
             Use ``product.assets["download_link"]["href"]`` instead.
         """
+        warnings.warn(
+            "EOProduct.remote_location is deprecated; use the download_link asset href instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         download_link = self.assets.get("download_link")
-        return download_link.get("href", "") if download_link is not None else ""
+        return (
+            (download_link.get("href") or None) if download_link is not None else None
+        )
 
     @remote_location.setter
     def remote_location(self, value: str) -> None:
+        warnings.warn(
+            "EOProduct.remote_location is deprecated; use the download_link asset href instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if (download_link := self.assets.get("download_link")) is not None:
             download_link["href"] = value
         else:
@@ -266,25 +276,43 @@ class EOProduct:
             }
 
     @property
-    def location(self) -> str:
+    def location(self) -> Optional[str]:
         """The path to the product, either remote or local if downloaded.
 
-        Falls back on the ``download_link`` asset ``file:local_path`` (as URI), then on
-        :attr:`remote_location`.
+        Reads the ``download_link`` asset ``file:local_path`` (as URI), falling back
+        to its ``href``. Returns ``None`` without that asset. Setting a local URI
+        updates ``file:local_path``; setting a remote URL updates ``href`` and
+        clears the local path.
 
         .. deprecated:: v5.0.0
             Use ``product.assets["download_link"].location`` instead.
         """
-        if self._location is not None:
-            return self._location
+        warnings.warn(
+            "EOProduct.location is deprecated; use the download_link asset location instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         download_link = self.assets.get("download_link")
-        if download_link is not None and download_link.get("file:local_path"):
+        if download_link is None:
+            return None
+        if download_link.get("file:local_path"):
             return download_link.location
-        return self.remote_location
+        return download_link.get("href") or None
 
     @location.setter
     def location(self, value: str) -> None:
-        self._location = value
+        warnings.warn(
+            "EOProduct.location is deprecated; use the download_link asset location instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if "download_link" not in self.assets:
+            self.assets["download_link"] = {
+                "href": value,
+                "roles": ["archive", "data"],
+            }
+        if (download_link := self.assets.get("download_link")) is not None:
+            download_link.location = value
 
     def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -539,23 +567,6 @@ class EOProduct:
         self.downloader = downloader
         self.downloader_auth = authenticator
 
-        # resolve "%(...)s" placeholders in locations, assets and properties with downloader config
-        # remote_location first, as location may fall back on it
-        location_attrs = ("remote_location", "location")
-        for location_attr in location_attrs:
-            if "%(" in getattr(self, location_attr):
-                try:
-                    setattr(
-                        self,
-                        location_attr,
-                        getattr(self, location_attr) % vars(self.downloader.config),
-                    )
-                except ValueError as e:
-                    logger.debug(
-                        f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
-                        f" in register_downloader: {str(e)}"
-                    )
-
         for asset in self.assets.values():
             for k in ("href", "eodag:order_link"):
                 v = asset.get(k)
@@ -727,8 +738,8 @@ class EOProduct:
         If the targeted assets are offline, an order request is sent before generating
         access options.
 
-        :param asset_key: (optional) Asset key to target. If ``None``, the product
-                          location is used, and all its assets are ordered if needed.
+        :param asset_key: (optional) Asset key to target. If ``None``, the ``download_link``
+                          asset location is used, and all assets are ordered if needed.
         :param wait: (optional) If order is needed, wait time in minutes between two
                      order status checks.
         :param timeout: (optional) If order is needed, maximum time in minutes before
@@ -753,7 +764,12 @@ class EOProduct:
                 self.order(wait=wait, timeout=timeout)
 
         # default url and headers
-        url = self.assets[asset_key]["href"] if asset_key else self.location
+        download_link = self.assets.get("download_link")
+        url = (
+            self.assets[asset_key]["href"]
+            if asset_key
+            else download_link.location if download_link is not None else ""
+        )
         headers = {**USER_AGENT}
 
         if (
@@ -1134,7 +1150,10 @@ class EOProduct:
                 stacklevel=2,
             )
             if "download_link" not in obj.assets:
-                obj.remote_location = download_link_href
+                obj.assets["download_link"] = {
+                    "href": download_link_href,
+                    "roles": ["archive", "data"],
+                }
         obj.links = feature.get("links", [])
 
         if plugins_manager is not None:
