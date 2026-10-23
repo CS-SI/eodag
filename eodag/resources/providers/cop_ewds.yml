@@ -72,16 +72,17 @@ cop_ewds:
     order_enabled: true
     order_method: POST
     order_on_response:
-      metadata_mapping:
-        eodag:order_id: $.json.jobID
-        eodag:status_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}?request=true
-        eodag:search_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}/results
+      asset_mapping:
+        order:id: $.json.jobID
+        eodag:status_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{order:id}?request=true
+        eodag:search_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{order:id}/results
     order_status:
       request:
         method: GET
-      metadata_mapping:
+      asset_mapping:
         eodag:order_status: $.json.status
         order:date: $.json.created
+      metadata_mapping:
         created: $.json.created
         published: $.json.finished
         updated: $.json.updated
@@ -93,8 +94,8 @@ cop_ewds:
         eodag:order_status: successful
       on_success:
         need_search: true
-        metadata_mapping:
-          eodag:download_link: $.json.asset.value.href
+        asset_mapping:
+          href: $.json.asset.value.href
   search:
     type: ECMWFSearch
     need_auth: true

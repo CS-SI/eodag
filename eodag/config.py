@@ -494,10 +494,12 @@ class PluginConfig(yaml.YAMLObject):
         #: Configuration for queryables discovery to use
         discover_queryables: PluginConfig.DiscoverQueryables
 
-    class OrderOnResponse(TypedDict):
+    class OrderOnResponse(TypedDict, total=False):
         """Configuration for order on-response during download"""
 
-        #: Parameters metadata-mapping to apply to the order response
+        #: Mapping of order response fields to the ordered asset
+        asset_mapping: dict[str, Union[str, list[str]]]
+        #: Mapping of order response fields to product properties
         metadata_mapping: dict[str, Union[str, list[str]]]
 
     class OrderStatusSuccess(TypedDict):
@@ -542,7 +544,9 @@ class PluginConfig(yaml.YAMLObject):
         result_type: str
         #: Key in the success response that gives access to the result
         results_entry: str
-        #: Metadata-mapping to apply to the success status result
+        #: Mapping of success result fields to the ordered asset
+        asset_mapping: dict[str, Union[str, list[str]]]
+        #: Mapping of success result fields to product properties
         metadata_mapping: dict[str, Union[str, list[str]]]
 
     class OrderStatus(TypedDict, total=False):
@@ -550,7 +554,9 @@ class PluginConfig(yaml.YAMLObject):
 
         #: Order status request configuration
         request: PluginConfig.OrderStatusRequest
-        #: Metadata-mapping used to parse order status response
+        #: Mapping of order status response fields to the ordered asset
+        asset_mapping: dict[str, Union[str, list[str]]]
+        #: Mapping of order status response fields to product properties
         metadata_mapping: dict[str, Union[str, list[str]]]
         #: Configuration to identify order status success during download
         success: PluginConfig.OrderStatusSuccess
@@ -693,8 +699,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Headers to be added to the order request
     order_headers: dict[str, str]
     #: :class:`~eodag.plugins.download.http.HTTPDownload`
-    #: Dictionary containing the key :attr:`~eodag.config.PluginConfig.metadata_mapping` which can be used to add new
-    #: product properties based on the data in response to the order request
+    #: Dictionary containing ``asset_mapping`` for ordered asset fields and ``metadata_mapping`` for product properties
+    #: parsed from the order response
     order_on_response: PluginConfig.OrderOnResponse
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Order status handling
     order_status: PluginConfig.OrderStatus
