@@ -35,7 +35,8 @@ dedt_leonardo:
         href: ''
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
-        eodag:order_link: 'https://polytope.leonardo.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+        _qs: $.qs
+        eodag:order_link: 'https://polytope.leonardo.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {_qs#to_geojson} }}'
         order:status: 'orderable'
   products:
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:

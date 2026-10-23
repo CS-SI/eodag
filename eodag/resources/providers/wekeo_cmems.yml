@@ -69,7 +69,9 @@ wekeo_cmems:
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "cacheable": "true", "dataset_id": "{_collection}"}'
+        _location: $.properties.location
+        _id: $.id
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{_location}","product_id":"{_id}", "cacheable": "true", "dataset_id": "{_collection}"}}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'

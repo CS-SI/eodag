@@ -37,7 +37,6 @@ from urllib.parse import (
     parse_qs,
     parse_qsl,
     quote,
-    quote_plus,
     unquote,
     unquote_plus,
     urlencode,
@@ -1834,36 +1833,6 @@ class PostJsonSearch(QueryStringSearch):
             raise_errors=raise_errors,
         )
         return formated_result
-
-    def normalize_results(
-        self, results: RawSearchResult, **kwargs: Any
-    ) -> list[EOProduct]:
-        """Build EOProducts from provider results"""
-        normalized = super().normalize_results(results, **kwargs)
-        for product in normalized:
-            if "eodag:download_link" in product.properties:
-                decoded_link = unquote(product.properties["eodag:download_link"])
-                if decoded_link[0] == "{":  # not a url but a dict
-                    if product.collection is None:
-                        msg = (
-                            f"Cannot build download query parameters for "
-                            f"{product}: collection is undefined"
-                        )
-                        raise MisconfiguredError(msg)
-                    collection = product.collection
-                    default_values = deepcopy(self.config.products.get(collection, {}))
-                    default_values.pop("metadata_mapping", None)
-                    searched_values = orjson.loads(decoded_link)
-                    _dc_qs = orjson.dumps(
-                        format_query_params(
-                            collection,
-                            self.config,
-                            {**default_values, **searched_values},
-                        )
-                    )
-                    product.properties["_dc_qs"] = quote_plus(_dc_qs)
-
-        return normalized
 
     def collect_search_urls(
         self,
