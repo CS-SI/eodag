@@ -153,7 +153,7 @@ def decode_exception(encoded: dict[str, Any]) -> Exception:
         )
     exc = cls(encoded.get("message", ""))
     if "status_code" in encoded:
-        exc.status_code = encoded["status_code"]  # type: ignore[attr-defined]
+        setattr(exc, "status_code", encoded["status_code"])
     return exc
 
 
