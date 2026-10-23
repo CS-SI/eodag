@@ -286,6 +286,10 @@ output_format = "rst"
 [tool.pytest.ini_options]
 testpaths = ["eodag/api", "eodag/types", "eodag/utils", "tests"]
 addopts = "--doctest-modules --disable-socket --allow-unix-socket"
+# Note: If some eodag tests want to use eodag_recording pytest plugin,
+# and the "@pytest.mark.eodag_record" annotation, then add
+# "-p eodag.utils.recording.pytest_integration" to addopts
+
 # logging disabled to prevent conflicts with click, see https://github.com/pallets/click/issues/824
 log_cli = false
 filterwarnings = [
