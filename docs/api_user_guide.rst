@@ -20,6 +20,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/api_user_guide/7_download.ipynb
    notebooks/api_user_guide/8_post_process.ipynb
    notebooks/tutos/tuto_stac_client.ipynb
+   recording_user_guide
 
 .. grid:: 1 2 2 3
    :gutter: 4
@@ -95,3 +96,11 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
          :shadow: md
 
          Learn how to use EODAG as a STAC client to access data through STAC APIs and static catalogs.
+
+   .. grid-item-card:: :octicon:`beaker;1.5em`  Tests
+         :link: recording_user_guide
+         :link-type: doc
+         :text-align: center
+         :shadow: md
+
+         Learn how to test your EODAG based applications.
