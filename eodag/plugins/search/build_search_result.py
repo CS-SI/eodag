@@ -1241,27 +1241,25 @@ def _check_id(product: EOProduct) -> EOProduct:
 
     if product.downloader is None:
         return product
-    on_response_mm = getattr(product.downloader.config, "order_on_response", {}).get(
-        "metadata_mapping", {}
+    on_response_am = getattr(product.downloader.config, "order_on_response", {}).get(
+        "asset_mapping", {}
     )
-    if not on_response_mm:
+    if not on_response_am:
         return product
 
-    logger.debug(f"Update product properties using given eodag:order_id {product_id}")
+    logger.debug(f"Update asset fields using given order:id {product_id}")
     on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
-        on_response_mm,
+        on_response_am,
     )
     properties_update = properties_from_json(
-        {}, {**on_response_mm_jsonpath, **{"eodag:order_id": (None, product_id)}}
+        {}, {**on_response_mm_jsonpath, **{"order:id": (None, product_id)}}
     )
     asset = product.assets.get("download_link")
     if asset is None:
         # asset has neither href nor eodag:order_link yet, bypass AssetsDict checks
         asset = product.assets._make_asset("download_link", {})
         product.assets.data["download_link"] = asset
-    product.downloader._update_from_order(  # type: ignore
-        asset, {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
-    )
+    product.downloader._update_from_order(asset, properties_update, {})  # type: ignore
 
     auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 

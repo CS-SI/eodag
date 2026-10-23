@@ -477,14 +477,14 @@ wekeo_main:
     order_enabled: true
     order_method: 'POST'
     order_on_response:
-      metadata_mapping:
-        eodag:order_id: '$.json.download_id'
-        eodag:status_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={eodag:order_id}'
-        eodag:download_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:order_id}'
+      asset_mapping:
+        order:id: '$.json.download_id'
+        eodag:status_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={order:id}'
+        href: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{order:id}'
     order_status:
       request:
         method: GET
-      metadata_mapping:
+      asset_mapping:
         eodag:order_status: $.json.features[0].status
         eodag:order_message: $.json.features[0].message
       error:
@@ -494,6 +494,6 @@ wekeo_main:
       ordered:
         http_code: 202
       on_success:
-        metadata_mapping:
+        asset_mapping:
           eodag:download_id: $.json.features[0]._id
-          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
+          href: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
