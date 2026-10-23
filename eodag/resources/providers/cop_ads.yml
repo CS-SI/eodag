@@ -33,7 +33,7 @@ cop_ads:
       request:
         method: GET
       asset_mapping:
-        eodag:order_status: $.json.status
+        _order_status: $.json.status
         order:date: $.json.created
       metadata_mapping:
         created: $.json.created
@@ -42,9 +42,9 @@ cop_ads:
         ecmwf:dataset: $.json.processID
         eodag:request_params: $.json.metadata.request.ids
       error:
-        eodag:order_status: failed
+        _order_status: failed
       success:
-        eodag:order_status: successful
+        _order_status: successful
       on_success:
         need_search: true
         asset_mapping:

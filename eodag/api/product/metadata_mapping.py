@@ -75,6 +75,7 @@ NOT_MAPPED = "Not Mapped"
 ONLINE_STATUS = "succeeded"
 STAGING_STATUS = "ordered"
 OFFLINE_STATUS = "orderable"
+FAILED_STATUS = "failed"
 COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")

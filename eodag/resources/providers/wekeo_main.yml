@@ -485,12 +485,12 @@ wekeo_main:
       request:
         method: GET
       asset_mapping:
-        eodag:order_status: $.json.features[0].status
+        _order_status: $.json.features[0].status
         eodag:order_message: $.json.features[0].message
       error:
-        eodag:order_status: Error
+        _order_status: Error
       success:
-        eodag:order_status: Done
+        _order_status: Done
       ordered:
         http_code: 202
       on_success:

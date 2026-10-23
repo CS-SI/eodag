@@ -40,6 +40,25 @@ For example::
         asset_mapping:
           href: $.json.asset.href
 
+Asset order status
+~~~~~~~~~~~~~~~~~~
+
+Order state is stored only in the asset's ``order:status`` field, using
+``orderable``, ``ordered``, ``succeeded`` or ``failed``. Raw provider status and
+progress are no longer stored as ``eodag:order_status`` or ``eodag:order_percent``.
+Use parse-only ``_order_status`` and ``_order_percent`` in order response mappings,
+and update ``success`` / ``error`` matching to reference ``_order_status``.
+
+An asset becomes ``failed`` when the provider reports an order error, rejects an
+order with HTTP 400, or the successful order result cannot be parsed (including
+an XML search returning zero or multiple results). Authentication, quota, timeout
+and transient request errors do not mark an asset failed. Follow-up processing
+must finish before the asset becomes ``succeeded``.
+
+Failed assets are not ordered again automatically. Status polling can still
+report the provider error; search again to obtain a fresh asset before retrying
+the order. There is no compatibility conversion for legacy order configurations.
+
 v4.0.0a2
 ++++++++
 
