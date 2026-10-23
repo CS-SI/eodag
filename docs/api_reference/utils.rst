@@ -112,3 +112,36 @@ Constants: Metadata-mapping / JSONPath regex
 .. autodata:: eodag.utils.JSONPATH_MATCH
 .. autodata:: eodag.utils.WORKABLE_JSONPATH_MATCH
 .. autodata:: eodag.utils.ARRAY_FIELD_MATCH
+
+eodag_recording pytest plugin
+-----------------------------
+
+.. currentmodule:: eodag.utils.recording.pytest_integration
+
+.. autofunction:: eodag.utils.recording.pytest_integration.eodag_record
+
+Recording hooks and fixtures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: eodag.utils.recording.pytest_integration.eodag_recorder
+.. autofunction:: eodag.utils.recording.pytest_integration.eodag_record_mode
+.. autofunction:: eodag.utils.recording.pytest_integration.eodag_archive_dir
+.. autofunction:: eodag.utils.recording.pytest_integration.eodag_cassette_dir
+.. autofunction:: eodag.utils.recording.pytest_integration.eodag_cassette_name
+
+Recording Internals
+^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: eodag.utils.recording.recorder
+   :members:
+
+.. automodule:: eodag.utils.recording.cassette
+   :members:
+   :private-members: _DROPPED_PROPERTIES, _RECORDABLE_EXCEPTIONS
+   :exclude-members: decode_exception, encode_exception
+
+Recording Errors
+^^^^^^^^^^^^^^^^
+
+.. automodule:: eodag.utils.recording.errors
+   :members:
