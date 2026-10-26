@@ -304,8 +304,11 @@ class PluginManager:
 
         The selection follows the provider/auth matching rules in
         :meth:`get_auth_plugins`: auth plugins are matched first using the product
-        URL (asset href, download link or remote location) and then using the
-        download/search plugin configuration. If no auth plugin matches, the method
+        asset URLs in order, stopping at the first matching auth plugin. For products
+        without assets, the order/download link or remote location is used; search
+        authentication uses the associated plugin's API endpoint. Each candidate URL
+        is checked alongside the associated plugin configuration, and either can
+        select an auth plugin. If no auth plugin matches, the method
         keeps the provider's own auth plugin as a last resort when the product still
         has a remote location, so product-specific registration can succeed even when
         the asset list is temporarily empty.
@@ -319,34 +322,39 @@ class PluginManager:
         :param product: The product to download. ``None`` for search authentication
         :returns: The Authentication plugin
         """
-        # matching url from product to download
+        # Collect candidate URLs; a technical asset may precede assets requiring auth.
         if product is not None and len(product.assets) > 0:
-            matching_url = next(iter(product.assets.values()))["href"]
+            matching_urls: list[Optional[str]] = [
+                asset["href"] for asset in product.assets.values() if asset.get("href")
+            ] or [None]
         elif (
             product is not None
             and product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
         ):
-            matching_url = (
+            matching_urls = [
                 product.properties.get("eodag:order_link") or product.remote_location
-            )
+            ]
         elif product is not None:
-            matching_url = (
+            matching_urls = [
                 product.properties.get("eodag:download_link") or product.remote_location
-            )
+            ]
         else:
             # search auth
-            matching_url = getattr(associated_plugin.config, "api_endpoint", None)
+            matching_urls = [getattr(associated_plugin.config, "api_endpoint", None)]
 
-        try:
+        auth_plugin = None
+        # Try each candidate until one selects auth; None allows config-only matching.
+        for matching_url in matching_urls:
             auth_plugin = next(
                 self.get_auth_plugins(
                     associated_plugin.provider,
                     matching_url=matching_url,
                     matching_conf=associated_plugin.config,
-                )
+                ),
+                None,
             )
-        except StopIteration:
-            auth_plugin = None
+            if auth_plugin is not None:
+                break
 
         # bind collection if supported by the auth plugin
         if auth_plugin and product is not None and product.collection:
