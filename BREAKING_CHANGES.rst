@@ -6,6 +6,48 @@ Full changelog available in `Release history <changelog.html>`_.
 v5.0.0
 ++++++
 
+Asset-based downloads
+~~~~~~~~~~~~~~~~~~~~~
+
+Download URLs, local paths, sizes and order state now belong to assets, not
+product properties. Custom search configurations must replace
+``metadata_mapping.eodag:download_link`` with
+``assets_mapping.download_link.href``. Move ``order:status`` and
+``eodag:order_link`` into the corresponding asset mapping as well. There is no
+compatibility conversion for old provider configurations.
+
+``Asset.size`` is removed; use ``asset["file:size"]``. Downloaded filesystem paths
+are stored in ``file:local_path``, while ``href`` remains the remote URL.
+Order identifiers use ``order:id`` instead of ``eodag:order_id``.
+
+The ``ignore_assets`` download configuration option is removed. Without an
+``asset`` filter, downloads and streaming downloads select only ``download_link``
+when it exists; otherwise they select all available assets. An explicit filter
+selects matching asset keys, including when ``download_link`` exists. Plugin
+signatures remain ``download(product, asset=...)`` and
+``stream_download(product, asset=...)``; order and download processing happens
+per selected asset.
+
+``product.order()`` and ``product.get_storage_options()`` order assets
+individually, with an optional asset filter. ``SearchResult.filter_online()``
+keeps only products whose assets are all online; an asset without an explicit
+``order:status`` is treated as online.
+
+Legacy download records
+~~~~~~~~~~~~~~~~~~~~~~~
+
+During v5, an existing product download can be reused without downloading again.
+When a ``download_link`` asset has no cached statement, EODAG checks the legacy
+``.downloaded`` records named by the MD5 of ``{collection}-{id}`` or, for older
+downloads, the URL. If the archive or extracted directory still exists, the
+record is converted to an asset JSON statement containing ``file:local_path``
+and the old record is removed. A record without data is not treated as a cached
+download. Other assets do not use legacy product records.
+
+New ``download_link`` downloads retain the product-level output layout, rather
+than creating a file named after the asset key. Legacy-record migration is
+provided for v5 only and is scheduled for removal in v6.
+
 Order response mappings
 ~~~~~~~~~~~~~~~~~~~~~~~
 

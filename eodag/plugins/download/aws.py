@@ -251,7 +251,12 @@ class AwsDownload(Download):
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any
+        :param executor: (optional) Executor for internal asset work, including individual S3 object
+                         downloads and extraction of requested entries from S3-hosted ZIP files.
+                         When called by ``download_all()``, this executor is shared with product-level
+                         downloads, so ``download_all()`` reserves worker capacity for nested tasks to
+                         avoid deadlocks. With a one-worker executor, nested AWS work runs sequentially
+                         instead of submitting tasks to the occupied pool.
         :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration

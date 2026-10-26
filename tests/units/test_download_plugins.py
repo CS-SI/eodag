@@ -1257,23 +1257,50 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(response.content, [b"chunk1"])
 
     def test_stream_download_download_link(self):
-        """HTTPDownload.stream_download() must stream download_link asset with product headers."""
+        """Streaming must prefer download_link unless an explicit asset filter is given."""
         plugin = self.get_download_plugin(self.product)
 
         self.product.assets.clear()
-        self.product.remote_location = "http://somewhere"
+        self.product.assets.update(
+            {
+                "download_link": {"href": "http://somewhere/product"},
+                "foo": {"href": "http://somewhere/foo"},
+            }
+        )
         self.product.headers = {}
 
         chunk_iter = iter([b"first_chunk", b"second_chunk"])
-        plugin._raw_stream_download = mock.Mock(return_value=chunk_iter)
-
-        try:
+        with (
+            mock.patch.object(
+                plugin, "_raw_stream_download", return_value=chunk_iter
+            ) as raw_stream,
+            mock.patch.object(plugin, "_raw_stream_download_assets") as asset_stream,
+        ):
             response = plugin.stream_download(self.product, output_dir=self.output_dir)
-        finally:
-            del plugin._raw_stream_download
 
-        self.assertEqual(list(response.content), [b"first_chunk", b"second_chunk"])
-        self.assertEqual(response.headers, self.product.headers)
+            self.assertEqual(list(response.content), [b"first_chunk", b"second_chunk"])
+            self.assertEqual(response.headers, self.product.headers)
+            raw_stream.assert_called_once()
+            self.assertIs(
+                raw_stream.call_args.args[1], self.product.assets["download_link"]
+            )
+            asset_stream.assert_not_called()
+
+            raw_stream.reset_mock()
+            asset_stream.return_value = [
+                StreamResponse(content=[b"filtered_chunk"], headers={})
+            ]
+
+            response = plugin.stream_download(
+                self.product, asset="foo", output_dir=self.output_dir
+            )
+
+            self.assertEqual(list(response.content), [b"filtered_chunk"])
+            raw_stream.assert_not_called()
+            asset_stream.assert_called_once()
+            self.assertEqual(
+                asset_stream.call_args.args[4], [self.product.assets["foo"]]
+            )
 
     def test_stream_download_strips_hop_by_hop_headers(self):
         """HTTPDownload.stream_download() must strip hop-by-hop headers but keep useful ones"""
@@ -1321,6 +1348,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         self.assertEqual(response.headers["Content-Type"], "application/octet-stream")
         self.assertEqual(response.headers["ETag"], '"abc123"')
+        self.assertEqual(response.size, 12)
+        self.assertEqual(self.product.assets["download_link"]["file:size"], 12)
+        self.assertFalse(hasattr(self.product, "size"))
         # filename is derived from Content-Disposition and re-set by StreamResponse
         self.assertIn("foo.zip", response.headers["Content-Disposition"])
 

@@ -86,27 +86,20 @@ class Download(PluginTopic):
     - ``download``: download a single :class:`~eodag.api.product._product.EOProduct`
     - ``download_all``: download multiple products from a :class:`~eodag.api.search_result.SearchResult`
 
-    They must:
+    Downloads use ``output_dir`` from configuration or keyword arguments and
+    extract archives when ``extract`` is true (the default). Without an ``asset``
+    filter, only ``download_link`` is selected if present; otherwise asset keys
+    are matched against the filter. Selected offline assets are ordered individually.
 
-    - download data in the ``output_dir`` folder defined in the plugin's
-      configuration or passed through kwargs
-    - extract products from their archive (if relevant) if ``extract`` is set to ``True``
-      (``True`` by default)
-    - save a product in an archive/directory (in ``output_dir``) whose name must be
-      the product's ``title`` property
-    - update the product's ``location`` attribute once its data is downloaded (and
-      eventually after it's extracted) to the product's location given as a file URI
-      (e.g. ``file:///tmp/product_folder`` on Linux or
-      ``file:///C:/Users/username/AppData/Local/Temp`` on Windows)
-    - save a *record* file in the directory ``{output_dir}/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``collection`` and ``properties['id']``
-      attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
-      and whose content is the product's ``remote_location`` attribute itself.
-    - not try to download a product whose ``location`` attribute already points to an
-      existing file/directory
-    - not try to download a product if its *record* file exists as long as the expected
-      product's file/directory. If the *record* file only is found, it must be deleted
-      (it certainly indicates that the download didn't complete)
+    The ``download_link`` asset retains the title-based product archive/directory
+    layout; other assets are stored inside the product directory. Downloaded
+    filesystem paths belong in ``file:local_path``, preserving the remote ``href``.
+    Plugins must not update deprecated product location properties.
+
+    Use :meth:`set_statements` to update asset state and persist per-asset JSON
+    statements in ``{output_dir}/.downloaded``. Cached data is reused only while
+    its path exists. During v5, :meth:`check_cache` also migrates legacy product
+    records for ``download_link``.
 
     :param provider: An eodag providers configuration dictionary
     :param config: Path to the user configuration file
