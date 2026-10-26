@@ -250,6 +250,55 @@ class TestPluginManager(unittest.TestCase):
             matching_conf=associated_plugin.config,
         )
 
+    def test_get_auth_plugin_with_preview_and_blob_assets(self):
+        """Test get_auth_plugin with preview and blob assets."""
+        providers = ProvidersDict.from_configs(
+            {
+                "planetary_computer": {
+                    "products": {"S2_MSI_L2A": {"_collection": "sentinel-2-l2a"}},
+                    "download": {"type": "HTTPDownload"},
+                    "auth": {
+                        "type": "SASAuth",
+                        "matching_url": r"https://[-\w\.]+.blob.core.windows.net",
+                        "auth_uri": "https://planetarycomputer.microsoft.com/api/sas/v1/token/{_collection}",
+                        "signed_url_key": "token",
+                    },
+                }
+            }
+        )
+        manager = PluginManager(providers)
+        preview = {
+            "href": "https://planetarycomputer.microsoft.com/api/data/v1/item/preview.png"
+        }
+        blob = {
+            "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/example.tif"
+        }
+        for assets in (
+            {"quicklook": preview, "B01": blob},
+            {"B01": blob, "quicklook": preview},
+            {"B01": blob},
+        ):
+            with self.subTest(insertion_order=list(assets)):
+                product = EOProduct(
+                    provider="planetary_computer",
+                    properties={"id": "test"},
+                    collection="S2_MSI_L2A",
+                )
+                product.assets = AssetsDict(product)
+                product.assets.update(assets)
+                if "quicklook" in assets:
+                    # Confirm quicklook is the first asset after sorting.
+                    self.assertEqual(next(iter(product.assets)), "quicklook")
+                downloader = manager.get_download_plugin(product)
+
+                plugin = manager.get_auth_plugin(downloader, product)
+
+                # Confirm that the plugin is correctly instantiated and configured
+                # even if first asset does not match the auth plugin's URL pattern.
+                self.assertIsNotNone(plugin)
+                self.assertEqual(plugin.config.type, "SASAuth")
+                self.assertEqual(plugin.provider_collection, "sentinel-2-l2a")
+
     def test_get_crunch_plugin(self):
         """Crunch plugin construction returns the requested plugin class."""
         plugin = PluginManager.get_crunch_plugin("FilterDate", start="2024-01-01")
