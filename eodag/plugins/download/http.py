@@ -1288,15 +1288,19 @@ class HTTPDownload(Download):
 
         all_assets_values = product.assets.get_values(kwargs.get("asset") or "")
 
-        # only keep assets that need to be downloaded (not cached)
+        # Download one uncached asset per URL; retain aliases for cache updates.
         assets_values: list[Asset] = []
+        assets_by_href: dict[str, list[Asset]] = {}
         per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
         for asset in all_assets_values:
             if statements := self.check_cache(asset, **per_asset_kwargs):
                 # update asset with cached statements
                 asset.update(statements)
             else:
-                assets_values.append(asset)
+                # Deduplicate before opening streams or scheduling file writes.
+                if asset["href"] not in assets_by_href:
+                    assets_values.append(asset)
+                assets_by_href.setdefault(asset["href"], []).append(asset)
 
         assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
@@ -1316,9 +1320,9 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
 
-        # count local assets
+        # Count all selected local assets, including aliases sharing a URL.
         local_assets_count = 0
-        for asset in assets_values:
+        for asset in all_assets_values:
             if asset["href"].startswith("file:"):
                 local_assets_count += 1
                 continue
@@ -1354,14 +1358,16 @@ class HTTPDownload(Download):
                 progress_callback(skipped_size)
 
             if not asset["href"].startswith("file:"):
-                self.set_statements(
-                    asset,
-                    {
-                        **asset.as_dict(),
-                        "file:local_path": asset_abs_path,
-                    },
-                    **per_asset_kwargs,
-                )
+                # Each alias keeps its own metadata and cache record for the shared file.
+                for alias in assets_by_href[asset["href"]]:
+                    self.set_statements(
+                        alias,
+                        {
+                            **alias.as_dict(),
+                            "file:local_path": asset_abs_path,
+                        },
+                        **per_asset_kwargs,
+                    )
             return
 
         # use parallelization if possible
