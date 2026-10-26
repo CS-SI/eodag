@@ -147,6 +147,71 @@ class TestSearchPluginBaseSearch(BaseSearchPluginTest):
         self.assertEqual("Two", asset_mappings["two"]["title"])
         self.assertListEqual(["a_role"], asset_mappings["two"]["roles"])
 
+    def test_build_assets_from_mapping_resolves_private_template_values(self):
+        with open(
+            Path(TEST_RESOURCES_PATH) / "provider_responses/cop_dataspace_search.json"
+        ) as response_file:
+            odata_item = json.load(response_file)["value"][0]
+        with open(
+            Path(TEST_RESOURCES_PATH) / "provider_responses/earth_search_search.json"
+        ) as response_file:
+            earth_search_item = json.load(response_file)["features"][0]
+
+        cases = [
+            (
+                "cop_dataspace",
+                "S2_MSI_L1C",
+                odata_item,
+                "https://catalogue.dataspace.copernicus.eu/odata/v1/Products("
+                f"{odata_item['Id']})/$value",
+            ),
+            (
+                "creodias",
+                "S2_MSI_L1C",
+                odata_item,
+                f"https://zipper.creodias.eu/odata/v1/Products({odata_item['Id']})/$value",
+            ),
+            (
+                "earth_search_gcs",
+                "S2_MSI_L1C",
+                earth_search_item,
+                "s3://gcp-public-data-sentinel-2/tiles/27/V/WK/"
+                f"{earth_search_item['id']}.SAFE",
+            ),
+            (
+                "earth_search_gcs",
+                "L8_OLI_TIRS_C1L1",
+                {
+                    "id": "LC08_001002_20200101",
+                    "properties": {
+                        "landsat:wrs_path": 1,
+                        "landsat:wrs_row": 2,
+                    },
+                },
+                "s3://gcp-public-data-landsat/LC08/01/001/002/LC08_001002_20200101",
+            ),
+            (
+                "aws_eos",
+                "L8_OLI_TIRS_C1L1",
+                {
+                    "path": 1.0,
+                    "row": 2.0,
+                    "productID": "LC08_001002_20200101",
+                },
+                "s3://landsat-pds/c1/L8/001/002/LC08_001002_20200101/",
+            ),
+        ]
+
+        for provider, collection, item, expected_href in cases:
+            with self.subTest(provider=provider, collection=collection):
+                search_plugin = self.get_search_plugin(provider=provider)
+                product = EOProduct(provider, {}, collection=collection)
+                assets = search_plugin.build_assets_from_mapping(item, product)
+
+                self.assertEqual(assets["download_link"]["href"], expected_href)
+                for asset in assets.values():
+                    self.assertFalse(any(key.startswith("_") for key in asset))
+
     def test_get_metadata_mapping_without_collection(self):
         """Test that the provider metadata_mapping is returned when no collection is specified"""
         search_plugin = self.get_search_plugin(provider="geodes")

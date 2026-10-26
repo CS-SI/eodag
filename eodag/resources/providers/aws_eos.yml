@@ -173,18 +173,22 @@ aws_eos:
         _on_amazon:
           - '{{"search":{{"onAmazon":"{_on_amazon}" }} }}'
           - '$.onAmazon'
-        _path: '$.path'
-        _row: '$.row'
         id:
           - '{{"search":{{"productID":"{id}" }} }}'
           - '{title}'
       assets_mapping:
         download_link:
-          href: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
+          _path: '$.path'
+          _row: '$.row'
+          _title: '$.productID'
+          href: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{_title}/'
           roles: '["archive", "data"]'
           order:status: 'succeeded'
         quicklook:
-          href: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
+          _path: '$.path'
+          _row: '$.row'
+          _title: '$.productID'
+          href: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{_title}/{_title}_thumb_large.jpg'
           title: "quicklook"
           roles: '["overwiev"]'
           type: 'image/jpeg'

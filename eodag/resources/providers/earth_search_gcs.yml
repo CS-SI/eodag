@@ -48,7 +48,11 @@ earth_search_gcs:
         mgrs:grid_square: '$.properties."sentinel:grid_square"'
       assets_mapping:
         download_link:
-          href: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
+          _utm_zone: '$.properties."mgrs:utm_zone"'
+          _latitude_band: '$.properties."mgrs:latitude_band"'
+          _grid_square: '$.properties."mgrs:grid_square"'
+          _title: '$.id'
+          href: 's3://gcp-public-data-sentinel-2/tiles/{_utm_zone}/{_latitude_band}/{_grid_square}/{_title}.SAFE'
           roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeeded'
@@ -64,13 +68,13 @@ earth_search_gcs:
           type: '$.assets.thumbnail.type'
     L8_OLI_TIRS_C1L1:
       _collection: landsat-8-l1-c1
-      metadata_mapping:
-        wrsPath: '$.properties."landsat:wrs_path"'
-        wrsRow: '$.properties."landsat:wrs_row"'
       assets_mapping_from_product: S2_MSI_L1C
       assets_mapping:
         download_link:
-          href: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
+          _wrs_path: '$.properties."landsat:wrs_path"'
+          _wrs_row: '$.properties."landsat:wrs_row"'
+          _title: '$.id'
+          href: 's3://gcp-public-data-landsat/LC08/01/{_wrs_path:03.0f}/{_wrs_row:03.0f}/{_title}'
           roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeeded'
