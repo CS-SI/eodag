@@ -956,6 +956,69 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
             self.assertEqual(statements["file:local_path"], asset_path)
 
+    @mock.patch("eodag.plugins.download.http.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._raw_stream_download_assets",
+        autospec=True,
+    )
+    def test_plugins_download_http_assets_shared_destination(
+        self, mock_raw_stream_download_assets, mock_flatten_top_directories
+    ):
+        """Download shared URLs once while caching the local path for each alias."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "quicklook": {"href": "https://somewhere/preview.png"},
+                "thumbnail": {"href": "https://somewhere/preview.png"},
+                "B01": {"href": "https://somewhere/B01.tif"},
+            }
+        )
+        fs_dir_path = os.path.join(self.output_dir, "dummy_product")
+        mock_flatten_top_directories.return_value = fs_dir_path, fs_dir_path
+        mock_raw_stream_download_assets.side_effect = (
+            lambda _self, _product, _executor, _auth, _cb, assets_values, **kw: [
+                StreamResponse(
+                    content=iter([b"content"]),
+                    arcname=os.path.basename(asset["href"]),
+                )
+                for asset in assets_values
+            ]
+        )
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            with mock.patch.object(executor, "submit", wraps=executor.submit) as submit:
+                plugin._download_assets(
+                    self.product,
+                    fs_dir_path,
+                    None,
+                    progress_callback=ProgressCallback(disable=True),
+                    executor=executor,
+                    output_dir=self.output_dir,
+                )
+
+            self.assertEqual(submit.call_count, 2)
+
+        requested_assets = mock_raw_stream_download_assets.call_args.args[5]
+        self.assertEqual(len(requested_assets), 2)
+        self.assertEqual(
+            {asset["href"] for asset in requested_assets},
+            {"https://somewhere/preview.png", "https://somewhere/B01.tif"},
+        )
+
+        for key, filename in (
+            ("quicklook", "preview.png"),
+            ("thumbnail", "preview.png"),
+            ("B01", "B01.tif"),
+        ):
+            asset_path = os.path.join(fs_dir_path, filename)
+            self.assertEqual(Path(asset_path).read_bytes(), b"content")
+            self.assertFalse(os.path.exists(asset_path + "~"))
+            statements = plugin.check_cache(
+                self.product.assets[key], output_dir=self.output_dir
+            )
+            self.assertEqual(statements["file:local_path"], asset_path)
+
     @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
