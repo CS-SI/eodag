@@ -2150,18 +2150,17 @@ class EODataAccessGateway:
         checks like verifying that a downloader and authenticator are registered
         for the product before trying to download it.
 
-        If the metadata mapping for ``eodag:download_link`` is set to something that can be
-        interpreted as a link on a
-        local filesystem, the download is skipped (by now, only a link starting
-        with ``file:/`` is supported). Therefore, any user that knows how to extract
-        product location from product metadata on a provider can override the
-        ``eodag:download_link`` metadata mapping in the right way. For example, using the
-        environment variable:
-        ``EODAG__CREODIAS__SEARCH__METADATA_MAPPING__EODAG_DOWNLOAD_LINK="file:///{id}"`` will
-        lead to all :class:`~eodag.api.product._product.EOProduct`'s originating from the
-        provider ``creodias`` to have their ``eodag:download_link`` metadata point to something like:
-        ``file:///12345-678``, making this method immediately return the later string without
-        trying to download the product.
+        If the ``href`` of the product ``download_link`` asset is a link on a local
+        filesystem, the download is skipped (by now, only a link starting with ``file:/``
+        is supported). Therefore, any user that knows how to extract product location from
+        product metadata on a provider can override the ``download_link`` asset mapping
+        in the right way. For example, setting
+        ``assets_mapping: {download_link: {href: "file:///{id}"}}`` in the ``creodias``
+        search plugin configuration will lead to all
+        :class:`~eodag.api.product._product.EOProduct`'s originating from this provider
+        to have their ``download_link`` asset point to something like ``file:///12345-678``,
+        making this method immediately return the later string without trying to download
+        the product.
 
         :param product: The EO product to download
         :param progress_callback: (optional) A method or a callable object

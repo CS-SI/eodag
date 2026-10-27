@@ -36,7 +36,11 @@ from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
-from eodag.utils import get_bucket_name_and_prefix, get_geometry_from_various
+from eodag.utils import (
+    ONLINE_STATUS,
+    get_bucket_name_and_prefix,
+    get_geometry_from_various,
+)
 from eodag.utils.dates import parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import RequestError, UnsupportedCollection, ValidationError
 
@@ -207,8 +211,6 @@ class CopMarineSearch(StaticStacSearch):
             "title": item_id,
             "geometry": geometry,
             "dataset": dataset_item["id"],
-            # order:status set to succeeded for consistency between providers
-            "order:status": "succeeded",
         }
         assets = {
             "download_link": {
@@ -216,6 +218,8 @@ class CopMarineSearch(StaticStacSearch):
                 "href": download_url,
                 "roles": ["archive", "data"],
                 "type": "application/x-netcdf",
+                # order:status set to succeeded for consistency between providers
+                "order:status": ONLINE_STATUS,
                 **asset_properties,
             }
         }

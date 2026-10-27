@@ -105,10 +105,6 @@ class TestCoreSearchResults(EODagTestCase):
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "product:type": "OCN",
-                        "eodag:download_link": (
-                            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
-                            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
-                        ),
                         "eodag:provider": "cop_dataspace",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
@@ -132,6 +128,15 @@ class TestCoreSearchResults(EODagTestCase):
                     "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                     "type": "Feature",
                     "collection": "S1_SAR_OCN",
+                    "assets": {
+                        "download_link": {
+                            "href": (
+                                "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+                                "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
+                            ),
+                            "roles": ["archive", "data"],
+                        }
+                    },
                     "geometry": {
                         "coordinates": [
                             [
@@ -460,6 +465,21 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertIsInstance(search_result, SearchResult)
         with open(search_results_geojson_path, "r") as f:
             self.make_assertions(f)
+
+    def test_core_deserialize_legacy_download_link_property(self):
+        """Deserialized legacy eodag:download_link property must become the download_link asset"""
+        search_results_geojson_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, "eodag:download_link"):
+            search_result = self.dag.deserialize(search_results_geojson_path)
+        product = search_result[0]
+        self.assertNotIn("eodag:download_link", product.properties)
+        self.assertEqual(
+            product.assets["download_link"]["href"],
+            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value",
+        )
 
     def make_assertions(self, f):
         d = json.load(f)

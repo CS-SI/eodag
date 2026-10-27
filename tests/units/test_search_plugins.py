@@ -18,12 +18,15 @@
 import ast
 import datetime as dt
 import json
+import logging
 import os
 import re
 import ssl
 import unittest
+from contextlib import contextmanager
 from copy import deepcopy as copy_deepcopy
 from importlib import import_module
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Annotated, Literal, Union, get_args, get_origin
@@ -93,6 +96,28 @@ from tests.context import (
     get_geometry_from_various,
     load_provider_configs,
 )
+
+
+@contextmanager
+def assert_no_logs(test_case):
+    """Assert that eodag emits no warning-or-higher logs.
+
+    Replace with unittest.TestCase.assertNoLogs when Python 3.9 support is dropped.
+    """
+    logger = logging.getLogger("eodag")
+    stream = StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setLevel(logging.WARNING)
+    previous_level = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    try:
+        yield
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(previous_level)
+        handler.close()
+    test_case.assertEqual(stream.getvalue(), "")
 
 
 class BaseSearchPluginTest(unittest.TestCase):
@@ -3290,7 +3315,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
     def test_plugins_search_geodes_get_availability_skips_missing_fields(
         self, mock__request
     ):
-        """Products without eodag:download_link or geodes:endpoint_url must be skipped
+        """Products without download_link href or geodes:endpoint_url must be skipped
         in the availability request body"""
         mock_response = mock.Mock()
         mock_response.json.return_value = {"products": []}
@@ -3302,7 +3327,6 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "id": "PROD2",
                 "geometry": "POINT (0 0)",
-                "eodag:download_link": "https://geodes.example/data/PROD2/file.tif",
             },
         )
         p_no_url.assets["download_link"] = {
@@ -3686,10 +3710,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_creodias_s3_links_empty(self, mock_request):
-        """Registering a product with no S3 objects must leave assets empty."""
+        """Registering a product with no S3 objects must only keep its download_link asset."""
         product = self._get_search_results(mock_request).data[0]
         product.driver = None
-        # remote location is proxied from the download_link asset, keep it without assets
         remote_location = product.remote_location
         product.assets = AssetsDict(product)
         product.remote_location = remote_location
@@ -3697,7 +3720,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self._register_product_with_stubbed_s3_objects(product, [])
 
         self.assertIsNotNone(product.driver)
-        self.assertEqual(0, len(product.assets))
+        self.assertEqual(["download_link"], list(product.assets))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -3771,6 +3794,44 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 collection=collection, provider=provider
             )
         )
+
+    def test_copernicus_asset_order_payloads(self):
+        for provider, collection, dataset, host in (
+            ("cop_ads", "CAMS_EAC4", "cams-global-reanalysis-eac4", "ads.atmosphere"),
+            ("cop_cds", "ERA5_SL", "reanalysis-era5-single-levels", "ads.atmosphere"),
+            ("cop_ewds", "EFAS_FORECAST", "efas-forecast", "ewds.climate"),
+        ):
+            with self.subTest(provider=provider):
+                plugin = self.get_search_plugin(provider=provider)
+                with assert_no_logs(self):
+                    product = plugin.query(
+                        collection=collection,
+                        **self.query_dates,
+                        geometry=[1, 43, 2, 44],
+                        **{"ecmwf:variable": "temperature"},
+                    ).data[0]
+                asset = product.assets["download_link"]
+                endpoint, body = asset["eodag:order_link"].split("?", 1)
+                self.assertEqual(
+                    endpoint,
+                    f"https://{host}.copernicus.eu/api/retrieve/v1/processes/"
+                    f"{dataset}/execution",
+                )
+                payload = json.loads(body)
+                self.assertDictEqual(payload, {"inputs": product.properties["qs"]})
+                self.assertEqual(payload["inputs"]["variable"], "temperature")
+                self.assertEqual(payload["inputs"]["area"], [44.0, 1.0, 43.0, 2.0])
+                self.assertNotIn("dataset", payload["inputs"])
+                self.assertFalse(any(key.startswith("_") for key in asset))
+                with assert_no_logs(self):
+                    replayed = plugin.query(
+                        collection=collection,
+                        _dc_qs=quote_plus(json.dumps(payload["inputs"])),
+                    ).data[0]
+                self.assertEqual(
+                    replayed.assets["download_link"]["eodag:order_link"],
+                    asset["eodag:order_link"],
+                )
 
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """ECMWFSearch.query must adapt end date in certain cases"""
@@ -6174,6 +6235,42 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.wekeomain_search_plugin = self.get_search_plugin(self.collection, provider)
         self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
+    def test_wekeo_cmems_asset_order_payload(self):
+        plugin = self.get_search_plugin(provider="wekeo_cmems")
+        collection = "CMEMS_TEST"
+        dataset = "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024"
+        plugin.config.products[collection] = {"_collection": dataset}
+        provider_item = {
+            "id": "cmems-product-id",
+            "properties": {"location": "s3://cmems-bucket/path/product.nc"},
+        }
+        product = EOProduct(
+            "wekeo_cmems",
+            {"id": provider_item["id"], "geometry": "POINT (0 0)"},
+            collection=collection,
+        )
+        with assert_no_logs(self):
+            product.assets.update(
+                plugin.build_assets_from_mapping(provider_item, product)
+            )
+        asset = product.assets["download_link"]
+        endpoint, body = asset["eodag:order_link"].split("?", 1)
+        self.assertEqual(
+            endpoint,
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+        )
+        self.assertDictEqual(
+            json.loads(body),
+            {
+                "location": provider_item["properties"]["location"],
+                "product_id": provider_item["id"],
+                "cacheable": "true",
+                "dataset_id": dataset,
+            },
+        )
+        self.assertEqual(asset["href"], provider_item["properties"]["location"])
+        self.assertFalse(any(key.startswith("_") for key in asset))
+
     def test_plugins_search_wekeosearch_init_wekeomain(self):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
@@ -6424,6 +6521,48 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         self.search_plugin = self.get_search_plugin(provider=self.provider)
         self.collection = "DT_CLIMATE_ADAPTATION"
 
+    def test_dedt_asset_order_payloads(self):
+        expected_feature = {
+            "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
+            "type": "polygon",
+        }
+        for provider, host, collection in (
+            ("dedt_lumi", "lumi", "DT_CLIMATE_ADAPTATION"),
+            ("dedt_mn5", "mn5", "DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1"),
+            ("dedt_leonardo", "leonardo", "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1"),
+        ):
+            with self.subTest(provider=provider):
+                plugin = self.get_search_plugin(provider=provider)
+                with assert_no_logs(self):
+                    product = plugin.query(
+                        collection=collection,
+                        start_datetime="2021-01-01",
+                        end_datetime="2021-01-02",
+                        geometry=[1, 43, 2, 44],
+                    ).data[0]
+                asset = product.assets["download_link"]
+                endpoint, body = asset["eodag:order_link"].split("?", 1)
+                self.assertEqual(
+                    endpoint,
+                    f"https://polytope.{host}.apps.dte.destination-earth.eu"
+                    "/api/v1/requests/destination-earth",
+                )
+                payload = json.loads(body)
+                self.assertEqual(payload["verb"], "retrieve")
+                self.assertDictEqual(payload["request"], product.properties["qs"])
+                self.assertEqual(payload["request"]["dataset"], "climate-dt")
+                self.assertDictEqual(payload["request"]["feature"], expected_feature)
+                self.assertFalse(any(key.startswith("_") for key in asset))
+                with assert_no_logs(self):
+                    replayed = plugin.query(
+                        collection=collection,
+                        _dc_qs=quote_plus(json.dumps(payload["request"])),
+                    ).data[0]
+                self.assertEqual(
+                    replayed.assets["download_link"]["eodag:order_link"],
+                    asset["eodag:order_link"],
+                )
+
     def test_plugins_apis_dedt_lumi_query_feature(self):
         """Test the proper handling of geom into ecmwf:feature"""
 
@@ -6440,6 +6579,13 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         eoproduct = results.data[0]
 
         self.assertDictEqual(_expected_feature, eoproduct.properties["qs"]["feature"])
+
+        download_link = eoproduct.assets["download_link"]
+        order_payload = json.loads(download_link["eodag:order_link"].split("?", 1)[1])
+        self.assertEqual(order_payload["verb"], "retrieve")
+        self.assertDictEqual(order_payload["request"], eoproduct.properties["qs"])
+        self.assertEqual(order_payload["request"]["dataset"], "climate-dt")
+        self.assertNotIn("_qs", download_link)
 
         # Unsupported multi-polygon
         with self.assertRaises(ValidationError):
@@ -7385,7 +7531,8 @@ class TestSearchPluginCSWSearch(unittest.TestCase):
         )
         product = plugin._CSWSearch__build_product(record, "collection")
         self.assertEqual(product.location, "preferred")
-        self.assertEqual(product.properties["eodag:download_link"], "preferred")
+        self.assertEqual(product.assets["download_link"]["href"], "preferred")
+        self.assertNotIn("eodag:download_link", product.properties)
         self.assertEqual(product.geometry.bounds, (1.0, 2.0, 3.0, 4.0))
 
     def test_csw_constraints_accept_shapely_geometry(self):
