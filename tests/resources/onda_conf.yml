@@ -159,13 +159,16 @@ onda:
         - '$.footprint'
       # The url of the quicklook
       quicklook: '$.quicklook'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '%(base_uri)s({uid})/$value'
       # storageStatus: must be one of succeeded, ordered, orderable
       storageStatus: '{$.offline#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       # Url used for ordering product if it is offline/archived
       eodag:order_link: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
+    assets_mapping:
+      download_link:
+        # The url to download the product "as is" (literal or as a template to be completed either after the search
+        # result is obtained from the provider or during the eodag download phase)
+        href: '%(base_uri)s({uid})/$value'
+        roles: '["archive", "data"]'
   products:
     # S1
     S1_SAR_OCN:
@@ -295,7 +298,7 @@ onda:
       constellation: '{constellation}'
   download:
     type: HTTPDownload
-    # base_uri used to parse eodag:download_link
+    # base_uri used to parse the download_link asset href
     base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
     extract: true
     archive_depth: 2

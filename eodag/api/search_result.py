@@ -34,7 +34,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
-from eodag.utils import STAC_VERSION, _deprecated
+from eodag.utils import ONLINE_STATUS, STAC_VERSION, _deprecated
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
@@ -176,13 +176,22 @@ class SearchResult(UserList[EOProduct]):
         return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
     def filter_online(self) -> SearchResult:
-        """Filter to only keep online products.
+        """Filter to only keep online products, whose assets are all online.
 
-        Applies :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch for ``order:status == succeeded``.
+        An asset without ``order:status`` is considered online.
 
-        :returns: The result of the application of the crunching method to the EO products
+        :returns: The online EO products
         """
-        return self.filter_property(**{"order:status": "succeeded"})
+        return SearchResult(
+            [
+                product
+                for product in self
+                if all(
+                    asset.get("order:status", ONLINE_STATUS) == ONLINE_STATUS
+                    for asset in product.assets.values()
+                )
+            ]
+        )
 
     @classmethod
     def from_dict(

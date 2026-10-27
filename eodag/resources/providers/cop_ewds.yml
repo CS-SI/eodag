@@ -125,7 +125,9 @@ cop_ewds:
         title: "downloadlink"
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
-        eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
+        _qs: $.qs
+        _dataset: $.dataset
+        eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{_dataset}/execution?{{"inputs": {_qs#to_geojson}}}'
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical
