@@ -138,6 +138,7 @@ class TestRequirements(unittest.TestCase):
         project_imports = get_project_imports(project_path)
         setup_requires = get_setup_requires(pyproject_path)
         setup_requires.update(get_optional_dependencies(pyproject_path, "all"))
+        setup_requires.update(get_optional_dependencies(pyproject_path, "recording"))
         import_required_dict = importlib_metadata.packages_distributions()
         try:
             default_libs = stdlib_list()
