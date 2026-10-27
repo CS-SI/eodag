@@ -48,6 +48,7 @@ from tests.context import (
     HTTP_REQ_TIMEOUT,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
+    ONLINE_STATUS,
     USER_AGENT,
     EOProduct,
     HTTPDownload,
@@ -1333,6 +1334,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         asset.get.return_value = None
 
         self.product.assets = mock.Mock()
+        self.product.assets.get.return_value = None
         self.product.assets.get_values.return_value = [asset]
 
         chunk_asset1 = mock.Mock()
@@ -1359,6 +1361,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         asset2.get.return_value = "text/plain"
 
         self.product.assets = mock.Mock()
+        self.product.assets.get.return_value = None
         self.product.assets.get_values.return_value = [asset1, asset2]
 
         chunk_asset1 = mock.Mock()
@@ -1422,6 +1425,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
         self.product.assets = mock.Mock()
+        self.product.assets.get.return_value = None
         self.product.assets.get_values.return_value = [asset]
         self.product.assets.__len__ = lambda self=self.product.assets: 1
 
@@ -1464,6 +1468,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin.__dict__.pop("_raw_stream_download", None)
 
         self.product.assets = mock.Mock()
+        self.product.assets.get.return_value = None
         self.product.assets.get_values.return_value = []
         self.product.assets.__len__ = lambda self=self.product.assets: 0
         self.product.location = self.product.remote_location = "http://somewhere"
@@ -1949,13 +1954,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.register_downloader(plugin, auth)
 
         endpoint = "https://ads.atmosphere.copernicus.eu/api/retrieve/v1"
-        self.product.properties["eodag:order_link"] = (
-            f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
-        )
         self.product.properties["id"] = "CAMS_EAC4_ORDERABLE_12345"
-        self.product.properties["order:status"] = "orderable"
-        self.product.location = self.product.remote_location = (
-            NOT_AVAILABLE + '?{"foo": "bar"}'
+        self.product.assets["download_link"] = {
+            "href": NOT_AVAILABLE + '?{"foo": "bar"}',
+            "eodag:order_link": f"{endpoint}/processes/{product_dataset}/execution"
+            + '?{"foo": "bar"}',
+        }
+        self.assertEqual(
+            self.product.assets["download_link"]["order:status"], OFFLINE_STATUS
         )
 
         @responses.activate(registry=responses.registries.OrderedRegistry)
@@ -2022,12 +2028,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     timeout=0.2 / 60,
                 )
             self.assertEqual(self.product.remote_location, expected_remote_location)
+            download_link = self.product.assets["download_link"]
+            self.assertEqual(download_link["href"], expected_remote_location)
             self.assertEqual(
-                self.product.properties["eodag:download_link"], expected_remote_location
+                download_link["eodag:status_link"], expected_order_status_link
             )
-            self.assertEqual(
-                self.product.properties["eodag:status_link"], expected_order_status_link
-            )
+            self.assertEqual(download_link["order:id"], "dummy_request_id")
+            self.assertEqual(download_link["order:status"], ONLINE_STATUS)
+            self.assertNotIn("eodag:status_link", self.product.properties)
             self.assertEqual(path, expected_path)
             self.assertEqual(self.product.location, path_to_uri(expected_path))
 
@@ -2041,13 +2049,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order() must request using eodag:order_link and GET protocol."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_method = "GET"
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
-        self.product.properties["order:status"] = OFFLINE_STATUS
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+        }
+        asset = self.product.assets["download_link"]
 
         # customized timeout
         timeout_backup = getattr(plugin.config, "timeout", None)
@@ -2057,11 +2063,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
             auth = auth_plugin.authenticate()
 
-            plugin._order(self.product, auth=auth)
+            plugin._order(asset, auth=auth)
 
             mock_request.assert_called_once_with(
                 method="GET",
-                url=self.product.properties["eodag:order_link"],
+                url=asset["eodag:order_link"],
                 auth=auth,
                 headers=USER_AGENT,
                 timeout=10,
@@ -2086,12 +2092,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_method = "GET"
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2099,12 +2104,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Verify that a DownloadError is raised
         with self.assertRaises(DownloadError) as context:
-            plugin._order(self.product, auth=auth)
+            plugin._order(asset, auth=auth)
         self.assertIn("could not be ordered", str(context.exception))
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["eodag:order_link"],
+            url=asset["eodag:order_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=5,
@@ -2121,12 +2126,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_method = "GET"
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2140,12 +2144,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Test the function, expecting ValidationError to be raised
         with self.assertRaises(ValidationError) as context:
-            plugin._order(self.product, auth=auth)
+            plugin._order(asset, auth=auth)
         self.assertIn("could not be ordered", str(context.exception))
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["eodag:order_link"],
+            url=asset["eodag:order_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -2160,23 +2164,21 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order() must request using eodag:order_link and POST protocol."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_method = "POST"
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
-        self.product.properties["order:status"] = OFFLINE_STATUS
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
         # eodag:order_link without query query args
-        plugin._order(self.product, auth=auth)
+        plugin._order(asset, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
-            url=self.product.properties["eodag:order_link"],
+            url=asset["eodag:order_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -2184,10 +2186,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         # eodag:order_link with query query args
         mock_request.reset_mock()
-        self.product.properties["eodag:order_link"] = (
+        asset["eodag:order_link"] = (
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?foo=bar"
         )
-        plugin._order(self.product, auth=auth)
+        plugin._order(asset, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
             url="https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
@@ -2200,11 +2202,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # eodag:order_link with JSON data containing a query string
         mock_request.reset_mock()
-        self.product.properties["eodag:order_link"] = (
+        asset["eodag:order_link"] = (
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?"
             '{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
         )
-        plugin._order(self.product, auth=auth)
+        plugin._order(asset, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
             url="https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
@@ -2231,13 +2233,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             },
             "error": {"that": "failed"},
         }
-        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+            "eodag:status_link": "http://somewhere/order-status",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2254,8 +2255,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
 
             with self.assertRaises(DownloadError):
-                plugin._order_status(self.product, auth=auth)
+                plugin._order_status(asset, auth=auth)
 
+            self.assertEqual(asset["eodag:order_percent"], 50)
+            self.assertEqual(self.product.properties["that"], "failed")
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
             )
@@ -2282,10 +2285,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             ),
         )
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
-        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
+        self.product.assets["download_link"] = {
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+            "eodag:status_link": "http://somewhere/order-status",
+        }
+        asset = self.product.assets["download_link"]
         response = mock_request.return_value
         response.status_code = 200
         # Use different case for header keys to test that case-insensitivity is preserved
@@ -2297,12 +2301,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         response.json.side_effect = ValueError("empty response")
 
-        plugin._order_status(self.product)
+        plugin._order_status(asset)
 
-        self.assertEqual(
-            self.product.properties["eodag:download_link"],
-            "http://somewhere/download",
-        )
+        self.assertEqual(asset["href"], "http://somewhere/download")
+        self.assertEqual(asset["order:status"], ONLINE_STATUS)
+        self.assertEqual(self.product.remote_location, "http://somewhere/download")
         response.json.assert_not_called()
 
     @mock.patch(
@@ -2317,13 +2320,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_request.return_value = MockResponse(status_code=500)
 
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
-        self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+            "eodag:status_link": "http://somewhere/orderstatus",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2331,12 +2333,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Verify that a DownloadError is raised
         with self.assertRaises(DownloadError) as context:
-            plugin._order_status(self.product, auth=auth)
+            plugin._order_status(asset, auth=auth)
         self.assertIn("order status could not be checked", str(context.exception))
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["eodag:status_link"],
+            url=asset["eodag:status_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=5,
@@ -2353,13 +2355,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         # Set up the EOProduct and the necessary properties
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
-        self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+            "eodag:status_link": "http://somewhere/orderstatus",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2373,12 +2374,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Test the function, expecting ValidationError to be raised
         with self.assertRaises(ValidationError) as context:
-            plugin._order_status(self.product, auth=auth)
+            plugin._order_status(asset, auth=auth)
         self.assertIn("order status could not be checked", str(context.exception))
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["eodag:status_link"],
+            url=asset["eodag:status_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=5,
@@ -2404,14 +2405,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             },
         }
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
-        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
-        self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+            "eodag:status_link": "http://somewhere/order-status",
+            "eodag:search_link": "http://somewhere/search-again",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2437,12 +2437,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 ),
             )
 
-            plugin._order_status(self.product, auth=auth)
+            plugin._order_status(asset, auth=auth)
 
-            self.assertEqual(
-                self.product.properties["eodag:download_link"],
-                "http://new-download-link",
-            )
+            self.assertEqual(asset["href"], "http://new-download-link")
+            self.assertEqual(asset["eodag:order_status"], "great-success")
             self.assertEqual(len(responses.calls), 2)
 
         run()
@@ -2467,14 +2465,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             },
         }
-        self.product.properties["eodag:order_link"] = (
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download"
-        )
-        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
-        self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
-        self.product.properties["eodag:download_link"] = (
-            "https://copernicus.nci.org.au/dummy"
-        )
+        self.product.assets["download_link"] = {
+            "href": "https://copernicus.nci.org.au/dummy",
+            "eodag:order_link": "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+            "eodag:status_link": "http://somewhere/order-status",
+            "eodag:search_link": "http://somewhere/search-again",
+        }
+        asset = self.product.assets["download_link"]
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2495,15 +2492,84 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
             if error_code == 500:
                 with self.assertRaises(DownloadError) as context:
-                    plugin._order_status(self.product, auth=auth)
+                    plugin._order_status(asset, auth=auth)
             if error_code == 400:
                 with self.assertRaises(ValidationError) as context:
-                    plugin._order_status(self.product, auth=auth)
+                    plugin._order_status(asset, auth=auth)
             self.assertIn("order status could not be checked", str(context.exception))
             self.assertEqual(len(responses.calls), 2)
 
         run(error_code=500)
         run(error_code=400)
+
+    def test_plugins_download_http_update_from_order(self):
+        """HTTPDownload._update_from_order() must store order fields on the asset"""
+        self.product.assets.update(
+            {
+                "download_link": {"eodag:order_link": "http://somewhere/order"},
+                "foo": {"eodag:order_link": "http://somewhere/order-foo"},
+            }
+        )
+        HTTPDownload._update_from_order(
+            self.product.assets["download_link"],
+            {
+                "eodag:order_id": "123",
+                "eodag:status_link": "http://somewhere/status",
+                "eodag:download_link": "http://somewhere/download",
+                "order:date": "2026-01-01",
+                "_private": "skipped",
+                "created": "2026-01-02",
+            },
+        )
+        download_link = self.product.assets["download_link"]
+        self.assertEqual(download_link["order:id"], "123")
+        self.assertEqual(download_link["eodag:status_link"], "http://somewhere/status")
+        self.assertEqual(download_link["href"], "http://somewhere/download")
+        self.assertEqual(download_link["order:date"], "2026-01-01")
+        self.assertNotIn("_private", download_link)
+        self.assertEqual(self.product.properties["created"], "2026-01-02")
+        self.assertEqual(self.product.location, "http://somewhere/download")
+
+        # non download_link asset does not change product location
+        HTTPDownload._update_from_order(
+            self.product.assets["foo"],
+            {"eodag:download_link": "http://somewhere/download-foo"},
+        )
+        self.assertEqual(
+            self.product.assets["foo"]["href"], "http://somewhere/download-foo"
+        )
+        self.assertEqual(self.product.location, "http://somewhere/download")
+
+    def test_plugins_download_http_order_assets(self):
+        """HTTPDownload.order() must order matching assets that are not online"""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.update(
+            {
+                "download_link": {"eodag:order_link": "http://somewhere/order"},
+                "foo": {"eodag:order_link": "http://somewhere/order-foo"},
+                "online": {
+                    "href": "http://somewhere/online",
+                    "order:status": ONLINE_STATUS,
+                },
+            }
+        )
+
+        def order(asset, auth=None):
+            asset["order:status"] = ONLINE_STATUS
+
+        with mock.patch.object(
+            plugin, "_order", autospec=True, side_effect=order
+        ) as mock_order:
+            plugin.order(self.product, wait=0.001 / 60, timeout=0.2 / 60, asset="foo")
+            mock_order.assert_called_once_with(
+                asset=self.product.assets["foo"], auth=None
+            )
+
+            mock_order.reset_mock()
+            plugin.order(self.product, wait=0.001 / 60, timeout=0.2 / 60)
+            mock_order.assert_called_once_with(
+                asset=self.product.assets["download_link"], auth=None
+            )
 
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):

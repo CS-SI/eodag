@@ -15,9 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import tempfile
 import unittest
 
-from tests.context import Asset, AssetsDict, mock
+from tests.context import (
+    OFFLINE_STATUS,
+    ONLINE_STATUS,
+    Asset,
+    AssetsDict,
+    EOProduct,
+    mock,
+    path_to_uri,
+)
 
 
 class CustomAsset(Asset):
@@ -103,3 +113,103 @@ class TestAssetsDict(unittest.TestCase):
 
         self.assertEqual(list(assets), ["download_link", "quicklook", "thumbnail"])
         self.assertTrue(all("_internal" not in asset for asset in assets.values()))
+
+
+class TestAssetLocationAndOrder(unittest.TestCase):
+    def setUp(self):
+        self.product = EOProduct("foo", {"id": "bar", "geometry": "POINT (0 0)"})
+        self.product.downloader = mock.Mock()
+        self.product.downloader_auth = mock.Mock()
+
+    def test_asset_locations_from_stac_fields(self):
+        """Asset locations must be read from and written to href and file:local_path"""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "foo")
+        self.product.assets["foo"] = {"href": "http://somewhere/foo"}
+        asset = self.product.assets["foo"]
+        self.assertEqual(asset.remote_location, "http://somewhere/foo")
+        self.assertEqual(asset.location, "http://somewhere/foo")
+
+        asset.location = path_to_uri(local_path)
+        self.assertEqual(asset["file:local_path"], local_path)
+        self.assertEqual(asset.location, path_to_uri(local_path))
+        self.assertEqual(asset.remote_location, "http://somewhere/foo")
+
+        asset.remote_location = "http://elsewhere/foo"
+        self.assertEqual(asset["href"], "http://elsewhere/foo")
+
+    def test_product_locations_proxy_download_link_asset(self):
+        """EOProduct locations must be proxied to the download_link asset"""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "dl")
+        other_path = os.path.join(temp_dir.name, "other")
+        self.assertEqual(self.product.location, "")
+        self.product.assets["download_link"] = {"href": "http://somewhere/dl"}
+        self.assertEqual(self.product.remote_location, "http://somewhere/dl")
+        self.assertEqual(self.product.location, "http://somewhere/dl")
+
+        self.product.remote_location = "http://elsewhere/dl"
+        self.assertEqual(
+            self.product.assets["download_link"]["href"], "http://elsewhere/dl"
+        )
+
+        self.product.assets["download_link"]["file:local_path"] = local_path
+        self.assertEqual(self.product.location, path_to_uri(local_path))
+
+        self.product.location = path_to_uri(other_path)
+        self.assertEqual(self.product.location, path_to_uri(other_path))
+        self.assertEqual(self.product.remote_location, "http://elsewhere/dl")
+
+    def test_asset_order(self):
+        """Only assets that are not online must be ordered"""
+        self.product.assets.update(
+            {
+                "download_link": {"eodag:order_link": "http://somewhere/order"},
+                "online": {
+                    "href": "http://somewhere/online",
+                    "order:status": ONLINE_STATUS,
+                },
+                "no_status": {"href": "http://somewhere/no_status"},
+            }
+        )
+        self.assertEqual(
+            self.product.assets["download_link"]["order:status"], OFFLINE_STATUS
+        )
+
+        self.product.order(wait=1, timeout=2)
+
+        self.product.downloader.order.assert_called_once_with(
+            self.product,
+            self.product.downloader_auth.authenticate.return_value,
+            wait=1,
+            timeout=2,
+            asset="download_link",
+        )
+
+    def test_asset_order_errors(self):
+        """Asset order must fail without a downloader supporting it"""
+        self.product.assets["foo"] = {"eodag:order_link": "http://somewhere/order"}
+        self.product.downloader = mock.Mock(spec=[])
+        with self.assertRaises(NotImplementedError):
+            self.product.assets["foo"].order()
+        self.product.downloader = None
+        with self.assertRaises(RuntimeError):
+            self.product.assets["foo"].order()
+
+    def test_register_downloader_resolves_assets(self):
+        """register_downloader must resolve asset href and eodag:order_link"""
+        self.product.assets.update(
+            {
+                "foo": {"href": "%(base_uri)s/foo"},
+                "bar": {"eodag:order_link": "%(base_uri)s/order"},
+            }
+        )
+        downloader = mock.Mock()
+        downloader.config = mock.Mock(base_uri="http://somewhere")
+        self.product.register_downloader(downloader, None)
+        self.assertEqual(self.product.assets["foo"]["href"], "http://somewhere/foo")
+        self.assertEqual(
+            self.product.assets["bar"]["eodag:order_link"], "http://somewhere/order"
+        )
