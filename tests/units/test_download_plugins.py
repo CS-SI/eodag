@@ -296,7 +296,6 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
     def test_plugins_download_base_finalize_extract_flat_archive(self):
         """Download._finalize must keep all files of a flat archive when archive_depth > 1."""
         plugin = self.get_download_plugin(self.product)
-        self.assertEqual(plugin.config.archive_depth, 2)
 
         with TemporaryDirectory() as output_dir:
             arch_path = Path(output_dir) / "FOO.zip"
@@ -304,7 +303,8 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                 zfile.writestr("EOPMetadata.xml", "metadata")
                 zfile.writestr("FOO.nat", "data")
 
-            plugin._finalize(str(arch_path), output_dir=output_dir, extract=True)
+            with mock.patch.object(plugin.config, "archive_depth", 2, create=True):
+                plugin._finalize(str(arch_path), output_dir=output_dir, extract=True)
 
             self.assertEqual(
                 sorted(os.listdir(Path(output_dir) / "FOO")),
@@ -321,7 +321,8 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                 zfile.writestr("FOO.SAFE/manifest.safe", "manifest")
                 zfile.writestr("FOO.SAFE/measurement/band.tif", "data")
 
-            plugin._finalize(str(arch_path), output_dir=output_dir, extract=True)
+            with mock.patch.object(plugin.config, "archive_depth", 2, create=True):
+                plugin._finalize(str(arch_path), output_dir=output_dir, extract=True)
 
             self.assertEqual(
                 sorted(os.listdir(Path(output_dir) / "FOO")),
