@@ -30,13 +30,18 @@ from unittest import mock
 
 import responses
 from concurrent.futures import ThreadPoolExecutor
+from requests import Response
+from requests.exceptions import ConnectionError, Timeout
 from requests.structures import CaseInsensitiveDict
 
+from eodag.api.product.metadata_mapping import FAILED_STATUS, STAGING_STATUS
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
+    AuthenticationError,
     DownloadError,
     MisconfiguredError,
     QuotaExceededError,
+    TimeOutError,
     ValidationError,
 )
 from tests import TEST_RESOURCES_PATH
@@ -1897,6 +1902,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         with self.assertRaises(ValidationError) as context:
             plugin._order(asset, auth=auth)
         self.assertIn("could not be ordered", str(context.exception))
+        self.assertEqual(asset["order:status"], FAILED_STATUS)
 
         mock_request.assert_called_once_with(
             method="GET",
@@ -1978,11 +1984,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order_status() must request status using eodag:status_link."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
+            "asset_mapping": {
+                "_order_percent": "$.json.progress_percentage",
+                "_order_status": "$.json.that",
+            },
             "metadata_mapping": {
-                "eodag:order_percent": "$.json.progress_percentage",
                 "that": "$.json.that",
             },
-            "error": {"that": "failed"},
+            "error": {"_order_status": "failed"},
         }
         self.product.assets["download_link"] = {
             "href": "https://copernicus.nci.org.au/dummy",
@@ -2008,7 +2017,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             with self.assertRaises(DownloadError):
                 plugin._order_status(asset, auth=auth)
 
-            self.assertEqual(asset["eodag:order_percent"], 50)
+            self.assertEqual(asset["order:status"], FAILED_STATUS)
+            self.assertNotIn("_order_percent", asset)
+            self.assertNotIn("_order_status", asset)
+            self.assertNotIn("eodag:order_percent", asset)
+            self.assertNotIn("eodag:order_status", asset)
             self.assertEqual(self.product.properties["that"], "failed")
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
@@ -2028,8 +2041,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     "order_status": {
                         "success": {"http_code": 200},
                         "on_success": {
-                            "metadata_mapping": {
-                                "eodag:download_link": "$.headers.location",
+                            "asset_mapping": {
+                                "href": "$.headers.location",
                             },
                         },
                     },
@@ -2058,6 +2071,83 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(asset["order:status"], ONLINE_STATUS)
         self.assertEqual(self.product.remote_location, "http://somewhere/download")
         response.json.assert_not_called()
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order_success_body_mappings(self, mock_request):
+        """Either success mapping can require a GET after HEAD."""
+        for href_mapping, published_mapping in (
+            ("$.json.href", "$.headers.Finished"),
+            ("$.headers.Location", "{$.json.finished#to_iso_utc_datetime}"),
+        ):
+            with self.subTest(href=href_mapping, published=published_mapping):
+                on_success = {
+                    "asset_mapping": {
+                        "href": href_mapping,
+                        "custom:field": "{published}",
+                    },
+                    "metadata_mapping": {"published": published_mapping},
+                }
+                plugin = HTTPDownload(
+                    self.product.provider,
+                    PluginConfig.from_mapping(
+                        {
+                            "type": "HTTPDownload",
+                            "order_status": {
+                                "asset_mapping": {"order:date": "$.json.created"},
+                                "metadata_mapping": {"created": "$.json.created"},
+                                "success": {"http_code": 200},
+                                "on_success": on_success,
+                            },
+                        }
+                    ),
+                )
+                self.product.assets.clear()
+                self.product.assets["download_link"] = {
+                    "href": "https://example.test/pending",
+                    "eodag:status_link": "https://example.test/status",
+                }
+                asset = self.product.assets["download_link"]
+                head_response = mock.Mock(status_code=200)
+                head_response.json.side_effect = ValueError("empty HEAD response")
+                get_response = mock.Mock(
+                    status_code=200,
+                    headers=CaseInsensitiveDict(
+                        {
+                            "Content-Type": "application/json",
+                            "Location": "https://example.test/download",
+                            "Finished": "2026-01-02T00:00:00.000Z",
+                        }
+                    ),
+                )
+                get_response.json.return_value = {
+                    "href": "https://example.test/download",
+                    "created": "2026-01-01",
+                    "finished": "2026-01-02",
+                }
+                mock_request.reset_mock()
+                mock_request.side_effect = [head_response, get_response]
+
+                plugin._order_status(asset)
+
+                self.assertEqual(
+                    [
+                        request.kwargs["method"]
+                        for request in mock_request.call_args_list
+                    ],
+                    ["HEAD", "GET"],
+                )
+                head_response.json.assert_not_called()
+                self.assertEqual(asset["href"], "https://example.test/download")
+                self.assertEqual(asset["order:date"], "2026-01-01")
+                self.assertEqual(self.product.properties["created"], "2026-01-01")
+                self.assertEqual(
+                    self.product.properties["published"], "2026-01-02T00:00:00.000Z"
+                )
+                self.assertEqual(
+                    asset["custom:field"], self.product.properties["published"]
+                )
+                self.assertNotIn("published", asset)
+                self.assertNotIn("order:date", self.product.properties)
 
     @mock.patch(
         "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
@@ -2145,15 +2235,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order_status() must search again after success if needed"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
-            "metadata_mapping": {"eodag:order_status": "$.json.status"},
-            "success": {"eodag:order_status": "great-success"},
+            "asset_mapping": {"_order_status": "$.json.status"},
+            "success": {"_order_status": "great-success"},
             "on_success": {
                 "need_search": True,
                 "result_type": "xml",
                 "results_entry": "//entry",
-                "metadata_mapping": {
-                    "eodag:download_link": "foo/text()",
+                "asset_mapping": {
+                    "href": "foo/text()",
                 },
+                "metadata_mapping": {"published": "bar/text()"},
             },
         }
         self.product.assets["download_link"] = {
@@ -2191,7 +2282,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             plugin._order_status(asset, auth=auth)
 
             self.assertEqual(asset["href"], "http://new-download-link")
-            self.assertEqual(asset["eodag:order_status"], "great-success")
+            self.assertEqual(asset["order:status"], ONLINE_STATUS)
+            self.assertNotIn("_order_status", asset)
+            self.assertNotIn("eodag:order_status", asset)
+            self.assertEqual(self.product.properties["published"], "something else")
+            self.assertNotIn("published", asset)
             self.assertEqual(len(responses.calls), 2)
 
         run()
@@ -2205,14 +2300,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order_status() must raise an error if the search request after success failed."""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
-            "metadata_mapping": {"eodag:order_status": "$.json.status"},
-            "success": {"eodag:order_status": "great-success"},
+            "asset_mapping": {"_order_status": "$.json.status"},
+            "success": {"_order_status": "great-success"},
             "on_success": {
                 "need_search": True,
                 "result_type": "xml",
                 "results_entry": "//entry",
-                "metadata_mapping": {
-                    "eodag:download_link": "foo/text()",
+                "asset_mapping": {
+                    "href": "foo/text()",
                 },
             },
         }
@@ -2248,13 +2343,171 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 with self.assertRaises(ValidationError) as context:
                     plugin._order_status(asset, auth=auth)
             self.assertIn("order status could not be checked", str(context.exception))
+            self.assertEqual(asset["order:status"], "ordered")
             self.assertEqual(len(responses.calls), 2)
 
         run(error_code=500)
         run(error_code=400)
 
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order_retryable_errors(self, mock_request):
+        """Authentication, quota and transport errors never mark an order failed."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets["download_link"] = {
+            "href": "https://example.test/pending",
+            "eodag:order_link": "https://example.test/order",
+            "eodag:status_link": "https://example.test/status",
+        }
+        asset = self.product.assets["download_link"]
+        with mock.patch.multiple(
+            plugin.config,
+            order_method="GET",
+            auth_error_code=[401, 403],
+            order_status={},
+            create=True,
+        ):
+            for operation in (plugin._order, plugin._order_status):
+                for error_code in (401, 403, 429, 500):
+                    with self.subTest(operation=operation.__name__, code=error_code):
+                        response = Response()
+                        response.status_code = error_code
+                        response._content = b"provider error"
+                        mock_request.side_effect = None
+                        mock_request.return_value = response
+                        asset["order:status"] = STAGING_STATUS
+                        expected_error = (
+                            AuthenticationError
+                            if operation == plugin._order and error_code in (401, 403)
+                            else (
+                                QuotaExceededError
+                                if operation == plugin._order and error_code == 429
+                                else DownloadError
+                            )
+                        )
+                        with self.assertRaises(expected_error):
+                            operation(asset)
+                        self.assertEqual(asset["order:status"], STAGING_STATUS)
+                for error, expected_error in (
+                    (Timeout("timed out"), TimeOutError),
+                    (
+                        ConnectionError("connection lost"),
+                        (ConnectionError, DownloadError),
+                    ),
+                ):
+                    with self.subTest(operation=operation.__name__, error=type(error)):
+                        mock_request.side_effect = error
+                        asset["order:status"] = STAGING_STATUS
+                        with self.assertRaises(expected_error):
+                            operation(asset)
+                        self.assertEqual(asset["order:status"], STAGING_STATUS)
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order_success_parsing_failed(self, mock_request):
+        """Invalid success payloads and non-singleton XML results mark assets failed."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets["download_link"] = {
+            "href": "https://example.test/pending",
+            "eodag:status_link": "https://example.test/status",
+            "eodag:search_link": "https://example.test/search",
+        }
+        asset = self.product.assets["download_link"]
+        for result_type, content, asset_mapping in (
+            ("xml", b"<feed/>", {"href": "foo/text()"}),
+            ("xml", b"<feed><entry/><entry/></feed>", {"href": "foo/text()"}),
+            ("xml", b"not XML", {"href": "foo/text()"}),
+            ("json", b"not JSON", {"href": "$.json.href"}),
+            ("json", b"not JSON", {}),
+        ):
+            with self.subTest(
+                result_type=result_type, content=content, mapping=asset_mapping
+            ):
+                on_success = {
+                    "need_search": True,
+                    "result_type": result_type,
+                    "asset_mapping": asset_mapping,
+                }
+                if result_type == "xml":
+                    on_success["results_entry"] = "//entry"
+                status_config = {
+                    "asset_mapping": {"_order_status": "$.json.status"},
+                    "success": {"_order_status": "done"},
+                    "on_success": on_success,
+                }
+                status_response = mock.Mock(status_code=200, headers={})
+                status_response.json.return_value = {"status": "done"}
+                success_response = mock.Mock(
+                    status_code=200,
+                    content=content,
+                    headers={"Content-Type": "application/json"},
+                )
+                success_response.json.side_effect = ValueError("invalid JSON")
+                mock_request.side_effect = [status_response, success_response]
+                asset["order:status"] = STAGING_STATUS
+                with mock.patch.multiple(
+                    plugin.config,
+                    order_status=status_config,
+                    order_on_response={"asset_mapping": {"order:id": "$.json.id"}},
+                    create=True,
+                ):
+                    with self.assertRaisesRegex(
+                        DownloadError, "Please search and download"
+                    ):
+                        plugin._order_status(asset)
+                self.assertEqual(asset["order:status"], FAILED_STATUS)
+                self.assertNotIn("_order_status", asset)
+
+    def test_plugins_download_http_order_request_states(self):
+        """Only orderable assets submit orders; failed assets can still poll status."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets["download_link"] = {
+            "href": "https://example.test/pending",
+            "eodag:order_link": "https://example.test/order",
+            "eodag:status_link": "https://example.test/status",
+        }
+        asset = self.product.assets["download_link"]
+        for state in (OFFLINE_STATUS, STAGING_STATUS, FAILED_STATUS, ONLINE_STATUS):
+            with self.subTest(state=state):
+                asset["order:status"] = state
+                with (
+                    mock.patch.object(plugin, "_order") as order,
+                    mock.patch.object(plugin, "_order_status") as status,
+                ):
+                    if state == FAILED_STATUS:
+                        status.side_effect = DownloadError("provider failure")
+                        with self.assertRaisesRegex(DownloadError, "provider failure"):
+                            plugin._order_request(asset, None)
+                    else:
+                        plugin._order_request(asset, None)
+                    self.assertEqual(order.call_count, int(state == OFFLINE_STATUS))
+                    self.assertEqual(status.call_count, int(state != ONLINE_STATUS))
+
+    @mock.patch("eodag.plugins.download.http.requests.Session", autospec=True)
+    def test_plugins_download_http_stream_ordered_status(self, mock_session):
+        """An HTTP ordered response stores the STAC Order status on the asset."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets["download_link"] = {
+            "href": "https://example.test/download",
+            "order:status": STAGING_STATUS,
+        }
+        asset = self.product.assets["download_link"]
+        mock_session.return_value.request.return_value.status_code = 202
+        with (
+            mock.patch.object(
+                plugin.config,
+                "order_status",
+                {"ordered": {"http_code": 202}},
+                create=True,
+            ),
+            mock.patch.object(
+                plugin, "_process_exception", side_effect=NotAvailableError("ordered")
+            ),
+        ):
+            with self.assertRaises(NotAvailableError):
+                plugin._raw_stream_download(self.product, asset)
+        self.assertEqual(asset["order:status"], STAGING_STATUS)
+
     def test_plugins_download_http_update_from_order(self):
-        """HTTPDownload._update_from_order() must store order fields on the asset"""
+        """Order fields are stored according to their mapping, not their names."""
         self.product.assets.update(
             {
                 "download_link": {"eodag:order_link": "http://somewhere/order"},
@@ -2264,12 +2517,19 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         HTTPDownload._update_from_order(
             self.product.assets["download_link"],
             {
-                "eodag:order_id": "123",
+                "order:id": 123,
                 "eodag:status_link": "http://somewhere/status",
-                "eodag:download_link": "http://somewhere/download",
+                "href": "http://somewhere/download",
                 "order:date": "2026-01-01",
+                "custom:field": "asset value",
                 "_private": "skipped",
+                "missing:asset": NOT_AVAILABLE,
+            },
+            {
                 "created": "2026-01-02",
+                "eodag:custom": "product value",
+                "_private": "skipped",
+                "missing:product": NOT_AVAILABLE,
             },
         )
         download_link = self.product.assets["download_link"]
@@ -2277,19 +2537,169 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(download_link["eodag:status_link"], "http://somewhere/status")
         self.assertEqual(download_link["href"], "http://somewhere/download")
         self.assertEqual(download_link["order:date"], "2026-01-01")
+        self.assertEqual(download_link["custom:field"], "asset value")
         self.assertNotIn("_private", download_link)
+        self.assertNotIn("missing:asset", download_link)
         self.assertEqual(self.product.properties["created"], "2026-01-02")
+        self.assertEqual(self.product.properties["eodag:custom"], "product value")
+        self.assertNotIn("_private", self.product.properties)
+        self.assertNotIn("missing:product", self.product.properties)
         self.assertEqual(self.product.location, "http://somewhere/download")
 
         # non download_link asset does not change product location
         HTTPDownload._update_from_order(
             self.product.assets["foo"],
-            {"eodag:download_link": "http://somewhere/download-foo"},
+            {"href": "http://somewhere/download-foo"},
+            {},
         )
         self.assertEqual(
             self.product.assets["foo"]["href"], "http://somewhere/download-foo"
         )
         self.assertEqual(self.product.location, "http://somewhere/download")
+
+    def test_plugins_download_http_order_response_mappings(self):
+        """Order mappings share placeholders but update separate destinations."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets["download_link"] = {"href": "https://example.test/pending"}
+        config = {
+            "asset_mapping": {
+                "order:id": "$.json.jobID",
+                "href": "{_base}/{order:id}?published={published}",
+                "custom:field": "$.json.asset_field",
+            },
+            "metadata_mapping": {
+                "published": "$.json.date",
+                "_base": "$.json.base",
+                "eodag:custom": "$.json.product_field",
+            },
+        }
+        response = mock.Mock(headers={})
+        response.json.return_value = {
+            "jobID": 123,
+            "base": "https://example.test/download",
+            "date": "2026-01-01",
+            "asset_field": "asset value",
+            "product_field": "product value",
+        }
+        asset = self.product.assets["download_link"]
+        with mock.patch.object(plugin.config, "order_on_response", config, create=True):
+            self.assertEqual(
+                plugin.order_response_process(response, asset),
+                response.json.return_value,
+            )
+        self.assertEqual(asset["order:id"], "123")
+        self.assertEqual(
+            asset["href"], "https://example.test/download/123?published=2026-01-01"
+        )
+        self.assertEqual(asset["custom:field"], "asset value")
+        self.assertEqual(self.product.properties["published"], "2026-01-01")
+        self.assertEqual(self.product.properties["eodag:custom"], "product value")
+        self.assertNotIn("published", asset)
+        self.assertNotIn("custom:field", self.product.properties)
+        self.assertNotIn("_base", self.product.properties)
+
+    def test_plugins_download_http_provider_order_mappings(self):
+        """Provider order mappings resolve asset fields without product leakage."""
+        configs = load_provider_configs()
+        for provider, status_link in (
+            (
+                "cop_ads",
+                "https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/123?request=true",
+            ),
+            (
+                "cop_cds",
+                "https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123?request=true",
+            ),
+            (
+                "cop_ewds",
+                "https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/123?request=true",
+            ),
+            ("dedl", "https://example.test/order/123"),
+            (
+                "dedt_lumi",
+                "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/a1b2c3",
+            ),
+            (
+                "dedt_mn5",
+                "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/a1b2c3",
+            ),
+            (
+                "dedt_leonardo",
+                "https://polytope.leonardo.apps.dte.destination-earth.eu/api/v1/requests/a1b2c3",
+            ),
+            ("meteoblue", "http://my.meteoblue.com/queue/status/123"),
+            (
+                "wekeo_main",
+                "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id=123",
+            ),
+            (
+                "wekeo_ecmwf",
+                "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id=123",
+            ),
+            (
+                "wekeo_cmems",
+                "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id=123",
+            ),
+        ):
+            with self.subTest(provider=provider):
+                plugin = HTTPDownload(provider, configs[provider].download)
+                product = EOProduct(
+                    provider, {"id": "product", "geometry": "POINT (0 0)"}
+                )
+                product.assets["ordered"] = {"href": "https://example.test/pending"}
+                asset = product.assets["ordered"]
+                response = mock.Mock(
+                    headers={"Location": "https://example.test/jobs/a1b2c3"}
+                )
+                response.json.return_value = {
+                    "jobID": 123,
+                    "download_id": 123,
+                    "id": 123,
+                    "links": [
+                        {"rel": "self", "href": "https://example.test/order/123"}
+                    ],
+                    "properties": {"order:status": OFFLINE_STATUS},
+                }
+
+                plugin.order_response_process(response, asset)
+
+                self.assertEqual(asset["eodag:status_link"], status_link)
+                if provider == "dedl":
+                    self.assertEqual(asset["order:status"], OFFLINE_STATUS)
+                self.assertNotIn("eodag:order_status", asset)
+                if provider != "dedl":
+                    self.assertEqual(
+                        asset["order:id"],
+                        "a1b2c3" if provider.startswith("dedt_") else "123",
+                    )
+                self.assertFalse(any(key.startswith("_") for key in asset))
+                self.assertNotIn("order:id", product.properties)
+                self.assertNotIn("eodag:status_link", product.properties)
+                for stage in (
+                    plugin.config.order_on_response,
+                    plugin.config.order_status,
+                    plugin.config.order_status.get("on_success", {}),
+                ):
+                    self.assertNotIn(
+                        "eodag:download_link", stage.get("asset_mapping", {})
+                    )
+                    self.assertNotIn("eodag:order_id", stage.get("asset_mapping", {}))
+                    self.assertNotIn(
+                        "eodag:order_status", stage.get("asset_mapping", {})
+                    )
+                    self.assertNotIn(
+                        "eodag:order_percent", stage.get("asset_mapping", {})
+                    )
+                    self.assertLessEqual(
+                        set(stage.get("metadata_mapping", {})),
+                        {
+                            "created",
+                            "published",
+                            "updated",
+                            "ecmwf:dataset",
+                            "eodag:request_params",
+                        },
+                    )
 
     def test_plugins_download_http_order_assets(self):
         """HTTPDownload.order() must order matching assets that are not online"""

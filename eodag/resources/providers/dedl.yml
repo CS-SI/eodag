@@ -69,19 +69,19 @@ dedl:
     order_enabled: True
     order_method: POST
     order_on_response:
-      metadata_mapping:
+      asset_mapping:
         eodag:status_link: '$.json.links[?rel=="self"].href'
-        eodag:order_status: $.json.properties."order:status"
+        order:status: $.json.properties."order:status"
     order_status:
       request:
         method: GET
-      metadata_mapping:
+      asset_mapping:
         order:status: $.json.properties."order:status"
       success:
         http_code: 200
       on_success:
-        metadata_mapping:
-          eodag:download_link: '$.json.assets.downloadLink.href'
+        asset_mapping:
+          href: '$.json.assets.downloadLink.href'
           order:status: $.json.properties."order:status"
   auth:
     type: OIDCTokenExchangeAuth

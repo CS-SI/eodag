@@ -4329,13 +4329,17 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         product.search_kwargs = {"id": "123"}
         product.collection = "ERA5_SL"
         downloader = mock.Mock()
-        downloader.config.order_on_response = {"metadata_mapping": {}}
+        downloader.config.order_on_response = {"asset_mapping": {}}
         product.downloader = downloader
 
         self.assertIs(_check_id(product), product)
         downloader._order_status.assert_not_called()
 
-        downloader.config.order_on_response = {"metadata_mapping": {"foo": "bar"}}
+        downloader.config.order_on_response = {
+            "asset_mapping": {
+                "eodag:status_link": "https://example.test/jobs/{order:id}",
+            }
+        }
         downloader._order_status.side_effect = DownloadError(
             "order status could not be checked"
         )
@@ -4346,6 +4350,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIn(
             "Requested data is not available on cop_ads (123).",
             context.exception.message,
+        )
+        downloader._update_from_order.assert_called_once_with(
+            product.assets["download_link"],
+            {"eodag:status_link": "https://example.test/jobs/123", "order:id": 123},
+            {},
         )
 
         downloader._order_status.side_effect = RuntimeError("boom")
@@ -4498,7 +4507,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertEqual(product.collection, "ERA5_SL")
         download_link = product.assets["download_link"]
         self.assertEqual(download_link["order:id"], "123")
-        self.assertEqual(download_link["eodag:order_status"], "accepted")
+        self.assertNotIn("eodag:order_status", download_link)
+        self.assertNotIn("_order_status", download_link)
         self.assertEqual(download_link["order:status"], "ordered")
         self.assertTrue(
             download_link["eodag:status_link"].endswith("/jobs/123?request=true")
