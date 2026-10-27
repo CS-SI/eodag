@@ -18,6 +18,7 @@
 import os
 import tempfile
 import unittest
+import warnings
 
 from tests.context import (
     OFFLINE_STATUS,
@@ -145,22 +146,104 @@ class TestAssetLocationAndOrder(unittest.TestCase):
         self.addCleanup(temp_dir.cleanup)
         local_path = os.path.join(temp_dir.name, "dl")
         other_path = os.path.join(temp_dir.name, "other")
-        self.assertEqual(self.product.location, "")
-        self.product.assets["download_link"] = {"href": "http://somewhere/dl"}
-        self.assertEqual(self.product.remote_location, "http://somewhere/dl")
-        self.assertEqual(self.product.location, "http://somewhere/dl")
 
-        self.product.remote_location = "http://elsewhere/dl"
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertIsNone(self.product.location)
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.remote_location"):
+            self.assertIsNone(self.product.remote_location)
+        self.product.assets["download_link"] = {"href": "http://somewhere/dl"}
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.remote_location"):
+            self.assertEqual(self.product.remote_location, "http://somewhere/dl")
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertEqual(self.product.location, "http://somewhere/dl")
+
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.remote_location"):
+            self.product.remote_location = "http://elsewhere/dl"
         self.assertEqual(
             self.product.assets["download_link"]["href"], "http://elsewhere/dl"
         )
 
         self.product.assets["download_link"]["file:local_path"] = local_path
-        self.assertEqual(self.product.location, path_to_uri(local_path))
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertEqual(self.product.location, path_to_uri(local_path))
 
-        self.product.location = path_to_uri(other_path)
-        self.assertEqual(self.product.location, path_to_uri(other_path))
-        self.assertEqual(self.product.remote_location, "http://elsewhere/dl")
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.product.location = path_to_uri(other_path)
+        self.assertEqual(
+            self.product.assets["download_link"]["file:local_path"], other_path
+        )
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertEqual(self.product.location, path_to_uri(other_path))
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.remote_location"):
+            self.assertEqual(self.product.remote_location, "http://elsewhere/dl")
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.product.location = "http://elsewhere/new"
+        self.assertNotIn("file:local_path", self.product.assets["download_link"])
+        self.assertEqual(
+            self.product.assets["download_link"]["href"], "http://elsewhere/new"
+        )
+        self.assertNotIn("_location", vars(self.product))
+
+    def test_product_location_setters_create_asset(self):
+        """Deprecated setters create a download_link asset when one is missing."""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "local-product")
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.product.location = path_to_uri(local_path)
+        self.assertEqual(
+            self.product.assets["download_link"]["file:local_path"],
+            local_path,
+        )
+        self.product.assets.clear()
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.remote_location"):
+            self.product.remote_location = "https://example.test/product"
+        self.assertEqual(
+            self.product.assets["download_link"]["href"], "https://example.test/product"
+        )
+        self.product.assets.clear()
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.product.location = ""
+        self.assertNotIn("download_link", self.product.assets)
+
+    def test_product_locations_without_href(self):
+        """Order-only assets have no product location until a URL is available."""
+        self.product.assets["download_link"] = {
+            "eodag:order_link": "https://example.test/order"
+        }
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertIsNone(self.product.location)
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.remote_location"):
+            self.assertIsNone(self.product.remote_location)
+
+    def test_asset_locations_roundtrip_without_product_proxies(self):
+        """Storage options and serialization use asset paths without deprecation warnings."""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "local-product")
+        self.product.assets["download_link"] = {
+            "href": "%(base_uri)s/product",
+            "file:local_path": local_path,
+        }
+        downloader = mock.Mock()
+        downloader.config.base_uri = "https://example.test"
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.product.register_downloader(downloader, None)
+            self.assertEqual(
+                self.product.get_storage_options(),
+                {"path": path_to_uri(local_path)},
+            )
+            serialized = self.product.as_dict()
+            restored = EOProduct.from_dict(serialized)
+        self.assertEqual(
+            restored.assets["download_link"]["href"], "https://example.test/product"
+        )
+        self.assertEqual(
+            restored.assets["download_link"]["file:local_path"], local_path
+        )
+        self.assertNotIn("eodag:download_link", serialized["properties"])
+        self.assertNotIn("_location", vars(restored))
 
     def test_asset_order(self):
         """Only assets that are not online must be ordered"""
