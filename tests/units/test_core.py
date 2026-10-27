@@ -5126,26 +5126,17 @@ class TestCoreDownload(TestCoreBase):
     def test_download_local_product(self):
         """download must skip local products"""
         product = EOProduct("dummy", dict(geometry="POINT (0 0)", id="dummy_product"))
+        local_path = Path(self.tmp_home_dir.name) / "some" / "path"
+        local_uri = local_path.as_uri()
 
-        product.location = "file:///some/path"
-        with self.assertLogs(level="INFO") as cm:
-            self.dag.download(product)
-            self.assertIn("Local product detected. Download skipped", str(cm.output))
-
-        product.location = "file:/some/path"
-        with self.assertLogs(level="INFO") as cm:
-            self.dag.download(product)
-            self.assertIn("Local product detected. Download skipped", str(cm.output))
-
-        product.location = "file:///c:/some/path"
-        with self.assertLogs(level="INFO") as cm:
-            self.dag.download(product)
-            self.assertIn("Local product detected. Download skipped", str(cm.output))
-
-        product.location = "file:/c:/some/path"
-        with self.assertLogs(level="INFO") as cm:
-            self.dag.download(product)
-            self.assertIn("Local product detected. Download skipped", str(cm.output))
+        for location in (local_uri, local_uri.replace("file:///", "file:/", 1)):
+            with self.subTest(location=location):
+                product.location = location
+                with self.assertLogs(level="INFO") as cm:
+                    self.assertEqual(self.dag.download(product), str(local_path))
+                self.assertIn(
+                    "Local product detected. Download skipped", str(cm.output)
+                )
 
     @mock.patch("eodag.plugins.download.base.as_completed")
     @mock.patch(
