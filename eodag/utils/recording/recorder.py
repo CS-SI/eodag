@@ -16,6 +16,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Record and replay of EODAG calls: ``search()``, ``search_all()`` and ``download()``.
+
+The three methods of :class:`~eodag.api.core.EODataAccessGateway` are patched at class
+level, so every instance is affected, including those created by the application under
+test.
+
+For ``download()``, eodag always downloads into the *archive directory*, and the patched
+method returns ``<output_dir>/<name>``, a symbolic link to ``<archive_dir>/<name>``
+created on the fly. ``output_dir`` is the one the caller would have got without the
+plugin (the ``output_dir`` keyword, otherwise the downloader configuration). Recorded
+and replayed runs are thus indistinguishable for the caller.
+"""
+
 from __future__ import annotations
 
 import contextvars
@@ -58,27 +71,34 @@ logger = logging.getLogger(__name__)
 
 
 class RecordMode(str, enum.Enum):
-    """Recording mode -- follows `VCR.py semantics
-    <https://vcrpy.readthedocs.io/en/stable/usage.html#record-modes>`_"""
+    """Recording mode, following the `VCR.py record modes
+    <https://vcrpy.readthedocs.io/en/stable/usage.html#record-modes>`_ semantics.
 
-    #: No recording is done. Cassettes will only be replayed.
+    With several cassettes, only the one designated by ``write_to`` is ever written.
+    """
+
+    #: Replay only. A call with no matching entry raises
+    #: :class:`~eodag.utils.recording.errors.NoMatchingRecordError`.
     NONE = "none"
 
-    #: Recording is accepted only once. Existing and non-empty cassettes will be read-only.
+    #: Behaves like :attr:`ALL` if the cassette to write to does not exist yet, like
+    #: :attr:`NONE` otherwise.
     ONCE = "once"
 
-    #: Recording from actual data. All cassettes will be recorded.
+    #: Every call is executed for real and the cassette to write to is rewritten from
+    #: scratch. The other cassettes are ignored (a warning is emitted).
     ALL = "all"
 
-    #: Only new data is recorded. Pre-existing keys are replay only.
+    #: Calls with a matching entry are replayed. Unknown calls are executed for real
+    #: and appended to the cassette to write to.
     NEW_EPISODES = "new_episodes"
 
 
 # --------------------------------------------------------------------------- #
 # Recorder
 # --------------------------------------------------------------------------- #
-#: True while real execution of ``search_all`` : the internal ``search()``
-#: (first page) shall not be registered separately.
+#: ``True`` while ``search_all()`` is actually being executed: the internal
+#: ``search()`` call (first page) must not be recorded separately.
 _PASSTHROUGH: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "eodag_recording_passthrough", default=False
 )
@@ -90,7 +110,7 @@ def _first_component(rel: str) -> str:
 
 def _ensure_symlink(link: Path, target: Path) -> None:
     """Creates ``link -> target``.
-    If ``link`` already exists, we suppose the product has already been downloaded -- unless the
+    If ``link`` already exists, we assume the product has already been downloaded -- unless the
     link is broken, in which case it's recreated.
     """
     if os.path.lexists(link):
@@ -121,13 +141,26 @@ def _default_output_dir(gateway: EODataAccessGateway, product: EOProduct) -> str
         plugin = gateway._plugins_manager.get_download_plugin(product)
         output_dir = plugin.config.output_dir
     except Exception as exc:  # noqa: BLE001
-        logger.debug("output_dir du plugin indisponible (%r)", exc)
+        logger.debug("download plugin output_dir unavailable (%r)", exc)
         output_dir = None
     return output_dir or tempfile.gettempdir()
 
 
 class EodagRecorder:
-    """Test state: cassettes, mode, recording directory, and gateway patch."""
+    """Records or replays EODAG calls for one test.
+
+    Holds the test state: cassettes, mode, archive directory, and gateway patch.
+
+    :param mode: Requested recording mode. ``once`` is resolved at construction, see
+        :attr:`effective_mode`.
+    :param cassettes: Cassette files used by the test.
+    :param archive_dir: Directory where eodag actually downloads products.
+    :param write_to: Cassette to write to. Optional if there is a single cassette,
+        mandatory otherwise whenever recording may happen.
+    :raises EodagRecordingConfigError: if there is no cassette, if ``write_to`` is not
+        one of the cassettes, or if it is missing when required.
+    :raises DuplicateKeyError: if the same key is present in several cassettes.
+    """
 
     def __init__(
         self,
@@ -142,13 +175,13 @@ class EodagRecorder:
         self.cassette_paths = [Path(p).resolve() for p in cassettes]
         if not self.cassette_paths:
             raise EodagRecordingConfigError("At least one cassette is required.")
-        #: Where EOProducts are actually stored and expected
+        #: Directory where eodag actually downloads products, and where replays link to
         self.archive_dir = Path(archive_dir).resolve()
         self._lock = threading.RLock()
         self._dirty = False
         self._patched = False
 
-        #: Path to the cassette that will be written to
+        #: Path to the cassette that is written to (``None`` if it cannot be determined)
         self.write_path = self._resolve_write_path(write_to)
         #: Effective recording mode
         self.effective_mode = self._resolve_effective_mode()
@@ -183,8 +216,9 @@ class EodagRecorder:
             and self.write_path is None
         ):
             raise EodagRecordingConfigError(
-                f"Several cassettes specified in mode {self.mode.value!r}: write_to is "
-                "mandatory (write_to cassette shall be explicitly specified)."
+                "write_to is mandatory when several cassettes are specified in mode "
+                f"{self.mode.value!r}: the cassette to write to must be designated "
+                "explicitly."
             )
         return mode
 
@@ -198,7 +232,7 @@ class EodagRecorder:
             if others:
                 warnings.warn(
                     f"Mode {self.mode.value!r}: cassettes are ignored in replay "
-                    f"(everything is actually executed) : {[str(p) for p in others]}",
+                    f"(every call is executed for real): {[str(p) for p in others]}",
                     EodagRecordingWarning,
                     stacklevel=2,
                 )
@@ -254,20 +288,20 @@ class EodagRecorder:
             ).ratio()
         )
         lines = [
-            f"No recording matches {section}() " f"(mode {self.mode.value!r}).",
-            f"Cassettes : {[str(p) for p in self.cassette_paths]}",
+            f"No recording matches {section}() (mode {self.mode.value!r}).",
+            f"Cassettes: {[str(p) for p in self.cassette_paths]}",
             "Parameters received:",
             json.dumps(got, indent=2, ensure_ascii=False, sort_keys=True),
         ]
         if not candidates:
             lines.append(
-                f"Section {section!r} is empty (empty cassette or not in this call)."
+                f"No {section!r} entry in the cassettes (missing or empty cassette?)."
             )
         for i, cand in enumerate(candidates[:3], 1):
-            lines.append(f"Closest recording #{i} — differences :")
+            lines.append(f"Closest recording #{i} — differences:")
             lines.extend("  " + d for d in _describe_diff(got, cand))
         lines.append(
-            "Launch again with --eodag-record-mode=all (or new_episodes) to register a use case."
+            "Re-run with --eodag-record-mode=all (or new_episodes) to record this call."
         )
         return NoMatchingRecordError("\n".join(lines))
 
@@ -281,15 +315,24 @@ class EodagRecorder:
         replay: Callable[[dict[str, Any]], Any],
     ) -> Any:
         """
-        The method that handles real execution (and recording) or replay.
+        Replays the matching entry, or executes ``real_call`` and records its outcome,
+        according to the effective mode.
 
-        :param section:   Cassette section, but also the method wrapped/mocked
-        :param params:    Actual parameters passed to the method wrapped
-        :param real_call: Actual EODAG fonction wrapped, the one that will get executed
-                          if not in replay.
-        :param encode:    Hook used to encode the result of EODAG execution (i.e. the
-                          result of ``real_call(**param)``
-        :param replay:    Hook that builds the expected result from the cassette content
+        :class:`~eodag.utils.exceptions.RequestError` and
+        :class:`~eodag.utils.exceptions.NotAvailableError` raised by ``real_call`` are
+        recorded and re-raised. Any other exception propagates without being recorded.
+
+        :param section:   Cassette section, which is also the name of the method
+                          wrapped/mocked.
+        :param params:    Actual parameters passed to the wrapped method.
+        :param real_call: Wrapped EODAG function, without arguments, executed if the
+                          call is not replayed.
+        :param encode:    Hook that encodes the result of ``real_call()`` for the
+                          cassette. It can return ``None`` to record nothing.
+        :param replay:    Hook that builds the expected result from the cassette
+                          content.
+        :return: The replayed or actual result.
+        :raises NoMatchingRecordError: in ``none`` mode, if no entry matches.
         """
         key = canonical_key(params)
         if self.effective_mode is not RecordMode.ALL:
@@ -317,8 +360,10 @@ class EodagRecorder:
     # ---- search / search_all ------------------------------------------------ #
     def _make_search_wrapper(self, section: str, original: Callable) -> Callable:
         """
-        Creates :func:`eodag.api.core.EODataAccessGateway.search()` and
-        :func:`eodag.api.core.EODataAccessGateway.search_all()` mock wrappers.
+        Creates the mock wrapper of
+        :func:`eodag.api.core.EODataAccessGateway.search()` or
+        :func:`eodag.api.core.EODataAccessGateway.search_all()`, depending on
+        ``original``.
         """
         recorder = self
 
@@ -329,13 +374,13 @@ class EodagRecorder:
             Replacement for :func:`eodag.api.core.EODataAccessGateway.search()` and
             :func:`eodag.api.core.EODataAccessGateway.search_all()`.
             """
-            logger.debug("Call to search(%s, %s)", args, kwargs)
+            logger.debug("Call to %s(%s, %s)", original.__name__, args, kwargs)
             if _PASSTHROUGH.get():
                 return original(gateway, *args, **kwargs)
             params = bind_passed_params(original, gateway, *args, **kwargs)
 
             def real_call() -> SearchResult:
-                """Actual call to the ``search()`` method."""
+                """Actual call to the original method (``search()`` or ``search_all()``)."""
                 logger.debug(
                     "└─> forwarded to %s(%s, %s)", original.__name__, args, kwargs
                 )
@@ -362,15 +407,22 @@ class EodagRecorder:
         """
         Creates :func:`eodag.api.core.EODataAccessGateway.download()` mock wrapper.
 
+        In every mode, the wrapper returns :file:`<output_dir>/<name>`, a symbolic link
+        to :file:`<archive_dir>/<name>` created on the fly. When really executed,
+        eodag downloads into the archive directory (its ``output_dir`` is replaced), and
+        the product path relative to the archive directory is what gets recorded.
+
         .. note:: About ``output_dir`` resolution:
 
             - EODAG uses ``output_dir`` from ``kwargs``, otherwise
-              ``downloader.config.output_dir``, otherwise system tmpdir.
-            - Returned path is :file:`output_dir/<title sanitisé><output_extension>`.
-              With ``archive_depth`` or extraction, it can be a sub-path
-            - EODAG creates a :file:`.downloaded/<hash>` in ``output_dir`` directory. It
-              will be in the archive.
-            - Default ``output_dir`` is returned by a private API.
+              ``downloader.config.output_dir``, otherwise the system tmpdir.
+            - The returned path is :file:`output_dir/<sanitized title><output_extension>`.
+              With ``archive_depth`` or extraction, it can be a sub-path.
+            - EODAG creates a :file:`.downloaded/<hash>` directory in ``output_dir``.
+              As ``output_dir`` is redirected to the archive directory, it ends up in
+              the archive.
+            - The default ``output_dir`` is read through a private EODAG API, see
+              :func:`_default_output_dir`.
         """
         recorder = self
 
@@ -394,12 +446,12 @@ class EodagRecorder:
                 return original(gateway, product, *args, **real_kwargs)
 
             def encode(path: Any) -> dict[str, Any] | None:
-                """Encodes ``download()`` result in the casette."""
+                """Encodes the ``download()`` result for the cassette."""
                 return recorder._encode_download(path, virtual_dir)
 
             def replay(result: dict[str, Any]) -> str:
                 """
-                Replays an previouly encoded ``download()`` result from the casette.
+                Replays a previously encoded ``download()`` result from the cassette.
                 """
                 logger.debug(
                     "└─> emulated: linking '%s' to '%s'", result["path"], virtual_dir
@@ -409,7 +461,7 @@ class EodagRecorder:
             real_result: dict[str, Any] = {}
 
             def real_and_link() -> str:
-                """Wraps actual downloading, and takes care of symlinks"""
+                """Runs the actual download and keeps the path it returned."""
                 path = real_call()
                 real_result["path"] = path
                 return path
@@ -440,8 +492,8 @@ class EodagRecorder:
         rel = self._relative_to_archive(path)
         if rel is None:
             warnings.warn(
-                f"download() has returned {path!r}, which is outside the recording directory "
-                f"{self.archive_dir} (local product ?) : not recorded.",
+                f"download() returned {path!r}, which is outside of the archive "
+                f"directory {self.archive_dir} (local product?): not recorded.",
                 EodagRecordingWarning,
                 stacklevel=2,
             )
@@ -449,14 +501,14 @@ class EodagRecorder:
         return {"path": rel}
 
     def _materialize(self, rel: str, virtual_dir: Path) -> str:
-        """Creates (if required) the link ``virtual_dir/<x> -> archive/<x>`` and returns
-        ``virtual_dir/<rel>``."""
+        """Creates the link ``virtual_dir/<x> -> archive/<x>`` if required, where ``<x>`` is
+        the first component of ``rel``, and returns ``virtual_dir/<rel>``."""
         first = _first_component(rel)
         target = self.archive_dir / first
         if not target.exists():
             raise EodagRecordingError(
-                f"Record file cannot be found: {target} (cassette or archive "
-                "unsynchronized ; record again with --eodag-record-mode=all)."
+                f"Archived product not found: {target} (cassette and archive directory "
+                "are out of sync; record again with --eodag-record-mode=all)."
             )
         if virtual_dir != self.archive_dir:
             _ensure_symlink(virtual_dir / first, target)
@@ -465,7 +517,12 @@ class EodagRecorder:
     # ---- patch ------------------------------------------------------------- #
     @contextmanager
     def patched(self) -> Iterator["EodagRecorder"]:
-        """Takes care of patching the supported methods."""
+        """Context manager that patches ``search``, ``search_all`` and ``download`` on
+        :class:`~eodag.api.core.EODataAccessGateway` (class level, so every instance is
+        affected), and restores them on exit.
+
+        :raises EodagRecordingError: if the class is already patched.
+        """
         if self._patched or getattr(
             EODataAccessGateway, "_eodag_recording_active", False
         ):
@@ -488,13 +545,23 @@ class EodagRecorder:
                 del cls._eodag_recording_active  # type: ignore[attr-defined]
 
     def finalize(self, save: bool) -> None:
-        """Writes the record cassette if new entries have been added and if test succeeds"""
+        """Writes the cassette to write to if new entries have been added and the test
+        succeeded.
+
+        :param save: ``False`` if the test failed, in which case nothing is written.
+        """
         if save and self._dirty and self._write_cassette is not None:
             self._write_cassette.dump()
             self._dirty = False
 
 
 def _describe_diff(got: dict[str, Any], recorded: dict[str, Any]) -> list[str]:
+    """Describes, parameter by parameter, how a call differs from a recorded one.
+
+    Lines start with ``+`` for a parameter passed but absent from the recording, ``-``
+    for a recorded parameter that was not passed, and ``~`` for a different value.
+    """
+
     def short(v: Any) -> str:
         s = json.dumps(v, ensure_ascii=False, sort_keys=True)
         return s if len(s) <= 100 else s[:97] + "..."
@@ -504,9 +571,9 @@ def _describe_diff(got: dict[str, Any], recorded: dict[str, Any]) -> list[str]:
         if name not in recorded:
             out.append(f"+ {name}={short(got[name])} (not in recording)")
         elif name not in got:
-            out.append(f"- {name}={short(recorded[name])} (recorded, failed)")
+            out.append(f"- {name}={short(recorded[name])} (recorded, but not passed)")
         elif got[name] != recorded[name]:
             out.append(
-                f"~ {name}: reçu {short(got[name])} / recorded {short(recorded[name])}"
+                f"~ {name}: received {short(got[name])} / recorded {short(recorded[name])}"
             )
     return out or ["(no visible difference)"]
