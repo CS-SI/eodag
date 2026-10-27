@@ -18,12 +18,15 @@
 import ast
 import datetime as dt
 import json
+import logging
 import os
 import re
 import ssl
 import unittest
+from contextlib import contextmanager
 from copy import deepcopy as copy_deepcopy
 from importlib import import_module
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Annotated, Literal, Union, get_args, get_origin
@@ -93,6 +96,28 @@ from tests.context import (
     get_geometry_from_various,
     load_provider_configs,
 )
+
+
+@contextmanager
+def assert_no_logs(test_case):
+    """Assert that eodag emits no warning-or-higher logs.
+
+    Replace with unittest.TestCase.assertNoLogs when Python 3.9 support is dropped.
+    """
+    logger = logging.getLogger("eodag")
+    stream = StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setLevel(logging.WARNING)
+    previous_level = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    try:
+        yield
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(previous_level)
+        handler.close()
+    test_case.assertEqual(stream.getvalue(), "")
 
 
 class BaseSearchPluginTest(unittest.TestCase):
@@ -3778,7 +3803,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         ):
             with self.subTest(provider=provider):
                 plugin = self.get_search_plugin(provider=provider)
-                with self.assertNoLogs("eodag", level="WARNING"):
+                with assert_no_logs(self):
                     product = plugin.query(
                         collection=collection,
                         **self.query_dates,
@@ -3798,7 +3823,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 self.assertEqual(payload["inputs"]["area"], [44.0, 1.0, 43.0, 2.0])
                 self.assertNotIn("dataset", payload["inputs"])
                 self.assertFalse(any(key.startswith("_") for key in asset))
-                with self.assertNoLogs("eodag", level="WARNING"):
+                with assert_no_logs(self):
                     replayed = plugin.query(
                         collection=collection,
                         _dc_qs=quote_plus(json.dumps(payload["inputs"])),
@@ -6224,7 +6249,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             {"id": provider_item["id"], "geometry": "POINT (0 0)"},
             collection=collection,
         )
-        with self.assertNoLogs("eodag", level="WARNING"):
+        with assert_no_logs(self):
             product.assets.update(
                 plugin.build_assets_from_mapping(provider_item, product)
             )
@@ -6508,7 +6533,7 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         ):
             with self.subTest(provider=provider):
                 plugin = self.get_search_plugin(provider=provider)
-                with self.assertNoLogs("eodag", level="WARNING"):
+                with assert_no_logs(self):
                     product = plugin.query(
                         collection=collection,
                         start_datetime="2021-01-01",
@@ -6528,7 +6553,7 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
                 self.assertEqual(payload["request"]["dataset"], "climate-dt")
                 self.assertDictEqual(payload["request"]["feature"], expected_feature)
                 self.assertFalse(any(key.startswith("_") for key in asset))
-                with self.assertNoLogs("eodag", level="WARNING"):
+                with assert_no_logs(self):
                     replayed = plugin.query(
                         collection=collection,
                         _dc_qs=quote_plus(json.dumps(payload["request"])),
