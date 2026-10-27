@@ -200,6 +200,30 @@ def test_search_all_single_entry(gateway, cassette, tmp_path):
 
 
 # ---------------------------------------------------------------- download --
+def _clean_windows_symlink_pathnames(pathname: str) -> str:
+    """
+    Workaround symlink pathname under windows.
+    See: https://github.com/python/cpython/issues/87123
+    """
+    _PREFIX = "\\\\?\\"
+    if pathname.startswith(_PREFIX):
+        return pathname[len(_PREFIX) :]
+    return pathname
+
+
+def test_clean_windows_symlink_pathnames():
+    """
+    Workaround we cannot test the function from from its docstring with doctest :(
+    """
+    assert _clean_windows_symlink_pathnames("") == ""
+
+    path = "D:\\a\\eodag\\eodag"
+    assert _clean_windows_symlink_pathnames(path) == path
+
+    winsympath = "\\\\?\\D:\\a\\eodag\\eodag"
+    assert _clean_windows_symlink_pathnames(winsympath) == path
+
+
 def test_download_symlink_roundtrip(gateway, cassette, tmp_path):
     def flow():
         product = gateway.search(collection="C")[0]
@@ -226,7 +250,9 @@ def test_download_symlink_roundtrip(gateway, cassette, tmp_path):
     assert path == str(tmp_path / "other_out" / "C_p1_0")
     assert (Path(path) / "data.txt").read_text() == "content of C_p1_0"
     assert Path(path).is_symlink()
-    assert os.readlink(path) == str(tmp_path / "archive" / "C_p1_0")
+    assert _clean_windows_symlink_pathnames(os.readlink(path)) == str(
+        tmp_path / "archive" / "C_p1_0"
+    )
 
     data = yaml.safe_load(cassette.read_text())
     assert data["download"] == [
@@ -391,8 +417,9 @@ def test_cassette_file_format(gateway, cassette, tmp_path):
 
 
 def test_cannot_patch_twice(tmp_path, cassette):
-    rec1, rec2 = recorder("none", cassette, tmp_path), recorder(
-        "none", cassette, tmp_path
+    rec1, rec2 = (
+        recorder("none", cassette, tmp_path),
+        recorder("none", cassette, tmp_path),
     )
     with rec1.patched():
         with pytest.raises(EodagRecordingError, match="already been patched"):
