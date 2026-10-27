@@ -380,7 +380,7 @@ class PluginManager:
         if (
             auth_plugin is None
             and product is not None
-            and product.remote_location
+            and product.assets.get("download_link", {}).get("href")
             and associated_plugin.provider == product.provider
         ):
             provider_conf = self.providers.configs.get(product.provider)
