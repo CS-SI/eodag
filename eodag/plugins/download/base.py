@@ -324,7 +324,8 @@ class Download(PluginTopic):
         Handle depth levels in the product archive. For example, if the downloaded archive was
         extracted to: ``/top_level/product_base_dir`` and ``archive_depth`` was configured to 2, the product
         location will be ``/top_level/product_base_dir``.
-        WARNING: A strong assumption is made here: there is only one subdirectory per level
+        WARNING: A strong assumption is made here: there is only one subdirectory per level.
+        Descending stops at the first level that does not contain a single subdirectory.
 
         :param product_path: The path to the extracted product
         :returns: The path to the extracted product with the right depth
@@ -332,7 +333,12 @@ class Download(PluginTopic):
         archive_depth = getattr(self.config, "archive_depth", 1)
         count = 1
         while count < archive_depth:
-            product_path = os.path.join(product_path, os.listdir(product_path)[0])
+            entries = os.listdir(product_path)
+            if len(entries) != 1 or not os.path.isdir(
+                os.path.join(product_path, entries[0])
+            ):
+                break
+            product_path = os.path.join(product_path, entries[0])
             count += 1
         return product_path
 
