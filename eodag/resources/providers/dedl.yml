@@ -165,7 +165,7 @@ dedl:
           href: '$.null'
           _order_href: '$.links[?rel=="retrieve"].href'
           _order_body: '$.links[?rel=="retrieve"].body'
-          order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
+          eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     ERA5_SL_MONTHLY:
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
       assets_mapping_from_product: ERA5_SL
@@ -411,7 +411,7 @@ dedl:
           href: '$.null'
           _order_href: '$.links[?rel=="retrieve"].href'
           _order_body: '$.links[?rel=="retrieve"].body'
-          order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
+          eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
           order:status: '{$.null#replace_str("Not Available","orderable")}'
     DT_CLIMATE_G2_CONT_IFS_NEMO_DAILY_HIGH:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.CONT_IFS-NEMO_DAILY_HIGH

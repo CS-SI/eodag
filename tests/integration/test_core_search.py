@@ -778,7 +778,9 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             "REANALYSIS-ERA5-SINGLE-LEVELS_123456", result[0].properties["title"]
         )
-        self.assertEqual("successful", result[0].properties["eodag:order_status"])
+        download_link = result[0].assets["download_link"]
+        self.assertEqual("successful", download_link["eodag:order_status"])
+        self.assertEqual("succeeded", download_link["order:status"])
         self.assertIn("eodag:request_params", result[0].properties)
         req_params = result[0].properties["eodag:request_params"]
         for k, v in status_response["metadata"]["request"]["ids"].items():
