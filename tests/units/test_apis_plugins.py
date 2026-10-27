@@ -576,7 +576,8 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             ),
         )
         self.assertEqual(
-            search_results.data[0].properties["order:status"], ONLINE_STATUS
+            search_results.data[0].assets["download_link"]["order:status"],
+            ONLINE_STATUS,
         )
         self.assertEqual(
             search_results.number_matched,
@@ -817,9 +818,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                     },
                 ),
             )
-            product.location = product.remote_location = product.properties[
-                "eodag:download_link"
-            ] = "http://somewhere"
+            product.location = product.remote_location = "http://somewhere"
             product.properties["id"] = "someproduct"
 
             responses.add(

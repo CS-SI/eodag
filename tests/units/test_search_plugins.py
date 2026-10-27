@@ -18,12 +18,15 @@
 import ast
 import datetime as dt
 import json
+import logging
 import os
 import re
 import ssl
 import unittest
+from contextlib import contextmanager
 from copy import deepcopy as copy_deepcopy
 from importlib import import_module
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Annotated, Literal, Union, get_args, get_origin
@@ -73,7 +76,6 @@ from tests.context import (
     DEFAULT_SEARCH_TIMEOUT,
     GENERIC_COLLECTION,
     HTTP_REQ_TIMEOUT,
-    NOT_AVAILABLE,
     TEST_RESOURCES_PATH,
     USER_AGENT,
     AuthenticationError,
@@ -94,6 +96,28 @@ from tests.context import (
     get_geometry_from_various,
     load_provider_configs,
 )
+
+
+@contextmanager
+def assert_no_logs(test_case):
+    """Assert that eodag emits no warning-or-higher logs.
+
+    Replace with unittest.TestCase.assertNoLogs when Python 3.9 support is dropped.
+    """
+    logger = logging.getLogger("eodag")
+    stream = StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setLevel(logging.WARNING)
+    previous_level = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    try:
+        yield
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(previous_level)
+        handler.close()
+    test_case.assertEqual(stream.getvalue(), "")
 
 
 class BaseSearchPluginTest(unittest.TestCase):
@@ -122,18 +146,24 @@ class BaseSearchPluginTest(unittest.TestCase):
     def get_auth_plugin(self, search_plugin):
         return self.plugins_manager.get_auth_plugin(search_plugin)
 
-    def test_get_assets_from_mapping(self):
+
+class TestSearchPluginBaseSearch(BaseSearchPluginTest):
+    def test_build_assets_from_mapping(self):
         search_plugin = self.get_search_plugin(provider="geodes")
         search_plugin.config.assets_mapping = {
-            "one": {"href": "$.properties.href", "roles": ["a_role"], "title": "One"},
+            "one": {
+                "href": "$.properties.href",
+                "roles": '["a_role"]',
+                "title": "One",
+            },
             "two": {
                 "href": "https://a.static_url.com",
-                "roles": ["a_role"],
+                "roles": '["a_role"]',
                 "title": "Two",
             },
         }
         provider_item = {"id": "ID123456", "properties": {"href": "a.product.com/ONE"}}
-        asset_mappings = search_plugin.get_assets_from_mapping(provider_item)
+        asset_mappings = search_plugin.build_assets_from_mapping(provider_item)
         self.assertEqual(2, len(asset_mappings))
         self.assertEqual("a.product.com/ONE", asset_mappings["one"]["href"])
         self.assertEqual("One", asset_mappings["one"]["title"])
@@ -141,6 +171,71 @@ class BaseSearchPluginTest(unittest.TestCase):
         self.assertEqual("https://a.static_url.com", asset_mappings["two"]["href"])
         self.assertEqual("Two", asset_mappings["two"]["title"])
         self.assertListEqual(["a_role"], asset_mappings["two"]["roles"])
+
+    def test_build_assets_from_mapping_resolves_private_template_values(self):
+        with open(
+            Path(TEST_RESOURCES_PATH) / "provider_responses/cop_dataspace_search.json"
+        ) as response_file:
+            odata_item = json.load(response_file)["value"][0]
+        with open(
+            Path(TEST_RESOURCES_PATH) / "provider_responses/earth_search_search.json"
+        ) as response_file:
+            earth_search_item = json.load(response_file)["features"][0]
+
+        cases = [
+            (
+                "cop_dataspace",
+                "S2_MSI_L1C",
+                odata_item,
+                "https://catalogue.dataspace.copernicus.eu/odata/v1/Products("
+                f"{odata_item['Id']})/$value",
+            ),
+            (
+                "creodias",
+                "S2_MSI_L1C",
+                odata_item,
+                f"https://zipper.creodias.eu/odata/v1/Products({odata_item['Id']})/$value",
+            ),
+            (
+                "earth_search_gcs",
+                "S2_MSI_L1C",
+                earth_search_item,
+                "s3://gcp-public-data-sentinel-2/tiles/27/V/WK/"
+                f"{earth_search_item['id']}.SAFE",
+            ),
+            (
+                "earth_search_gcs",
+                "L8_OLI_TIRS_C1L1",
+                {
+                    "id": "LC08_001002_20200101",
+                    "properties": {
+                        "landsat:wrs_path": 1,
+                        "landsat:wrs_row": 2,
+                    },
+                },
+                "s3://gcp-public-data-landsat/LC08/01/001/002/LC08_001002_20200101",
+            ),
+            (
+                "aws_eos",
+                "L8_OLI_TIRS_C1L1",
+                {
+                    "path": 1.0,
+                    "row": 2.0,
+                    "productID": "LC08_001002_20200101",
+                },
+                "s3://landsat-pds/c1/L8/001/002/LC08_001002_20200101/",
+            ),
+        ]
+
+        for provider, collection, item, expected_href in cases:
+            with self.subTest(provider=provider, collection=collection):
+                search_plugin = self.get_search_plugin(provider=provider)
+                product = EOProduct(provider, {}, collection=collection)
+                assets = search_plugin.build_assets_from_mapping(item, product)
+
+                self.assertEqual(assets["download_link"]["href"], expected_href)
+                for asset in assets.values():
+                    self.assertFalse(any(key.startswith("_") for key in asset))
 
     def test_get_metadata_mapping_without_collection(self):
         """Test that the provider metadata_mapping is returned when no collection is specified"""
@@ -184,6 +279,169 @@ class BaseSearchPluginTest(unittest.TestCase):
             collection_mapping,
             search_plugin.config.products[collection]["metadata_mapping"],
         )
+
+    def test_get_assets_mapping_without_collection(self):
+        """Test that the provider assets_mapping is returned when no collection is specified"""
+        search_plugin = self.get_search_plugin(provider="dedl")
+        provider_mapping = search_plugin.config.assets_mapping
+        self.assertNotIn("_collection", provider_mapping)
+
+        assets_mapping = search_plugin.get_assets_mapping()
+
+        self.assertEqual(provider_mapping, assets_mapping)
+        self.assertNotIn("_collection", assets_mapping)
+
+    def test_get_assets_mapping_with_collection(self):
+        """Test that the collection assets_mapping is returned when a collection is specified"""
+        search_plugin = self.get_search_plugin(provider="dedl")
+        collection = "ERA5_SL"
+        provider_mapping = search_plugin.config.assets_mapping
+        collection_mapping = search_plugin.config.products[collection]["assets_mapping"]
+
+        assets_mapping = search_plugin.get_assets_mapping(collection)
+
+        self.assertEqual(
+            collection_mapping["download_link"],
+            assets_mapping["download_link"],
+        )
+        self.assertNotEqual(
+            provider_mapping["download_link"],
+            assets_mapping["download_link"],
+        )
+        self.assertEqual(
+            search_plugin.config.products[collection]["_collection"],
+            assets_mapping["download_link"]["_collection"],
+        )
+
+        # Check that original mappings are still intact and not modified
+        self.assertEqual(provider_mapping, search_plugin.config.assets_mapping)
+        self.assertEqual(
+            collection_mapping,
+            search_plugin.config.products[collection]["assets_mapping"],
+        )
+
+    def test_get_assets_mapping_from_product_inherits(self):
+        """A product with only ``assets_mapping_from_product`` inherits the parent's mapping fully"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        parent_mapping = {
+            "download_link": {"href": "parent_href", "roles": ["data"]},
+            "quicklook": {"href": "parent_ql", "roles": ["overview"]},
+        }
+        search_plugin.config.products = {
+            "PARENT_COLLECTION": {"assets_mapping": parent_mapping},
+            "CHILD_COLLECTION": {"assets_mapping_from_product": "PARENT_COLLECTION"},
+        }
+        resolved = search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        self.assertEqual(parent_mapping, resolved)
+
+    def test_get_assets_mapping_from_product_per_asset_override(self):
+        """A child product can override one asset and inherit the others from the parent"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        search_plugin.config.products = {
+            "PARENT_COLLECTION": {
+                "assets_mapping": {
+                    "download_link": {"href": "parent_dl", "roles": ["data"]},
+                    "quicklook": {"href": "parent_ql", "roles": ["overview"]},
+                    "thumbnail": {"href": "parent_tn", "roles": ["thumbnail"]},
+                }
+            },
+            "CHILD_COLLECTION": {
+                "assets_mapping_from_product": "PARENT_COLLECTION",
+                "assets_mapping": {
+                    "download_link": {"href": "child_dl", "roles": ["data"]},
+                },
+            },
+        }
+        resolved = search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        # download_link overridden, others inherited
+        self.assertEqual("child_dl", resolved["download_link"]["href"])
+        self.assertEqual("parent_ql", resolved["quicklook"]["href"])
+        self.assertEqual("parent_tn", resolved["thumbnail"]["href"])
+
+    def test_get_assets_mapping_from_product_does_not_mutate_parent(self):
+        """Resolving a child product must not mutate the parent's cached config"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        parent_mapping = {
+            "download_link": {"href": "parent_dl", "roles": ["data"]},
+            "quicklook": {"href": "parent_ql", "roles": ["overview"]},
+        }
+        search_plugin.config.products = {
+            "PARENT_COLLECTION": {"assets_mapping": copy_deepcopy(parent_mapping)},
+            "CHILD_COLLECTION": {
+                "assets_mapping_from_product": "PARENT_COLLECTION",
+                "assets_mapping": {
+                    "download_link": {"href": "child_dl", "roles": ["data"]},
+                },
+            },
+        }
+        # Resolve the child first; this previously polluted the parent's config
+        search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        # PARENT_COLLECTION must still expose its original mapping
+        self.assertEqual(
+            parent_mapping,
+            search_plugin.config.products["PARENT_COLLECTION"]["assets_mapping"],
+        )
+        # And resolving the parent after the child must still return the parent's mapping
+        self.assertEqual(
+            parent_mapping, search_plugin.get_assets_mapping("PARENT_COLLECTION")
+        )
+
+    def test_get_assets_mapping_from_product_chain(self):
+        """Multi-hop ``assets_mapping_from_product`` chain resolves transitively, leaf overrides win"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        search_plugin.config.products = {
+            "GRANDPARENT_COLLECTION": {
+                "assets_mapping": {
+                    "download_link": {"href": "gp_dl"},
+                    "quicklook": {"href": "gp_ql"},
+                    "thumbnail": {"href": "gp_tn"},
+                }
+            },
+            "PARENT_COLLECTION": {
+                "assets_mapping_from_product": "GRANDPARENT_COLLECTION",
+                "assets_mapping": {
+                    "quicklook": {"href": "parent_ql"},
+                },
+            },
+            "CHILD_COLLECTION": {
+                "assets_mapping_from_product": "PARENT_COLLECTION",
+                "assets_mapping": {
+                    "download_link": {"href": "child_dl"},
+                },
+            },
+        }
+        resolved = search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        self.assertEqual("child_dl", resolved["download_link"]["href"])
+        self.assertEqual("parent_ql", resolved["quicklook"]["href"])
+        self.assertEqual("gp_tn", resolved["thumbnail"]["href"])
+
+    def test_get_assets_mapping_from_product_cycle(self):
+        """A cycle in ``assets_mapping_from_product`` is detected, logged and broken"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        search_plugin.config.products = {
+            "LEFT_COLLECTION": {
+                "assets_mapping_from_product": "RIGHT_COLLECTION",
+                "assets_mapping": {"download_link": {"href": "left_dl"}},
+            },
+            "RIGHT_COLLECTION": {
+                "assets_mapping_from_product": "LEFT_COLLECTION",
+                "assets_mapping": {"quicklook": {"href": "right_ql"}},
+            },
+        }
+        with self.assertLogs("eodag.search.base", level="WARNING") as logs:
+            resolved = search_plugin.get_assets_mapping("LEFT_COLLECTION")
+        self.assertTrue(
+            any("cycle detected" in msg for msg in logs.output),
+            msg=f"expected cycle warning, got: {logs.output}",
+        )
+        # Both assets are merged once; leaf (LEFT_COLLECTION) wins on collisions
+        self.assertEqual("left_dl", resolved["download_link"]["href"])
+        self.assertEqual("right_ql", resolved["quicklook"]["href"])
 
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
@@ -1211,20 +1469,6 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertEqual(raw.next_page_token, 3)
         self.assertEqual(raw.next_page_token_key, "page")
 
-    def test_plugins_search_querystringsearch_init_raises_on_empty_metadata_mapping_from_product(
-        self,
-    ):
-        """QueryStringSearch.__init__ must reject an empty metadata_mapping inherited from another product."""
-        provider = "earth_search"
-        plugin_cfg = copy_deepcopy(self.get_search_plugin(provider=provider).config)
-        plugin_cfg.products["S1_SAR_GRD"][
-            "metadata_mapping_from_product"
-        ] = "S2_MSI_L1C"
-        plugin_cfg.products["S2_MSI_L1C"]["metadata_mapping"] = {}
-
-        with self.assertRaises(MisconfiguredError):
-            QueryStringSearch(provider, plugin_cfg)
-
     def test_plugins_search_querystringsearch_clear_resets_pagination_state(self):
         """QueryStringSearch.clear must reset URLs, parameters, and page state."""
         self.sara_search_plugin.search_urls = ["https://example.test"]
@@ -1559,8 +1803,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self, mock_normalize, mock_request
     ):
         provider = "wekeo_ecmwf"
-        search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
-        search_plugin = next(search_plugins)
+        search_plugin = self.get_search_plugin(provider=provider)
         mock_request.return_value = MockResponse({"features": []}, 200)
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
@@ -3081,15 +3324,18 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self, identifier, checksum, endpoint_url="https://geodes.example/data"
     ):
         download_link = f"https://geodes.example/data/{identifier}/file_{checksum}.tif"
-        return EOProduct(
+        product = EOProduct(
             self.provider,
             {
                 "id": identifier,
                 "geometry": "POINT (0 0)",
-                "eodag:download_link": download_link,
-                "geodes:endpoint_url": endpoint_url,
             },
         )
+        product.assets["download_link"] = {
+            "href": download_link,
+            "alternate": {"href": endpoint_url},
+        }
+        return product
 
     @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
     def test_plugins_search_geodes_get_availability(self, mock__request):
@@ -3119,11 +3365,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "availability": [
                     {
-                        "href": p1.properties["eodag:download_link"],
+                        "href": p1.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                     {
-                        "href": p2.properties["eodag:download_link"],
+                        "href": p2.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                 ]
@@ -3134,7 +3380,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
     def test_plugins_search_geodes_get_availability_skips_missing_fields(
         self, mock__request
     ):
-        """Products without eodag:download_link or geodes:endpoint_url must be skipped
+        """Products without download_link href or geodes:endpoint_url must be skipped
         in the availability request body"""
         mock_response = mock.Mock()
         mock_response.json.return_value = {"products": []}
@@ -3146,9 +3392,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "id": "PROD2",
                 "geometry": "POINT (0 0)",
-                "eodag:download_link": "https://geodes.example/data/PROD2/file.tif",
             },
         )
+        p_no_url.assets["download_link"] = {
+            "href": "https://geodes.example/data/PROD2/file.tif"
+        }
         p_no_link = EOProduct(
             self.provider,
             {
@@ -3157,6 +3405,9 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                 "geodes:endpoint_url": "https://geodes.example/data",
             },
         )
+        p_no_link.assets["download_link"] = {
+            "alternate": {"href": "https://geodes.example/data"}
+        }
 
         self.search_plugin._get_availability([p_ok, p_no_url, p_no_link])
 
@@ -3164,7 +3415,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertEqual(len(prep.query_params["availability"]), 1)
         self.assertEqual(
             prep.query_params["availability"][0]["href"],
-            p_ok.properties["eodag:download_link"],
+            p_ok.assets["download_link"]["href"],
         )
 
     @mock.patch(
@@ -3186,7 +3437,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], ONLINE_STATUS)
+        self.assertEqual(product.assets["download_link"]["order:status"], ONLINE_STATUS)
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -3209,7 +3460,9 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], OFFLINE_STATUS)
+        self.assertEqual(
+            product.assets["download_link"]["order:status"], OFFLINE_STATUS
+        )
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -3220,14 +3473,14 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         """When no matching product/asset is found in the availability response,
         order:status must be left unchanged and a warning must be logged"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         # no matching id in response
         mock_get_availability.return_value = {"products": []}
 
         with self.assertLogs("eodag.search.geodes", level="WARNING") as log_ctx:
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
         self.assertTrue(
             any("Could not update availability" in m for m in log_ctx.output)
         )
@@ -3240,7 +3493,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
     ):
         """Products whose checksum matches more than one file must be skipped"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         mock_get_availability.return_value = {
             "products": [
                 {
@@ -3256,7 +3509,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         with self.assertLogs("eodag.search.geodes", level="WARNING"):
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._set_availability", autospec=True
@@ -3292,13 +3545,6 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         with open(self.provider_resp_dir / "geodes_search.json", encoding="utf-8") as f:
             raw_features = json.load(f)["features"]
-        raw_assets = raw_features[0]["assets"]
-        quicklook_asset = raw_assets[
-            "2025/04/02/S2A/S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035_quicklook.jpg"
-        ]
-        zip_asset = raw_assets[
-            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip"
-        ]
 
         search_plugin = self.get_search_plugin(provider="geodes")
         normalized = search_plugin.normalize_results(RawSearchResult(raw_features))
@@ -3307,29 +3553,59 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertDictEqual(
             dict(normalized[0].assets),
             {
-                "quicklook.jpg": {
-                    "href": quicklook_asset["href"],
-                    "title": "quicklook.jpg",
-                    "description": quicklook_asset["description"],
+                "download_link": {
+                    "href": (
+                        "https://geodes-portal.cnes.fr/api/download/"
+                        "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
+                        "/files/86f828c4c7e921615d1cd0476604f780"
+                    ),
+                    "alternate": {
+                        "href": (
+                            "https://s3.datalake.cnes.fr/sentinel2-l1c/14/U/LD/2025/04/02/"
+                            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip"
+                        ),
+                        "description": "Link to product in datalake",
+                        "alternate:name": "s3",
+                    },
+                    "order:status": "succeeded",
+                    "roles": ["archive", "data"],
+                    "title": "downloadlink",
+                    "type": "application/octet-stream",
+                    "file:size": 764210185,
+                    "geodes:reference": False,
+                    "geodes:online": False,
+                    "geodes:datatype": "RAWDATA",
+                    "file:checksum": "86f828c4c7e921615d1cd0476604f780",
+                },
+                "quicklook": {
+                    "href": (
+                        "https://geodes-portal.cnes.fr/api/quicklook/"
+                        "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
+                        "/files/1003ae6b1edf05adf7c46cb759ffeaec?scope=gdh"
+                    ),
+                    "roles": ["overwiev"],
+                    "title": "quicklook",
                     "type": "image/jpeg",
-                    "roles": ["overview"],
                     "file:size": 18684,
                     "geodes:reference": False,
                     "geodes:online": True,
                     "geodes:datatype": "QUICKLOOK_SD",
                     "file:checksum": "1003ae6b1edf05adf7c46cb759ffeaec",
                 },
-                "zip": {
-                    "href": zip_asset["href"],
-                    "title": "zip",
-                    "description": zip_asset["description"],
-                    "type": "application/zip",
-                    "roles": ["auxiliary"],
-                    "file:size": 764210185,
+                "thumbnail": {
+                    "href": (
+                        "https://geodes-portal.cnes.fr/api/quicklook/"
+                        "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
+                        "/files/1003ae6b1edf05adf7c46cb759ffeaec?scope=gdh"
+                    ),
+                    "roles": ["thumbnail"],
+                    "title": "thumbnail",
+                    "type": "image/jpeg",
+                    "file:size": 18684,
                     "geodes:reference": False,
-                    "geodes:online": False,
-                    "geodes:datatype": "RAWDATA",
-                    "file:checksum": "86f828c4c7e921615d1cd0476604f780",
+                    "geodes:online": True,
+                    "geodes:datatype": "QUICKLOOK_SD",
+                    "file:checksum": "1003ae6b1edf05adf7c46cb759ffeaec",
                 },
             },
         )
@@ -3381,14 +3657,15 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             ],
             "type": "Polygon",
         }
-        # check eodag:download_link
+        # check download_link asset href
+        download_asset = products.data[0].assets["download_link"]
         self.assertEqual(
-            products.data[0].properties["eodag:download_link"],
+            download_asset["href"],
             f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
-        # check eodag:order_link
+        # check download_link asset eodag:order_link
         self.assertEqual(
-            products.data[0].properties["eodag:order_link"],
+            download_asset["eodag:order_link"],
             f"{endpoint}?"
             + json.dumps(
                 {
@@ -3484,23 +3761,31 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         )
 
         assets = product.assets
-        self.assertEqual(3, len(assets))
-        for asset in assets.values():
+        # 1 download_link asset (from assets_mapping) + 3 s3-listed assets
+        self.assertEqual(4, len(assets))
+        # check if s3 links have been created correctly for s3-listed assets
+        s3_listed_assets = {k: v for k, v in assets.items() if k != "download_link"}
+        self.assertEqual(3, len(s3_listed_assets))
+        for asset in s3_listed_assets.values():
             self.assertTrue(asset["href"].startswith(product.remote_location))
+        # download_link asset is set from the product's metadata
+        self.assertTrue(assets["download_link"]["href"].startswith("s3://eodata/"))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_creodias_s3_links_empty(self, mock_request):
-        """Registering a product with no S3 objects must leave assets empty."""
+        """Registering a product with no S3 objects must only keep its download_link asset."""
         product = self._get_search_results(mock_request).data[0]
         product.driver = None
+        remote_location = product.remote_location
         product.assets = AssetsDict(product)
+        product.remote_location = remote_location
 
         self._register_product_with_stubbed_s3_objects(product, [])
 
         self.assertIsNotNone(product.driver)
-        self.assertEqual(0, len(product.assets))
+        self.assertEqual(["download_link"], list(product.assets))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -3574,6 +3859,44 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 collection=collection, provider=provider
             )
         )
+
+    def test_copernicus_asset_order_payloads(self):
+        for provider, collection, dataset, host in (
+            ("cop_ads", "CAMS_EAC4", "cams-global-reanalysis-eac4", "ads.atmosphere"),
+            ("cop_cds", "ERA5_SL", "reanalysis-era5-single-levels", "ads.atmosphere"),
+            ("cop_ewds", "EFAS_FORECAST", "efas-forecast", "ewds.climate"),
+        ):
+            with self.subTest(provider=provider):
+                plugin = self.get_search_plugin(provider=provider)
+                with assert_no_logs(self):
+                    product = plugin.query(
+                        collection=collection,
+                        **self.query_dates,
+                        geometry=[1, 43, 2, 44],
+                        **{"ecmwf:variable": "temperature"},
+                    ).data[0]
+                asset = product.assets["download_link"]
+                endpoint, body = asset["eodag:order_link"].split("?", 1)
+                self.assertEqual(
+                    endpoint,
+                    f"https://{host}.copernicus.eu/api/retrieve/v1/processes/"
+                    f"{dataset}/execution",
+                )
+                payload = json.loads(body)
+                self.assertDictEqual(payload, {"inputs": product.properties["qs"]})
+                self.assertEqual(payload["inputs"]["variable"], "temperature")
+                self.assertEqual(payload["inputs"]["area"], [44.0, 1.0, 43.0, 2.0])
+                self.assertNotIn("dataset", payload["inputs"])
+                self.assertFalse(any(key.startswith("_") for key in asset))
+                with assert_no_logs(self):
+                    replayed = plugin.query(
+                        collection=collection,
+                        _dc_qs=quote_plus(json.dumps(payload["inputs"])),
+                    ).data[0]
+                self.assertEqual(
+                    replayed.assets["download_link"]["eodag:order_link"],
+                    asset["eodag:order_link"],
+                )
 
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """ECMWFSearch.query must adapt end date in certain cases"""
@@ -3783,8 +4106,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
         )
-        assert eoproduct.properties["eodag:order_link"].startswith("http")
-        assert NOT_AVAILABLE in eoproduct.location
+        assert eoproduct.assets["download_link"]["eodag:order_link"].startswith("http")
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertIsNone(eoproduct.location)
 
     def test_plugins_search_ecmwfsearch_with_collection(self):
         """ECMWFSearch.query must build a EOProduct from input parameters with predefined collection"""
@@ -4071,13 +4395,17 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         product.search_kwargs = {"id": "123"}
         product.collection = "ERA5_SL"
         downloader = mock.Mock()
-        downloader.config.order_on_response = {"metadata_mapping": {}}
+        downloader.config.order_on_response = {"asset_mapping": {}}
         product.downloader = downloader
 
         self.assertIs(_check_id(product), product)
         downloader._order_status.assert_not_called()
 
-        downloader.config.order_on_response = {"metadata_mapping": {"foo": "bar"}}
+        downloader.config.order_on_response = {
+            "asset_mapping": {
+                "eodag:status_link": "https://example.test/jobs/{order:id}",
+            }
+        }
         downloader._order_status.side_effect = DownloadError(
             "order status could not be checked"
         )
@@ -4088,6 +4416,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIn(
             "Requested data is not available on cop_ads (123).",
             context.exception.message,
+        )
+        downloader._update_from_order.assert_called_once_with(
+            product.assets["download_link"],
+            {"eodag:status_link": "https://example.test/jobs/123", "order:id": 123},
+            {},
         )
 
         downloader._order_status.side_effect = RuntimeError("boom")
@@ -4238,6 +4571,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertEqual(product.properties["ecmwf:day"], ["01"])
         self.assertEqual(product.properties["ecmwf:time"], ["00:00"])
         self.assertEqual(product.collection, "ERA5_SL")
+        download_link = product.assets["download_link"]
+        self.assertEqual(download_link["order:id"], "123")
+        self.assertNotIn("eodag:order_status", download_link)
+        self.assertNotIn("_order_status", download_link)
+        self.assertEqual(download_link["order:status"], "ordered")
+        self.assertTrue(
+            download_link["eodag:status_link"].endswith("/jobs/123?request=true")
+        )
+        self.assertNotIn("eodag:order_id", product.properties)
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""
@@ -5114,7 +5456,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # with additional param
         queryables = search_plugin.discover_queryables(
             collection="ERA5_SL_MONTHLY",
-            dataset="EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
+            _collection="EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             **{"ecmwf:variable": "a"},
         )
         self.assertIsNotNone(queryables)
@@ -5784,8 +6126,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.assertEqual(
             "item_20200102_20200103_direct_20210101", product.properties["id"]
         )
-        self.assertEqual("native", next(iter(product.assets.keys())))
-        asset = product.assets["native"]
+        self.assertEqual("download_link", next(iter(product.assets.keys())))
+        asset = product.assets["download_link"]
         self.assertEqual(123, asset["file:size"])
         self.assertEqual("d41d8cd98f00b204e9800998ecf8427e", asset["file:checksum"])
         self.assertEqual("2020-01-04T00:00:00.000Z", asset["updated"])
@@ -5862,9 +6204,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 end_datetime="2020-02-01T01:00:00Z",
             )
 
-        self.assertIn("native", result[0].assets)
-        asset = result[0].assets["native"]
-        self.assertEqual(asset.get("title"), "native")
+        self.assertIn("download_link", result[0].assets)
+        asset = result[0].assets["download_link"]
+        self.assertEqual(asset.get("title"), "downloadlink")
         self.assertEqual(
             asset.get("href"),
             "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
@@ -5904,16 +6246,16 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         )
         self.assertEqual("2001-05-01T00:00:00.000Z", product.properties["end_datetime"])
         self.assertEqual(
-            "https://www.abc.com/thumbnailA", product.properties["eodag:thumbnail"]
+            "https://www.abc.com/thumbnailA", product.assets["thumbnail"]["href"]
         )
         self.assertEqual("dataset-number-one", product.properties["dataset"])
         self.assertEqual("a", product.properties["a"])
         self.assertEqual("b", product.properties["b"])
         self.assertEqual("c", product.properties["c"])
-        self.assertIn("native", product.assets)
+        self.assertIn("download_link", product.assets)
         self.assertEqual(
             "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/item1_20010501",
-            product.assets["native"]["href"],
+            product.assets["download_link"]["href"],
         )
 
         # with use of dataset dates
@@ -5935,13 +6277,11 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             asset_properties={"z": "z"},
         )
         self.assertEqual("item1_20010501", product.properties["id"])
-        self.assertIn("native", product.assets)
+        self.assertIn("download_link", product.assets)
         self.assertEqual(
             "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/item1_20010501",
-            product.assets["native"]["href"],
+            product.assets["download_link"]["href"],
         )
-        self.assertIn("z", product.assets["native"])
-        self.assertEqual("z", product.assets["native"]["z"])
 
     def test_plugins_search_cop_marine_discover_queryables(self):
         """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
@@ -5971,17 +6311,57 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.wekeomain_search_plugin = self.get_search_plugin(self.collection, provider)
         self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
+    def test_wekeo_cmems_asset_order_payload(self):
+        plugin = self.get_search_plugin(provider="wekeo_cmems")
+        collection = "CMEMS_TEST"
+        dataset = "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024"
+        plugin.config.products[collection] = {"_collection": dataset}
+        provider_item = {
+            "id": "cmems-product-id",
+            "properties": {"location": "s3://cmems-bucket/path/product.nc"},
+        }
+        product = EOProduct(
+            "wekeo_cmems",
+            {"id": provider_item["id"], "geometry": "POINT (0 0)"},
+            collection=collection,
+        )
+        with assert_no_logs(self):
+            product.assets.update(
+                plugin.build_assets_from_mapping(provider_item, product)
+            )
+        asset = product.assets["download_link"]
+        endpoint, body = asset["eodag:order_link"].split("?", 1)
+        self.assertEqual(
+            endpoint,
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download",
+        )
+        self.assertDictEqual(
+            json.loads(body),
+            {
+                "location": provider_item["properties"]["location"],
+                "product_id": provider_item["id"],
+                "cacheable": "true",
+                "dataset_id": dataset,
+            },
+        )
+        self.assertEqual(asset["href"], provider_item["properties"]["location"])
+        self.assertFalse(any(key.startswith("_") for key in asset))
+
     def test_plugins_search_wekeosearch_init_wekeomain(self):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
         default_config = load_provider_configs()["wekeo_main"]
-        # "eodag:order_link" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
+        # eodag:order_link is defined once at the provider-level assets_mapping
+        # (no per-product eodag:order_link in metadata_mapping anymore)
         self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
+        self.assertNotIn(
+            "eodag:order_link",
+            default_config.products["S1_SAR_GRD"].get("metadata_mapping", {}),
+        )
         self.assertIn(
             "eodag:order_link",
-            default_config.products["S1_SAR_GRD"]["metadata_mapping"],
+            default_config.search.assets_mapping["download_link"],
         )
-        self.assertNotIn("metadata_mapping", default_config.products["S1_SAR_SLC"])
 
         # metadata_mapping_from_product: from S1_SAR_GRD to S1_SAR_SLC
         self.assertEqual(
@@ -5989,7 +6369,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             "S1_SAR_GRD",
         )
 
-        # check initialized plugin configuration
+        # check initialized plugin configuration: S1_SAR_SLC inherits S1_SAR_GRD
         self.assertDictEqual(
             self.wekeomain_search_plugin.config.products["S1_SAR_GRD"][
                 "metadata_mapping"
@@ -5999,27 +6379,10 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             ],
         )
 
-        # S3_SRA_BS has both metadata_mapping_from_product and metadata_mapping
-        # "metadata_mapping" must override "metadata_mapping_from_product"
-        self.assertIn(
-            "eodag:order_link",
-            default_config.products["S3_SRA_BS"]["metadata_mapping"],
-        )
-        self.assertIn(
-            "eodag:order_link",
-            default_config.products["S3_EFR"]["metadata_mapping"],
-        )
+        # S3_SRA_BS inherits from S3_EFR via metadata_mapping_from_product
         self.assertEqual(
             default_config.products["S3_SRA_BS"]["metadata_mapping_from_product"],
             "S3_EFR",
-        )
-        self.assertNotEqual(
-            self.wekeomain_search_plugin.config.products["S3_SRA_BS"][
-                "metadata_mapping"
-            ]["eodag:order_link"],
-            self.wekeomain_search_plugin.config.products["S3_EFR"]["metadata_mapping"][
-                "eodag:order_link"
-            ],
         )
 
     @mock.patch(
@@ -6234,6 +6597,48 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         self.search_plugin = self.get_search_plugin(provider=self.provider)
         self.collection = "DT_CLIMATE_ADAPTATION"
 
+    def test_dedt_asset_order_payloads(self):
+        expected_feature = {
+            "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
+            "type": "polygon",
+        }
+        for provider, host, collection in (
+            ("dedt_lumi", "lumi", "DT_CLIMATE_ADAPTATION"),
+            ("dedt_mn5", "mn5", "DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1"),
+            ("dedt_leonardo", "leonardo", "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1"),
+        ):
+            with self.subTest(provider=provider):
+                plugin = self.get_search_plugin(provider=provider)
+                with assert_no_logs(self):
+                    product = plugin.query(
+                        collection=collection,
+                        start_datetime="2021-01-01",
+                        end_datetime="2021-01-02",
+                        geometry=[1, 43, 2, 44],
+                    ).data[0]
+                asset = product.assets["download_link"]
+                endpoint, body = asset["eodag:order_link"].split("?", 1)
+                self.assertEqual(
+                    endpoint,
+                    f"https://polytope.{host}.apps.dte.destination-earth.eu"
+                    "/api/v1/requests/destination-earth",
+                )
+                payload = json.loads(body)
+                self.assertEqual(payload["verb"], "retrieve")
+                self.assertDictEqual(payload["request"], product.properties["qs"])
+                self.assertEqual(payload["request"]["dataset"], "climate-dt")
+                self.assertDictEqual(payload["request"]["feature"], expected_feature)
+                self.assertFalse(any(key.startswith("_") for key in asset))
+                with assert_no_logs(self):
+                    replayed = plugin.query(
+                        collection=collection,
+                        _dc_qs=quote_plus(json.dumps(payload["request"])),
+                    ).data[0]
+                self.assertEqual(
+                    replayed.assets["download_link"]["eodag:order_link"],
+                    asset["eodag:order_link"],
+                )
+
     def test_plugins_apis_dedt_lumi_query_feature(self):
         """Test the proper handling of geom into ecmwf:feature"""
 
@@ -6250,6 +6655,13 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         eoproduct = results.data[0]
 
         self.assertDictEqual(_expected_feature, eoproduct.properties["qs"]["feature"])
+
+        download_link = eoproduct.assets["download_link"]
+        order_payload = json.loads(download_link["eodag:order_link"].split("?", 1)[1])
+        self.assertEqual(order_payload["verb"], "retrieve")
+        self.assertDictEqual(order_payload["request"], eoproduct.properties["qs"])
+        self.assertEqual(order_payload["request"]["dataset"], "climate-dt")
+        self.assertNotIn("_qs", download_link)
 
         # Unsupported multi-polygon
         with self.assertRaises(ValidationError):
@@ -6428,7 +6840,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
     ):
         """test if the input parameters are correctly validated"""
         mock_fetch_constraints.return_value = {"constraints": self.constraints}
-        plugin = next(self.plugins_manager.get_search_plugins(provider="cop_ghsl"))
+        plugin = self.get_search_plugin(provider="cop_ghsl")
         # missing parameter
         input_params = {"year": "2020", "proj:code": "EPSG:54009"}
         with self.assertRaises(ValidationError):
@@ -6532,19 +6944,19 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             json_data=provider_tiles, status_code=200
         )
         collection = "GHS_BUILT_S"
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider="cop_ghsl"
-            )
-        )
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        plugin = self.get_search_plugin(collection=collection, provider="cop_ghsl")
+        collection_config = {
+            key: value
+            for key, value in plugin.config.products.get(collection, {}).items()
+            if "_mapping" not in key
+        }
         input_params = {
             "year": ["2000", "2005"],
             "proj:code": "EPSG:4326",
             "tile_size": "3ss",
             "collection": collection,
         }
-        tiles, unit = plugin._get_tiles_for_filters(product_type_config, input_params)
+        tiles, unit = plugin._get_tiles_for_filters(collection_config, input_params)
         self.assertEqual("lat/lon", unit)
         self.assertEqual(2, len(tiles))
         self.assertIn("2000", tiles)
@@ -6591,18 +7003,16 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         with self.assertRaises(MisconfiguredError):
             plugin._get_tiles_for_filters({}, deepcopy(params))
 
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        product_type_config = plugin.config.products.get(collection, {})
         mock_requests_get.return_value = MockResponse({}, status_code=404)
         self.assertIsNone(
             plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
         )
 
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         mock_requests_get.side_effect = requests.exceptions.Timeout()
         with self.assertRaises(TimeOutError):
             plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
 
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         mock_requests_get.side_effect = requests.exceptions.RequestException("boom")
         with self.assertRaises(RequestError):
             plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
@@ -6746,11 +7156,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             json_data=provider_tiles, status_code=200
         )
         collection = "GHS_BUILT_S"
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider="cop_ghsl"
-            )
-        )
+        plugin = self.get_search_plugin(collection=collection, provider="cop_ghsl")
         params = {
             "collection": collection,
             "id": "GHS_BUILT_S__4326_3ss_2000_NRES__R3_C4",
@@ -6802,13 +7208,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             ],
         }
         collection = "GHS_BUILT_S"
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider="cop_ghsl"
-            )
-        )
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
-        params = product_type_config
+        plugin = self.get_search_plugin(collection, "cop_ghsl")
+        params = {}
         params["year"] = ["2000", "2005"]
         params["proj:code"] = "EPSG:4326"
         params["tile_size"] = "3ss"
@@ -6821,6 +7222,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(8, count)
         self.assertEqual(5, len(products))
         properties = products[0].properties
+        assets = products[0].assets
         self.assertEqual("2000-01-01T00:00:00.000Z", properties["start_datetime"])
         self.assertEqual("2000-12-31T23:59:59.000Z", properties["end_datetime"])
         self.assertEqual("2000", properties["year"])
@@ -6828,7 +7230,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
             "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R3_C3.zip",
-            properties["eodag:download_link"],
+            assets["download_link"]["href"],
         )
         geometry = get_geometry_from_various(
             geometry=["-160.008", "69.100", "-150.008", "59.100"]
@@ -6858,11 +7260,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             ],
         }
         collection = "GHS_ESM"
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider="cop_ghsl"
-            )
-        )
+        plugin = self.get_search_plugin(collection=collection, provider="cop_ghsl")
         product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         params = product_type_config
         params["tile_size"] = "10m"
@@ -6874,6 +7272,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(4, count)
         self.assertEqual(4, len(products))
         properties = products[0].properties
+        assets = products[0].assets
         self.assertEqual("2015-01-01T00:00:00.000Z", properties["start_datetime"])
         self.assertEqual("2015-12-31T23:59:59.000Z", properties["end_datetime"])
         self.assertEqual("2015", properties["year"])
@@ -6881,7 +7280,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/"
             "ESM_BUILT_VHR2015CLASS_EUROPE_R2019_3035_10/V1-0/tiles/R3_C3.zip",
-            properties["eodag:download_link"],
+            assets["download_link"]["href"],
         )
         geometry = get_geometry_from_various(
             geometry=["-160.008", "69.100", "-150.008", "59.100"]
@@ -6949,11 +7348,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         prep = PreparedSearch(limit=5)
         # product type with one file
         collection = "GHS_FUA"
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider="cop_ghsl"
-            )
-        )
+        plugin = self.get_search_plugin(collection=collection, provider="cop_ghsl")
         plugin.config.collection_config = {
             "collection": collection,
             "extent": {
@@ -6966,20 +7361,17 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(1, count)
         self.assertEqual(1, len(products))
         properties = products[0].properties
+        assets = products[0].assets
         self.assertEqual("2015-01-01T00:00:00Z", properties["start_datetime"])
         self.assertEqual("2015-12-31T00:00:00Z", properties["end_datetime"])
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A"
             "/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip",
-            properties["eodag:download_link"],
+            assets["download_link"]["href"],
         )
         # product type with several files
         collection = "GHS_UCDB_REGION"
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider="cop_ghsl"
-            )
-        )
+        plugin = self.get_search_plugin(collection=collection, provider="cop_ghsl")
         plugin.config.collection_config = {
             "collection": collection,
             "extent": {
@@ -6995,22 +7387,19 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(1, count)
         self.assertEqual(1, len(products))
         properties = products[0].properties
+        assets = products[0].assets
         self.assertEqual("1975-01-01T00:00:00Z", properties["start_datetime"])
         self.assertEqual("2030-12-31T00:00:00Z", properties["end_datetime"])
         self.assertEqual("EUROPE", properties["region"])
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A"
             "/GHS_UCDB_REGION_EUROPE_R2024A/V1-1/GHS_UCDB_REGION_EUROPE_R2024A_V1_1.zip",
-            properties["eodag:download_link"],
+            assets["download_link"]["href"],
         )
 
         # product type with several files and assets
         collection = "GHS_ENACT_POP"
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider="cop_ghsl"
-            )
-        )
+        plugin = self.get_search_plugin(collection=collection, provider="cop_ghsl")
         filters = {
             "grouped_by": "month",
             "month": "02",
@@ -7043,15 +7432,14 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
     def test_plugins_search_cop_ghsl_discover_queryables(self, mock_fetch_constraints):
         """test that the correct queryables are returned"""
         mock_fetch_constraints.return_value = {"constraints": self.constraints}
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection="GHS_BUILT_S", provider="cop_ghsl"
-            )
-        )
+        plugin = self.get_search_plugin(collection="GHS_BUILT_S", provider="cop_ghsl")
         kwargs = {"collection": "GHS_BUILT_S"}
-        collection_config = plugin.config.products.get("GHS_BUILT_S", {})
+        collection_config = {
+            key: value
+            for key, value in plugin.config.products.get("GHS_BUILT_S", {}).items()
+            if "_mapping" not in key
+        }
         kwargs.update(collection_config)
-        kwargs.pop("metadata_mapping")
         queryables = plugin.discover_queryables(**kwargs)
         self.assertEqual(6, len(queryables))
         expected_queryables = [
@@ -7085,10 +7473,12 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             constraint["month"] = ["01", "02"]
         mock_fetch_constraints.return_value = {"constraints": constraints}
         kwargs = {"collection": "GHS_ENACT_POP"}
-        collection_config = plugin.config.products.get("GHS_ENACT_POP", {})
+        collection_config = {
+            key: value
+            for key, value in plugin.config.products.get("GHS_ENACT_POP", {}).items()
+            if "_mapping" not in key
+        }
         kwargs.update(collection_config)
-        kwargs.pop("metadata_mapping")
-        kwargs.pop("assets_mapping")
         queryables = plugin.discover_queryables(**kwargs)
         self.assertEqual(6, len(queryables))
         expected_queryables = [
@@ -7123,25 +7513,30 @@ class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
         self.assertDictEqual(
             dict(normalized[0].assets),
             {
+                "download_link": {
+                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                    "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL",
+                    "title": "downloadlink",
+                    "roles": ["archive", "data"],
+                    "type": "application/zip",
+                    "order:status": "succeeded",
+                },
                 "EOPMetadata.xml": {
                     "href": base_href + "EOPMetadata.xml",
                     "title": "EOPMetadata.xml",
                     "roles": ["metadata"],
-                    "eumesat_ds:type": "Link",
                     "type": "application/xml",
                 },
                 "manifest.xml": {
                     "href": base_href + "manifest.xml",
                     "title": "manifest.xml",
                     "roles": ["metadata"],
-                    "eumesat_ds:type": "Link",
                     "type": "application/xml",
                 },
                 "nc": {
                     "href": base_href + "PREmm20201201000000120IMPGS01GL.nc",
                     "title": "nc",
                     "roles": ["data"],
-                    "eumesat_ds:type": "Link",
                     "type": "application/x-netcdf",
                 },
             },
@@ -7212,7 +7607,8 @@ class TestSearchPluginCSWSearch(unittest.TestCase):
         )
         product = plugin._CSWSearch__build_product(record, "collection")
         self.assertEqual(product.location, "preferred")
-        self.assertEqual(product.properties["eodag:download_link"], "preferred")
+        self.assertEqual(product.assets["download_link"]["href"], "preferred")
+        self.assertNotIn("eodag:download_link", product.properties)
         self.assertEqual(product.geometry.bounds, (1.0, 2.0, 3.0, 4.0))
 
     def test_csw_constraints_accept_shapely_geometry(self):

@@ -43,7 +43,6 @@ from __future__ import annotations
 import functools
 import json
 import sys
-import textwrap
 from importlib.metadata import metadata
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
@@ -448,6 +447,20 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 @click.option(
     "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
 )
+@click.option(
+    "--json",
+    is_flag=True,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["yaml"],
+    help="Print full collection information as JSON",
+)
+@click.option(
+    "--yaml",
+    is_flag=True,
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["json"],
+    help="Print full collection information as YAML",
+)
 @click.pass_context
 def list_col(ctx: Context, **kwargs: Any) -> None:
     """Print the list of supported collections"""
@@ -460,7 +473,8 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
     fetch_providers = not kwargs.pop("no_fetch")
-    text_wrapper = textwrap.TextWrapper()
+    json_output = kwargs.pop("json")
+    yaml_output = kwargs.pop("yaml")
     guessed_collections = CollectionsList([])
     try:
         guessed_collections = dag.guess_collection(
@@ -501,17 +515,25 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
             collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
-        click.echo("Listing available collections:")
-        for collection in collections:
-            click.echo("\n* {}: ".format(collection.id))
-            for prop, value in collection.model_dump().items():
-                if prop != "id":
-                    text_wrapper.initial_indent = "    - {}: ".format(prop)
-                    text_wrapper.subsequent_indent = " " * len(
-                        text_wrapper.initial_indent
-                    )
-                    if value is not None:
-                        click.echo(text_wrapper.fill(str(value)))
+        formatted_collections = {
+            collection.id: collection.model_dump(
+                mode="json", exclude_none=True, exclude={"id"}
+            )
+            for collection in collections
+        }
+        if json_output:
+            click.echo(json.dumps(formatted_collections))
+        elif yaml_output:
+            click.echo(
+                yaml.dump(
+                    formatted_collections,
+                    Dumper=IndentedSafeDumper,
+                    sort_keys=False,
+                    allow_unicode=True,
+                )
+            )
+        elif collections:
+            click.echo("\n".join(collection.id for collection in collections))
     except UnsupportedProvider:
         click.echo("Unsupported provider. You may have a typo")
         click.echo("Available providers: {}".format(", ".join(dag.providers.names)))

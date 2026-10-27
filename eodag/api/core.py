@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import geojson
 import yaml
-from pydantic import AliasChoices
+from pydantic import AliasChoices, BaseModel
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product import EOProduct
@@ -782,19 +782,56 @@ class EODataAccessGateway:
                                 )
                                 ext_collections_conf[provider] = new_collections_conf
                                 new_collections.append(new_collection)
+
                                 # increase the increment if the new collection had
                                 # bad formatted attributes in the external config
-                                dumped_collection = self.collections_config[
-                                    new_coll_obj._id
-                                ].model_dump()
-                                dumped_ext_conf_col = {
-                                    **dumped_collection,
-                                    **new_collections_conf["collections_config"][
-                                        new_collection
-                                    ],
-                                }
-                                if dumped_ext_conf_col != dumped_collection:
-                                    bad_formatted_col_count += 1
+                                for field, v in new_collections_conf[
+                                    "collections_config"
+                                ][new_collection].items():
+                                    field_from_alias = (
+                                        Collection.get_collection_field_from_alias(
+                                            field
+                                        )
+                                    )
+
+                                    # a field was bad formatted if it was not part of the model fields
+                                    if field_from_alias not in Collection.model_fields:
+                                        bad_formatted_col_count += 1
+                                        break
+
+                                    default = Collection.model_fields[
+                                        field_from_alias
+                                    ].get_default()
+                                    default_json = (
+                                        default.model_dump(mode="json")
+                                        if isinstance(default, BaseModel)
+                                        else default
+                                    )
+                                    formatted_v = new_coll_obj.__dict__[
+                                        field_from_alias
+                                    ]
+
+                                    # a field was bad formatted also if its value has been reformatted to its
+                                    # default value and it is not a static field or without a null value
+
+                                    # NOTE: this check works while there is no transformation of values in model
+                                    # validators to make them pass for fields where the default value is not null.
+                                    # For instance, for a field "foo" with default value "bar" having "BAR" in input,
+                                    # if a "before" validator uses "lower()" without raising an error, the input would
+                                    # be considered as well formatted while increment would increase as
+                                    # "v != default_json" statement would give True.
+                                    if (
+                                        formatted_v == default
+                                        and v != default_json
+                                        and (
+                                            field_from_alias
+                                            not in Collection.__static_fields__
+                                            or v is not None
+                                        )
+                                    ):
+                                        bad_formatted_col_count += 1
+                                        break
+
                 if new_collections:
                     logger.debug(
                         "Added %s collections for %s", len(new_collections), provider
@@ -1003,12 +1040,12 @@ class EODataAccessGateway:
                     filters_evaluators[filter_name](
                         {
                             filter_name: col_f.__dict__[
-                                Collection.get_collection_mtd_from_alias(filter_name)
+                                Collection.get_collection_field_from_alias(filter_name)
                             ]
                         }
                     )
                     for filter_name, value in filters.items()
-                    if Collection.get_collection_mtd_from_alias(filter_name)
+                    if Collection.get_collection_field_from_alias(filter_name)
                     in col_f.__dict__
                 ]
 
@@ -2056,9 +2093,13 @@ class EODataAccessGateway:
             collection_obj = search_result._dag.collections_config.get(
                 collection, Collection(id=collection)
             )
-            collection_dict = collection_obj.serialize()
+            collection_dict = collection_obj.model_dump(
+                display_extensions=True,
+                mode="json",
+                exclude_none=True,
+                exclude={"alias"},
+            )
             # add links
-            collection_dict.setdefault("links", [])
             collection_dict["links"].append(
                 {
                     "rel": "self",
@@ -2109,18 +2150,17 @@ class EODataAccessGateway:
         checks like verifying that a downloader and authenticator are registered
         for the product before trying to download it.
 
-        If the metadata mapping for ``eodag:download_link`` is set to something that can be
-        interpreted as a link on a
-        local filesystem, the download is skipped (by now, only a link starting
-        with ``file:/`` is supported). Therefore, any user that knows how to extract
-        product location from product metadata on a provider can override the
-        ``eodag:download_link`` metadata mapping in the right way. For example, using the
-        environment variable:
-        ``EODAG__CREODIAS__SEARCH__METADATA_MAPPING__EODAG_DOWNLOAD_LINK="file:///{id}"`` will
-        lead to all :class:`~eodag.api.product._product.EOProduct`'s originating from the
-        provider ``creodias`` to have their ``eodag:download_link`` metadata point to something like:
-        ``file:///12345-678``, making this method immediately return the later string without
-        trying to download the product.
+        If the ``href`` of the product ``download_link`` asset is a link on a local
+        filesystem, the download is skipped (by now, only a link starting with ``file:/``
+        is supported). Therefore, any user that knows how to extract product location from
+        product metadata on a provider can override the ``download_link`` asset mapping
+        in the right way. For example, setting
+        ``assets_mapping: {download_link: {href: "file:///{id}"}}`` in the ``creodias``
+        search plugin configuration will lead to all
+        :class:`~eodag.api.product._product.EOProduct`'s originating from this provider
+        to have their ``download_link`` asset point to something like ``file:///12345-678``,
+        making this method immediately return the later string without trying to download
+        the product.
 
         :param product: The EO product to download
         :param progress_callback: (optional) A method or a callable object
@@ -2149,9 +2189,11 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
-        if product.location.startswith("file:/"):
+        download_link = product.assets.get("download_link")
+        location = download_link.location if download_link is not None else ""
+        if location.startswith("file:/"):
             logger.info("Local product detected. Download skipped")
-            return uri_to_path(product.location)
+            return uri_to_path(location)
         self._setup_downloader(product)
         path = product.download(
             progress_callback=progress_callback,

@@ -214,13 +214,11 @@ class TestPluginManager(unittest.TestCase):
 
         # product with download link
         get_auth_plugins.return_value = iter([mock.sentinel.auth])
-        product = EOProduct(
-            provider="low",
-            properties={
-                "eodag:download_link": "https://download.example",
-                "order:status": ONLINE_STATUS,
-            },
-        )
+        product = EOProduct(provider="low", properties={"id": "test"})
+        product.assets["download_link"] = {
+            "href": "https://download.example",
+            "order:status": ONLINE_STATUS,
+        }
 
         plugin = self.manager.get_auth_plugin(associated_plugin, product=product)
 
@@ -231,14 +229,18 @@ class TestPluginManager(unittest.TestCase):
             matching_conf=associated_plugin.config,
         )
 
-        # product with order link
+        # product with offline download_link asset: matches its order link
         get_auth_plugins.return_value = iter([mock.sentinel.auth])
-        product = EOProduct(
-            provider="low",
-            properties={
-                "eodag:order_link": "https://order.example",
-                "order:status": "orderable",
-            },
+        product = EOProduct(provider="low", properties={"id": "test"})
+        product.assets.update(
+            {
+                "quicklook": {"href": "https://quicklook.example"},
+                "download_link": {
+                    "href": "https://download.example",
+                    "eodag:order_link": "https://order.example",
+                    "order:status": "orderable",
+                },
+            }
         )
 
         plugin = self.manager.get_auth_plugin(associated_plugin, product=product)
@@ -249,6 +251,68 @@ class TestPluginManager(unittest.TestCase):
             matching_url="https://order.example",
             matching_conf=associated_plugin.config,
         )
+
+        # product without assets: no matching url
+        get_auth_plugins.return_value = iter([mock.sentinel.auth])
+        product = EOProduct(provider="low", properties={"id": "test"})
+
+        plugin = self.manager.get_auth_plugin(associated_plugin, product=product)
+
+        self.assertIs(plugin, mock.sentinel.auth)
+        get_auth_plugins.assert_called_with(
+            "low",
+            matching_url=None,
+            matching_conf=associated_plugin.config,
+        )
+
+    def test_get_auth_plugin_with_preview_and_blob_assets(self):
+        """Test get_auth_plugin with preview and blob assets."""
+        providers = ProvidersDict.from_configs(
+            {
+                "planetary_computer": {
+                    "products": {"S2_MSI_L2A": {"_collection": "sentinel-2-l2a"}},
+                    "download": {"type": "HTTPDownload"},
+                    "auth": {
+                        "type": "SASAuth",
+                        "matching_url": r"https://[-\w\.]+.blob.core.windows.net",
+                        "auth_uri": "https://planetarycomputer.microsoft.com/api/sas/v1/token/{_collection}",
+                        "signed_url_key": "token",
+                    },
+                }
+            }
+        )
+        manager = PluginManager(providers)
+        preview = {
+            "href": "https://planetarycomputer.microsoft.com/api/data/v1/item/preview.png"
+        }
+        blob = {
+            "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/example.tif"
+        }
+        for assets in (
+            {"quicklook": preview, "B01": blob},
+            {"B01": blob, "quicklook": preview},
+            {"B01": blob},
+        ):
+            with self.subTest(insertion_order=list(assets)):
+                product = EOProduct(
+                    provider="planetary_computer",
+                    properties={"id": "test"},
+                    collection="S2_MSI_L2A",
+                )
+                product.assets = AssetsDict(product)
+                product.assets.update(assets)
+                if "quicklook" in assets:
+                    # Confirm quicklook is the first asset after sorting.
+                    self.assertEqual(next(iter(product.assets)), "quicklook")
+                downloader = manager.get_download_plugin(product)
+
+                plugin = manager.get_auth_plugin(downloader, product)
+
+                # Confirm that the plugin is correctly instantiated and configured
+                # even if first asset does not match the auth plugin's URL pattern.
+                self.assertIsNotNone(plugin)
+                self.assertEqual(plugin.config.type, "SASAuth")
+                self.assertEqual(plugin.provider_collection, "sentinel-2-l2a")
 
     def test_get_crunch_plugin(self):
         """Crunch plugin construction returns the requested plugin class."""

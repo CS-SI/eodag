@@ -23,6 +23,7 @@ import logging
 import os
 import re
 import tempfile
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -64,7 +65,6 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
-    OFFLINE_STATUS,
     normalize_bands,
 )
 from eodag.utils import (
@@ -115,13 +115,11 @@ class EOProduct:
     """A wrapper around an Earth Observation Product originating from a search.
 
     Every Search plugin instance must build an instance of this class for each of
-    the result of its query method, and return a list of such instances. A EOProduct
-    has a `location` attribute that initially points to its remote location, but is
-    later changed to point to its path on the filesystem when the product has been
-    downloaded. It also has a `remote_location` that always points to the remote
-    location, so that the product can be downloaded at anytime if it is deleted from
-    the filesystem. An EOProduct instance also has a reference to the search
-    parameters that led to its creation.
+    the result of its query method, and return a list of such instances. Download
+    URLs and local paths are stored on assets as ``href`` and ``file:local_path``.
+    The deprecated ``location`` and ``remote_location`` properties proxy the
+    ``download_link`` asset. An EOProduct instance also has a reference to the
+    search parameters that led to its creation.
 
     :param provider: The provider from which the product originates
     :param properties: The metadata of the product
@@ -144,10 +142,6 @@ class EOProduct:
     geometry: BaseGeometry
     #: The intersection between the product's geometry and the search area.
     search_intersection: Optional[BaseGeometry]
-    #: The path to the product, either remote or local if downloaded
-    location: str
-    #: The remote path to the product
-    remote_location: str
     #: Assets of the product
     assets: AssetsDict
     #: STAC item links of the product
@@ -179,7 +173,6 @@ class EOProduct:
             or properties.pop("collection", None)
             or properties.get("_collection")
         )
-        self.location = self.remote_location = properties.get("eodag:download_link", "")
         self.assets = AssetsDict(self)
         self.links = []
         self.properties = {
@@ -246,6 +239,80 @@ class EOProduct:
         self.driver = self.get_driver()
         self.downloader: Optional[Union[Api, Download]] = None
         self.downloader_auth: Optional[Authentication] = None
+
+    @property
+    def remote_location(self) -> Optional[str]:
+        """The remote path to the product: ``href`` of its ``download_link`` asset.
+
+        Returns ``None`` without a ``download_link`` asset. Setting it creates
+        the asset if missing.
+
+        .. deprecated:: v5.0.0
+            Use ``product.assets["download_link"]["href"]`` instead.
+        """
+        warnings.warn(
+            "EOProduct.remote_location is deprecated; use the download_link asset href instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        download_link = self.assets.get("download_link")
+        return (
+            (download_link.get("href") or None) if download_link is not None else None
+        )
+
+    @remote_location.setter
+    def remote_location(self, value: str) -> None:
+        warnings.warn(
+            "EOProduct.remote_location is deprecated; use the download_link asset href instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if (download_link := self.assets.get("download_link")) is not None:
+            download_link["href"] = value
+        else:
+            self.assets["download_link"] = {
+                "href": value,
+                "roles": ["archive", "data"],
+            }
+
+    @property
+    def location(self) -> Optional[str]:
+        """The path to the product, either remote or local if downloaded.
+
+        Reads the ``download_link`` asset ``file:local_path`` (as URI), falling back
+        to its ``href``. Returns ``None`` without that asset. Setting a local URI
+        updates ``file:local_path``; setting a remote URL updates ``href`` and
+        clears the local path.
+
+        .. deprecated:: v5.0.0
+            Use ``product.assets["download_link"].location`` instead.
+        """
+        warnings.warn(
+            "EOProduct.location is deprecated; use the download_link asset location instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        download_link = self.assets.get("download_link")
+        if download_link is None:
+            return None
+        if download_link.get("file:local_path"):
+            return download_link.location
+        return download_link.get("href") or None
+
+    @location.setter
+    def location(self, value: str) -> None:
+        warnings.warn(
+            "EOProduct.location is deprecated; use the download_link asset location instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if "download_link" not in self.assets:
+            self.assets["download_link"] = {
+                "href": value,
+                "roles": ["archive", "data"],
+            }
+        if (download_link := self.assets.get("download_link")) is not None:
+            download_link.location = value
 
     def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -500,21 +567,16 @@ class EOProduct:
         self.downloader = downloader
         self.downloader_auth = authenticator
 
-        # resolve locations and properties if needed with downloader configuration
-        location_attrs = ("location", "remote_location")
-        for location_attr in location_attrs:
-            if "%(" in getattr(self, location_attr):
-                try:
-                    setattr(
-                        self,
-                        location_attr,
-                        getattr(self, location_attr) % vars(self.downloader.config),
-                    )
-                except ValueError as e:
-                    logger.debug(
-                        f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
-                        f" in register_downloader: {str(e)}"
-                    )
+        for asset in self.assets.values():
+            for k in ("href", "eodag:order_link"):
+                v = asset.get(k)
+                if isinstance(v, str) and "%(" in v:
+                    try:
+                        asset[k] = v % vars(self.downloader.config)
+                    except (TypeError, ValueError) as e:
+                        logger.debug(
+                            f"Could not resolve {asset.key} asset {k} ({v}) in register_downloader: {str(e)}"
+                        )
 
         for k, v in self.properties.items():
             if isinstance(v, str) and "%(" in v:
@@ -597,17 +659,6 @@ class EOProduct:
 
         if fs_path is None:
             raise DownloadError("Missing file location returned by download process")
-        logger.debug(
-            "Product location updated from '%s' to '%s'",
-            self.remote_location,
-            self.location,
-        )
-        if self.remote_location != NOT_AVAILABLE:
-            logger.info(
-                "Remote location of the product is still available through its "
-                "'remote_location' property: %s",
-                self.remote_location,
-            )
 
         return fs_path
 
@@ -655,6 +706,21 @@ class EOProduct:
             **kwargs,
         )
 
+    def order(
+        self,
+        asset: str = "",
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+    ) -> None:
+        """Order the product assets that are not online yet, and poll their status until
+        they become available.
+
+        :param asset: (optional) regex filter on asset keys; all assets if empty
+        :param wait: (optional) Wait time in minutes between two order status checks
+        :param timeout: (optional) Maximum time in minutes before stop checking order status
+        """
+        self.assets.order(asset, wait=wait, timeout=timeout)
+
     def get_storage_options(
         self,
         asset_key: Optional[str] = None,
@@ -669,11 +735,11 @@ class EOProduct:
         - for AWS/S3 authentication, credentials and S3 client options are returned
         - for HTTP authentication, request headers and a potentially signed URL are returned
 
-        If the product is offline, an order request is sent before generating access
-        options.
+        If the targeted assets are offline, an order request is sent before generating
+        access options.
 
-        :param asset_key: (optional) Asset key to target. If ``None``, the product
-                          location is used.
+        :param asset_key: (optional) Asset key to target. If ``None``, the ``download_link``
+                          asset location is used, and all assets are ordered if needed.
         :param wait: (optional) If order is needed, wait time in minutes between two
                      order status checks.
         :param timeout: (optional) If order is needed, maximum time in minutes before
@@ -688,17 +754,22 @@ class EOProduct:
         if self.downloader is None:
             return {}
 
-        # order if product is offline
-        if self.properties.get("order:status") == OFFLINE_STATUS and hasattr(
-            self.downloader, "order"
-        ):
-            self.downloader.order(self, auth, wait=wait, timeout=timeout)
+        if asset_key and asset_key not in self.assets:
+            raise AddressNotFound(f"{asset_key} not found in {self} assets")
+
+        if hasattr(self.downloader, "order"):
+            if asset_key:
+                self.assets[asset_key].order(wait=wait, timeout=timeout)
+            else:
+                self.order(wait=wait, timeout=timeout)
 
         # default url and headers
-        try:
-            url = self.assets[asset_key]["href"] if asset_key else self.location
-        except KeyError as e:
-            raise AddressNotFound(f"{asset_key} not found in {self} assets") from e
+        download_link = self.assets.get("download_link")
+        url = (
+            self.assets[asset_key]["href"]
+            if asset_key
+            else download_link.location if download_link is not None else ""
+        )
         headers = {**USER_AGENT}
 
         if (
@@ -743,7 +814,7 @@ class EOProduct:
     ) -> tuple[ProgressCallback, bool]:
         # determine position of the progress bar with a counter of executor passings
         # to avoid bar overwriting in case of parallel downloads
-        count = executor._counter() if executor is not None else 1  # type: ignore
+        count = executor._counter() if executor is not None else 0  # type: ignore
 
         # progress bar init
         if progress_callback is None:
@@ -763,6 +834,7 @@ class EOProduct:
     def _download_quicklook(
         self,
         quicklook_file: str,
+        quicklook_url: str,
         progress_callback: ProgressCallback,
         ssl_verify: Optional[bool] = None,
         auth: Optional[AuthBase] = None,
@@ -774,6 +846,7 @@ class EOProduct:
         authentication, and can display a download progress if a callback is provided.
 
         :param quicklook_file: The full path (including filename) where the quicklook will be saved.
+        :param quicklook_url: The quicklook URL to fetch.
         :param progress_callback: A callable that accepts the current and total download sizes
                                 to display or log the download progress. It must support `reset(total)`
                                 and be callable with downloaded chunk sizes.
@@ -783,7 +856,7 @@ class EOProduct:
         :raises HTTPError: If the HTTP request to the quicklook URL fails.
         """
         with requests.get(
-            self.properties["eodag:quicklook"],
+            quicklook_url,
             stream=True,
             auth=auth,
             headers=USER_AGENT,
@@ -824,29 +897,33 @@ class EOProduct:
         :returns: The absolute path of the downloaded quicklook
         """
 
-        def format_quicklook_address() -> None:
+        quicklook_asset = self.assets.get("quicklook")
+        quicklook_url = quicklook_asset.get("href") if quicklook_asset else None
+
+        def format_quicklook_address(url: str) -> str:
             """If the quicklook address is a Python format string, resolve the
             formatting with the properties of the product."""
-            fstrmatch = re.match(r".*{.+}*.*", self.properties["eodag:quicklook"])
+            fstrmatch = re.match(r".*{.+}*.*", url)
             if fstrmatch:
-                self.properties["eodag:quicklook"] = format_string(
+                return format_string(
                     None,
-                    self.properties["eodag:quicklook"],
+                    url,
                     **{
                         prop_key: prop_val
                         for prop_key, prop_val in self.properties.items()
                         if prop_key != "eodag:quicklook"
                     },
                 )
+            return url
 
-        if self.properties.get("eodag:quicklook") is None:
+        if quicklook_url is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
                 self.properties["id"],
             )
             return ""
 
-        format_quicklook_address()
+        quicklook_url = format_quicklook_address(quicklook_url)
 
         if output_dir is not None:
             quicklooks_output_dir = os.path.abspath(os.path.realpath(output_dir))
@@ -881,11 +958,10 @@ class EOProduct:
             # it is a HTTP URL. If not, we assume it is a base64 string, in which case
             # we just decode the content, write it into the quicklook_file and return it.
             if not (
-                self.properties["eodag:quicklook"].startswith("http")
-                or self.properties["eodag:quicklook"].startswith("https")
+                quicklook_url.startswith("http") or quicklook_url.startswith("https")
             ):
                 with open(quicklook_file, "wb") as fd:
-                    img = self.properties["eodag:quicklook"].encode("ascii")
+                    img = quicklook_url.encode("ascii")
                     fd.write(base64.b64decode(img))
                 return quicklook_file
 
@@ -905,7 +981,7 @@ class EOProduct:
             )
             try:
                 self._download_quicklook(
-                    quicklook_file, progress_callback, ssl_verify, auth
+                    quicklook_file, quicklook_url, progress_callback, ssl_verify, auth
                 )
             except RequestException as e:
                 logger.debug(
@@ -913,7 +989,11 @@ class EOProduct:
                 )
                 try:
                     self._download_quicklook(
-                        quicklook_file, progress_callback, ssl_verify, None
+                        quicklook_file,
+                        quicklook_url,
+                        progress_callback,
+                        ssl_verify,
+                        None,
                     )
                 except RequestException as e_no_auth:
                     logger.error(
@@ -1061,6 +1141,19 @@ class EOProduct:
         obj = cls(provider, properties, collection=collection)
         obj.search_intersection = geometry.shape(search_intersection)
         obj.assets.update(feature.get("assets", {}))
+        # v5 compatibility for results serialized with the removed property
+        if download_link_href := obj.properties.pop("eodag:download_link", None):
+            warnings.warn(
+                "'eodag:download_link' product property is deprecated and will not be "
+                "converted any more in v6, it is replaced by the 'download_link' asset.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if "download_link" not in obj.assets:
+                obj.assets["download_link"] = {
+                    "href": download_link_href,
+                    "roles": ["archive", "data"],
+                }
         obj.links = feature.get("links", [])
 
         if plugins_manager is not None:

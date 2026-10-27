@@ -37,7 +37,6 @@ from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
-    OFFLINE_STATUS,
     STAGING_STATUS,
     format_metadata,
     mtd_cfg_as_conversion_and_querypath,
@@ -317,8 +316,6 @@ class ECMWFSearch(PostJsonSearch):
             **{
                 "id": "$.id",
                 "title": "$.id",
-                "order:status": OFFLINE_STATUS,
-                "eodag:download_link": "$.null",
                 "geometry": ["feature", "$.geometry"],
                 "eodag:default_geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
             },
@@ -639,6 +636,7 @@ class ECMWFSearch(PostJsonSearch):
                 START,
                 END,
                 "geometry",
+                "_collection",
             } and not self._is_discoverable_metadata_key(key):
                 raise ValidationError(
                     f"'{key}' is not a queryable parameter for {self.provider}", {key}
@@ -1131,10 +1129,11 @@ class ECMWFSearch(PostJsonSearch):
             start, end = ecmwf_temporal_to_eodag(properties)
             properties["start_datetime"] = start
             properties["end_datetime"] = end
+            result_data = result
 
         else:
             # use all available query_params to parse properties
-            result_data: dict[str, Any] = {
+            result_data = {
                 **results.collection_def_params,
                 **sorted_unpaginated_qp,
                 **{"qs": sorted_unpaginated_qp},
@@ -1204,6 +1203,9 @@ class ECMWFSearch(PostJsonSearch):
             **kwargs,
         )
 
+        # "Technicals" assets as (downloadlink, quicklook, thumbnail)
+        product.assets.update(self.build_assets_from_mapping(result_data, product))
+
         # backup original register_downloader to register_downloader_only
         product.register_downloader_only = product.register_downloader
         # patched register_downloader that will also update properties
@@ -1239,31 +1241,34 @@ def _check_id(product: EOProduct) -> EOProduct:
 
     if product.downloader is None:
         return product
-    on_response_mm = getattr(product.downloader.config, "order_on_response", {}).get(
-        "metadata_mapping", {}
+    on_response_am = getattr(product.downloader.config, "order_on_response", {}).get(
+        "asset_mapping", {}
     )
-    if not on_response_mm:
+    if not on_response_am:
         return product
 
-    logger.debug(f"Update product properties using given eodag:order_id {product_id}")
+    logger.debug(f"Update asset fields using given order:id {product_id}")
     on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
-        on_response_mm,
+        on_response_am,
     )
     properties_update = properties_from_json(
-        {}, {**on_response_mm_jsonpath, **{"eodag:order_id": (None, product_id)}}
+        {}, {**on_response_mm_jsonpath, **{"order:id": (None, product_id)}}
     )
-    product.properties.update(
-        {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
-    )
+    asset = product.assets.get("download_link")
+    if asset is None:
+        # asset has neither href nor eodag:order_link yet, bypass AssetsDict checks
+        asset = product.assets._make_asset("download_link", {})
+        product.assets.data["download_link"] = asset
+    product.downloader._update_from_order(asset, properties_update, {})  # type: ignore
 
     auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 
     # try to poll the job corresponding to the given id
     try:
-        product.downloader._order_status(product=product, auth=auth)  # type: ignore
+        product.downloader._order_status(asset=asset, auth=auth)  # type: ignore
     # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
     except NotAvailableError:
-        product.properties["order:status"] = STAGING_STATUS
+        asset["order:status"] = STAGING_STATUS
     except Exception as e:
         if (
             isinstance(e, DownloadError) or isinstance(e, ValidationError)
@@ -1505,6 +1510,9 @@ class MeteoblueSearch(ECMWFSearch):
             collection=collection,
             properties=properties,
         )
+
+        # "Technicals" assets as (downloadlink, quicklook, thumbnail)
+        product.assets.update(self.build_assets_from_mapping(result, product))
 
         return [
             product,

@@ -300,7 +300,16 @@ class PluginManager:
         self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
     ) -> Optional[Authentication]:
         """Build and return the authentication plugin associated to the given
-        search/download plugin
+        search/download plugin.
+
+        The selection follows the provider/auth matching rules in
+        :meth:`get_auth_plugins`: auth plugins are matched first using the product
+        asset URLs in order, stopping at the first matching auth plugin (assets ``href``
+        or ``eodag:order_link`` when it is not online). Then using the
+        download/search plugin configuration. If no auth plugin matches, the method
+        keeps the provider's own auth plugin as a last resort when the product still
+        has a remote location, so product-specific registration can succeed even when
+        the asset list is temporarily empty.
 
         .. versionchanged:: v3.0.0
             ``get_auth_plugin()`` now needs ``associated_plugin`` instead of ``provider``
@@ -311,30 +320,39 @@ class PluginManager:
         :param product: The product to download. ``None`` for search authentication
         :returns: The Authentication plugin
         """
-        # matching url from product to download
+        # Collect candidate URLs; a technical asset may precede assets requiring auth.
         if product is not None and len(product.assets) > 0:
-            matching_url = next(iter(product.assets.values()))["href"]
-        elif (
-            product is not None
-            and product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS
-        ):
-            matching_url = product.properties.get("eodag:order_link")
-        elif product is not None:
-            matching_url = product.properties.get("eodag:download_link")
-        else:
+            matching_urls: list[Optional[str]] = []
+            for matching_asset in product.assets.values():
+                # use the order link if the asset is not online, otherwise use the href
+                if matching_asset.get(
+                    "order:status", ONLINE_STATUS
+                ) != ONLINE_STATUS and matching_asset.get("eodag:order_link"):
+                    matching_urls.append(matching_asset["eodag:order_link"])
+                else:
+                    matching_urls.append(matching_asset["href"])
+            matching_urls = matching_urls or [None]
+        elif product is None:
             # search auth
-            matching_url = getattr(associated_plugin.config, "api_endpoint", None)
+            matching_urls = [getattr(associated_plugin.config, "api_endpoint", None)]
+        else:
+            matching_urls = [None]
 
-        try:
+        auth_plugin = None
+        # Try each candidate until one selects auth; None allows config-only matching.
+        for matching_url in matching_urls:
             auth_plugin = next(
                 self.get_auth_plugins(
                     associated_plugin.provider,
                     matching_url=matching_url,
                     matching_conf=associated_plugin.config,
-                )
+                ),
+                None,
             )
-        except StopIteration:
-            auth_plugin = None
+            if auth_plugin is not None:
+                break
+
+        # bind collection if supported by the auth plugin
         if auth_plugin and product is not None and product.collection:
             bind_collection = getattr(auth_plugin, "bind_collection", None)
             if bind_collection:
@@ -356,6 +374,25 @@ class PluginManager:
                         collection=product.collection
                     )
                 auth_plugin = bind_collection(provider_collection)
+
+        # Keep the provider auth as a last resort only when this product still has a
+        # remote location but no auth plugin matched the URL/config.
+        if (
+            auth_plugin is None
+            and product is not None
+            and product.assets.get("download_link", {}).get("href")
+            and associated_plugin.provider == product.provider
+        ):
+            provider_conf = self.providers.configs.get(product.provider)
+            provider_auth_conf = getattr(provider_conf, "auth", None)
+            if provider_auth_conf is not None:
+                auth_plugin = cast(
+                    Authentication,
+                    self._build_plugin(
+                        product.provider, provider_auth_conf, Authentication
+                    ),
+                )
+
         return auth_plugin
 
     def get_auth_plugins(

@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import glob
 import hashlib
 import logging
 import os
@@ -27,9 +28,20 @@ import tempfile
 import zipfile
 from abc import abstractmethod
 from pathlib import Path
+from threading import Lock
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    final,
+)
 
+import orjson
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
@@ -37,10 +49,11 @@ from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_MIME,
     ProgressCallback,
     StreamResponse,
+    guess_extension,
     sanitize,
-    uri_to_path,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -53,7 +66,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product._product import EOProduct
+    from eodag.api.product import Asset, EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
@@ -73,31 +86,26 @@ class Download(PluginTopic):
     - ``download``: download a single :class:`~eodag.api.product._product.EOProduct`
     - ``download_all``: download multiple products from a :class:`~eodag.api.search_result.SearchResult`
 
-    They must:
+    Downloads use ``output_dir`` from configuration or keyword arguments and
+    extract archives when ``extract`` is true (the default). Without an ``asset``
+    filter, only ``download_link`` is selected if present; otherwise asset keys
+    are matched against the filter. Selected offline assets are ordered individually.
 
-    - download data in the ``output_dir`` folder defined in the plugin's
-      configuration or passed through kwargs
-    - extract products from their archive (if relevant) if ``extract`` is set to ``True``
-      (``True`` by default)
-    - save a product in an archive/directory (in ``output_dir``) whose name must be
-      the product's ``title`` property
-    - update the product's ``location`` attribute once its data is downloaded (and
-      eventually after it's extracted) to the product's location given as a file URI
-      (e.g. ``file:///tmp/product_folder`` on Linux or
-      ``file:///C:/Users/username/AppData/Local/Temp`` on Windows)
-    - save a *record* file in the directory ``{output_dir}/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``collection`` and ``properties['id']``
-      attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
-      and whose content is the product's ``remote_location`` attribute itself.
-    - not try to download a product whose ``location`` attribute already points to an
-      existing file/directory
-    - not try to download a product if its *record* file exists as long as the expected
-      product's file/directory. If the *record* file only is found, it must be deleted
-      (it certainly indicates that the download didn't complete)
+    The ``download_link`` asset retains the title-based product archive/directory
+    layout; other assets are stored inside the product directory. Downloaded
+    filesystem paths belong in ``file:local_path``, preserving the remote ``href``.
+    Plugins must not update deprecated product location properties.
+
+    Use :meth:`set_statements` to update asset state and persist per-asset JSON
+    statements in ``{output_dir}/.downloaded``. Cached data is reused only while
+    its path exists. During v5, :meth:`check_cache` also migrates legacy product
+    records for ``download_link``.
 
     :param provider: An eodag providers configuration dictionary
     :param config: Path to the user configuration file
     """
+
+    directories_mutex = Lock()
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Download, self).__init__(provider, config)
@@ -179,47 +187,264 @@ class Download(PluginTopic):
             "Download streaming must be implemented using a method named stream_download"
         )
 
-    def _prepare_download(
+    def _prepare_directories(self, **kwargs: Unpack[DownloadConf]) -> tuple[str, str]:
+        """Prepare output and statement directories."""
+        # output dir
+        output_dir = kwargs.get("output_dir")
+        if output_dir is None:
+            output_dir = getattr(self.config, "output_dir", None)
+        if output_dir is None:
+            output_dir = tempfile.gettempdir()
+        output_dir = os.path.abspath(output_dir)
+
+        # statement dir
+        statement_dir = os.path.join(output_dir, ".downloaded")
+
+        Download.directories_mutex.acquire()
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+        if not os.path.isdir(statement_dir):
+            try:
+                os.makedirs(statement_dir)
+            except OSError:
+                import traceback as tb
+
+                logger.warning(
+                    "Unable to create download directory:\n" + tb.format_exc()
+                )
+        Download.directories_mutex.release()
+
+        return output_dir, statement_dir
+
+    def _get_statement_path(self, asset: Asset, statement_dir: str) -> str:
+        """Get the path to the statement file for the given asset."""
+        asset_hash = "{}-{}-{}".format(
+            str(asset.product.collection),
+            str(asset.product.properties.get("id")),
+            asset.key,
+        )
+        return "{}/{}.json".format(
+            statement_dir, hashlib.md5(asset_hash.encode("utf-8")).hexdigest()
+        )
+
+    @final
+    def set_statements(self, asset: Asset, status: dict[str, Any], **kwargs):
+        """update asset statement"""
+        _, statement_dir = self._prepare_directories(**kwargs)
+        statement_file = self._get_statement_path(asset, statement_dir)
+        logger.debug(
+            "Asset {} statements recorded at {}".format(asset.key, statement_file)
+        )
+        with open(statement_file, "wb") as f:
+            f.write(orjson.dumps(status))
+        # update asset with current status
+        asset.update(status)
+
+    @final
+    def get_statements(
         self,
-        product: EOProduct,
-        progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Unpack[DownloadConf],
-    ) -> tuple[Optional[str], Optional[str]]:
-        """Check if file has already been downloaded, and prepare product download
+        asset: Asset,
+        **kwargs,
+    ) -> dict[str, Any]:
+        """Check if file has already been downloaded, and prepare asset download
+
+        :param asset: The Asset to download
+        :param kwargs: Additional download keyword arguments,`output_dir` (str), `extract` (bool),
+                       `delete_archive` (bool)
+        :returns: The asset statements if they exist, otherwise an empty dictionary
+        """
+        output_dir, statement_dir = self._prepare_directories(**kwargs)
+        statement_file = self._get_statement_path(asset, statement_dir)
+
+        # Try load statement file
+        statements = {
+            "href": "",
+            "order:status": "",
+            "file:local_path": "",
+        }
+
+        if os.path.isfile(statement_file):
+            try:
+                with open(statement_file, "r") as f:
+                    imported_statements = orjson.loads(f.read())
+
+                # Keep existing statements only if href hasn't changed since last download
+                # means: old and new are defined and different
+                if asset.get("href", "") in ["", imported_statements.get("href", "")]:
+                    statements = imported_statements
+                else:
+                    raise Exception("Out-dated statement (href changed)")
+            except Exception as e:
+                logger.debug(
+                    "Asset {} fail to load statement file: {}".format(asset.key, str(e))
+                )
+                # Corrupted or out-dated file
+                try:
+                    os.remove(statement_file)
+                except Exception as e:
+                    logger.debug(
+                        "Remove corrupted asset {} statements: {}".format(asset.key, e)
+                    )
+
+        product_dir = os.path.join(
+            output_dir, sanitize(asset.product.properties.get("title", ""))
+        )
+
+        statement_local_path = str(statements.get("file:local_path", ""))
+        if statement_local_path and (
+            os.path.isfile(statement_local_path) or os.path.isdir(statement_local_path)
+        ):
+            return statements
+
+        # Generate expected local path
+        local_path = os.path.join(product_dir, sanitize(asset.key))
+        if not os.path.isdir(local_path):
+            computed_extension: Optional[str] = None
+            if asset.get("type") not in [None, "", DEFAULT_MIME]:
+                computed_extension = guess_extension(asset.get("type") or DEFAULT_MIME)
+            if computed_extension is None:
+                computed_extension = ""
+            output_extension: str = kwargs.get(
+                "output_extension",
+                getattr(self.config, "output_extension", computed_extension),
+            )
+            if (
+                not isinstance(output_extension, str)
+                or len(output_extension) == 0
+                or not output_extension.startswith(".")
+            ):
+                logger.debug("Malformed output extension {}".format(computed_extension))
+                output_extension = ""
+
+            if not os.path.isdir(local_path) and not local_path.endswith(
+                output_extension
+            ):
+                local_path = "{}{}".format(local_path.rstrip("/\\"), output_extension)
+                if not os.path.isfile(local_path) and os.path.isdir(product_dir):
+                    # Find matching file, excluding extension restriction
+                    # When asset is a directory, result could be an archive
+                    base_path = os.path.join(product_dir, sanitize(asset.key))
+                    for file in os.listdir(product_dir):
+                        path = os.path.join(product_dir.rstrip("/\\"), file)
+                        if os.path.isfile(path) and path.startswith(f"{base_path}."):
+                            local_path = path
+                            statements["file:local_path"] = local_path
+                            self.set_statements(asset, statements, **kwargs)
+                            break
+
+        statements["file:local_path"] = local_path
+
+        return statements
+
+    @final
+    def check_cache(self, asset: Asset, **kwargs: Any) -> Optional[dict[str, Any]]:
+        """Get asset cached download path
+
+        :param asset: The asset to check in the download cache
+        :param kwargs: Additional keyword arguments
+        :returns: The asset statements if local path exists and is valid, otherwise None
+        """
+        # Gather current asset statements
+        statements = self.get_statements(asset, **kwargs)
+
+        local_path = statements.get("file:local_path")
+        if isinstance(local_path, str) and (
+            os.path.isfile(local_path) or os.path.isdir(local_path)
+        ):
+            logger.debug(
+                "Asset {} already downloaded at {}".format(asset.key, local_path)
+            )
+            return statements
+
+        if asset.key == "download_link":
+            return self._migrate_legacy_record(asset, **kwargs)
+
+        return None
+
+    def _migrate_legacy_record(
+        self, asset: Asset, **kwargs: Any
+    ) -> Optional[dict[str, Any]]:
+        """Convert a legacy product-level download record into ``download_link`` asset statements.
+
+        Products downloaded with eodag < v5 have a ``.downloaded/<md5>`` record file instead of
+        asset statements.
+
+        :param asset: The ``download_link`` asset
+        :param kwargs: Additional keyword arguments
+        :returns: The asset statements if a legacy download was found, otherwise None
+        """
+        product = asset.product
+        output_dir, statement_dir = self._prepare_directories(**kwargs)
+        record_names = [self.generate_record_hash(product)]
+        if href := asset.get("href"):
+            record_names.append(hashlib.md5(href.encode("utf-8")).hexdigest())
+        record_file = next(
+            (
+                path
+                for name in record_names
+                if os.path.isfile(path := os.path.join(statement_dir, name))
+            ),
+            None,
+        )
+        if record_file is None:
+            return None
+
+        fs_path, fs_dir_path, fs_dir_path_without_suffix = self._product_output_paths(
+            product, output_dir, self._output_extension(**kwargs)
+        )
+        path_obj = Path(fs_path)
+        candidates: list[Union[Path, str]] = [
+            *path_obj.parent.glob(f"{glob.escape(path_obj.stem)}.*"),
+            fs_path,
+            fs_dir_path,
+            fs_dir_path_without_suffix,
+        ]
+        local_path = next((str(p) for p in candidates if os.path.exists(p)), None)
+        os.remove(record_file)
+        if local_path is None:
+            logger.debug(f"Legacy record {record_file} found but not the actual file")
+            return None
+
+        logger.debug(f"Legacy download record {record_file} migrated to {asset.key}")
+        statements = {**asset.as_dict(), "file:local_path": local_path}
+        self.set_statements(asset, statements, **kwargs)
+        return statements
+
+    def _select_assets(
+        self, product: EOProduct, asset_filter: Optional[str] = None
+    ) -> list[Asset]:
+        """Select the product assets to download.
+
+        Without filter, only the ``download_link`` asset is selected if it exists, otherwise all assets.
 
         :param product: The EO product to download
-        :param progress_callback: (optional) A progress callback
-        :returns: fs_path, record_filename
+        :param asset_filter: (optional) regex filter on asset keys
+        :returns: The assets to download
         """
-        if product.location != product.remote_location:
-            fs_path = uri_to_path(product.location)
-            # The fs path of a product is either a file (if 'extract' config is False) or a directory
-            if os.path.isfile(fs_path) or os.path.isdir(fs_path):
-                logger.info(
-                    f"Product already present on this platform. Identifier: {fs_path}",
-                )
-                # Do not download data if we are on site. Instead give back the absolute path to the data
-                return fs_path, None
+        if (
+            asset_filter is None
+            and (download_link := product.assets.get("download_link")) is not None
+        ):
+            return [download_link]
+        return product.assets.get_values(asset_filter or "")
 
-        url = product.remote_location
-        if not url:
-            logger.debug(
-                f"Unable to get download url for {product}, skipping download",
-            )
-            return None, None
-        logger.info(
-            f"Download url: {url}",
+    def _output_extension(self, **kwargs: Any) -> str:
+        """Get the configured output extension"""
+        return str(
+            kwargs.get("output_extension")
+            or getattr(self.config, "output_extension", "")
         )
 
-        output_dir = (
-            kwargs.pop("output_dir", None)
-            or getattr(self.config, "output_dir", tempfile.gettempdir())
-            or tempfile.gettempdir()
-        )
-        output_extension = kwargs.get("output_extension") or getattr(
-            self.config, "output_extension", ""
-        )
+    def _product_output_paths(
+        self, product: EOProduct, output_dir: str, output_extension: str
+    ) -> tuple[str, str, str]:
+        """Get the product output paths.
 
+        :param product: The EO product
+        :param output_dir: The output directory
+        :param output_extension: The output extension
+        :returns: file path, directory path and directory path without collision avoidance suffix
+        """
         prefix = os.path.abspath(output_dir)
         sanitized_title = sanitize(product.properties["title"])
         if sanitized_title == product.properties["title"]:
@@ -228,82 +453,102 @@ class Download(PluginTopic):
             collision_avoidance_suffix = "-" + sanitize(product.properties["id"])
         fs_path = os.path.join(
             prefix,
-            f"{sanitize(product.properties['title'])}{collision_avoidance_suffix}{output_extension}",
+            f"{sanitized_title}{collision_avoidance_suffix}{output_extension}",
         )
         fs_dir_path = (
             fs_path.replace(output_extension, "") if output_extension else fs_path
         )
-        # check also path without collision suffix that may be used as path dir
+        # path without collision suffix that may be used as path dir
         fs_path_without_suffix = os.path.join(
-            prefix, f"{sanitize(product.properties['title'])}{output_extension}"
+            prefix, f"{sanitized_title}{output_extension}"
         )
         fs_dir_path_without_suffix = (
             fs_path_without_suffix.replace(output_extension, "")
             if output_extension
             else fs_path_without_suffix
         )
+        return fs_path, fs_dir_path, fs_dir_path_without_suffix
 
-        download_records_dir = os.path.join(prefix, ".downloaded")
-        try:
-            os.makedirs(download_records_dir)
-        except OSError as exc:
-            import errno
-
-            if exc.errno != errno.EEXIST:  # Skip error if dir exists
-                import traceback as tb
-
-                logger.warning(
-                    f"Unable to create records directory. Got:\n{tb.format_exc()}",
+    @staticmethod
+    def _local_product_path(product: EOProduct) -> Optional[str]:
+        """Get the product local path if it is already available on the filesystem"""
+        download_link = product.assets.get("download_link")
+        if download_link is not None and (
+            fs_path := download_link.get("file:local_path")
+        ):
+            # The fs path of a product is either a file (if 'extract' config is False) or a directory
+            if os.path.isfile(fs_path) or os.path.isdir(fs_path):
+                logger.info(
+                    f"Product already present on this platform. Identifier: {fs_path}",
                 )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        old_record_filename = os.path.join(download_records_dir, url_hash)
-        record_filename = os.path.join(
-            download_records_dir, self.generate_record_hash(product)
+                return fs_path
+        return None
+
+    def _product_output_path(
+        self, product: EOProduct, **kwargs: Unpack[DownloadConf]
+    ) -> str:
+        """Get the output file path of the product ``download_link``, creating the output directory.
+
+        :param product: The EO product to download
+        :param kwargs: download additional kwargs
+        :returns: The output file path
+        """
+        output_dir, _ = self._prepare_directories(**kwargs)
+        fs_path, _, _ = self._product_output_paths(
+            product, output_dir, self._output_extension(**kwargs)
         )
-        if os.path.isfile(old_record_filename):
-            os.rename(old_record_filename, record_filename)
+        return fs_path
 
-        # path with or without extension
-        path_obj = Path(fs_path)
-        matched_paths = list(path_obj.parent.glob(f"{path_obj.stem}.*"))
-        fs_path_with_ext = matched_paths[0] if matched_paths else fs_path
-        if (
-            os.path.isfile(record_filename)
-            and fs_path_with_ext
-            and os.path.isfile(fs_path_with_ext)
-        ):
-            logger.info(
-                f"Product already downloaded: {fs_path_with_ext}",
-            )
-            return (
-                self._finalize(
-                    str(fs_path_with_ext), progress_callback=progress_callback, **kwargs
-                ),
-                None,
-            )
-        elif os.path.isfile(record_filename) and (
-            os.path.isdir(fs_dir_path) or os.path.isdir(fs_dir_path_without_suffix)
-        ):
-            logger.info(
-                f"Product already downloaded: {fs_dir_path}",
-            )
-            return (
-                self._finalize(
-                    fs_dir_path, progress_callback=progress_callback, **kwargs
-                ),
-                None,
-            )
-        # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
-        elif os.path.isfile(record_filename):
-            logger.debug(
-                f"Record file found ({record_filename}) but not the actual file",
-            )
-            logger.debug(
-                f"Removing record file : {record_filename}",
-            )
-            os.remove(record_filename)
+    def _cached_download_link(
+        self,
+        product: EOProduct,
+        progress_callback: Optional[ProgressCallback] = None,
+        **kwargs: Unpack[DownloadConf],
+    ) -> Optional[str]:
+        """Get the local path of the product if its ``download_link`` asset was already downloaded.
 
-        return fs_path, record_filename
+        A cached archive is finalized (extracted if configured) and its asset statements are updated.
+
+        :param product: The EO product to download
+        :param progress_callback: (optional) A progress callback
+        :param kwargs: download additional kwargs
+        :returns: The product local path, or ``None`` if it was not downloaded yet
+        """
+        if fs_path := self._local_product_path(product):
+            return fs_path
+        if (download_link := product.assets.get("download_link")) is None:
+            return None
+        per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
+        if not (statements := self.check_cache(download_link, **per_asset_kwargs)):
+            return None
+
+        download_link.update(statements)
+        local_path = str(statements["file:local_path"])
+        logger.info(f"Product already downloaded: {local_path}")
+        if os.path.isfile(local_path):
+            local_path = self._finalize(
+                local_path, progress_callback=progress_callback, **kwargs
+            )
+        if local_path != statements["file:local_path"]:
+            self._record_download_link(product, local_path, **kwargs)
+        return local_path
+
+    def _record_download_link(
+        self, product: EOProduct, product_path: str, **kwargs: Unpack[DownloadConf]
+    ) -> None:
+        """Record the local path of the downloaded product ``download_link`` asset.
+
+        :param product: The downloaded EO product
+        :param product_path: The product local path
+        :param kwargs: download additional kwargs
+        """
+        if (download_link := product.assets.get("download_link")) is not None:
+            per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
+            self.set_statements(
+                download_link,
+                {**download_link.as_dict(), "file:local_path": product_path},
+                **per_asset_kwargs,
+            )
 
     def generate_record_hash(self, product: EOProduct) -> str:
         """Generate the record hash of the given product.
@@ -561,11 +806,7 @@ class Download(PluginTopic):
             if (
                 product.downloader
                 and product.downloader.config.type == "AwsDownload"
-                or len(product.assets) > 0
-                and (
-                    not getattr(self.config, "ignore_assets", False)
-                    or kwargs.get("asset") is not None
-                )
+                or len(product.assets) > 1
             )
         )
 
@@ -666,8 +907,24 @@ class Download(PluginTopic):
 
         return paths
 
+    @staticmethod
+    def _get_order_status(product: EOProduct, asset: Optional[Asset] = None) -> str:
+        """Get the asset ``order:status``
+
+        :param product: The EO product
+        :param asset: (optional) The asset carrying the order state
+        :returns: The order status, ``succeeded`` if not set
+        """
+        if asset is None:
+            return ONLINE_STATUS
+        return asset.get("order:status", ONLINE_STATUS)
+
     def _order_download_retry(
-        self, product: EOProduct, wait: float, timeout: float
+        self,
+        product: EOProduct,
+        wait: float,
+        timeout: float,
+        asset: Optional[Asset] = None,
     ) -> Callable[[Callable[..., T]], Callable[..., T]]:
         """
         Order download retry decorator.
@@ -679,15 +936,17 @@ class Download(PluginTopic):
         :param wait: If download fails, wait time in minutes between two download tries
         :param timeout: If download fails, maximum time in minutes before stop retrying
                         to download
+        :param asset: (optional) The asset to order/download, carrying the order state
         :returns: decorator
         """
+        retried: Union[EOProduct, Asset] = asset if asset is not None else product
 
         def decorator(order_download: Callable[..., T]) -> Callable[..., T]:
             def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
                 start_time = dt.datetime.now()
                 stop_time = start_time + dt.timedelta(minutes=timeout)
-                product.next_try = start_time
+                retried.next_try = start_time
                 retry_count = 0
                 not_available_info = "The product could not be downloaded"
                 # another output for notebooks
@@ -696,16 +955,15 @@ class Download(PluginTopic):
                 while "Loop until products download succeeds or timeout is reached":
                     datetime_now = dt.datetime.now()
 
-                    if datetime_now >= product.next_try:
-                        product.next_try += dt.timedelta(minutes=wait)
+                    if datetime_now >= retried.next_try:
+                        retried.next_try += dt.timedelta(minutes=wait)
                         try:
                             download = order_download(*args, **kwargs)
                         except NotAvailableError as e:
                             not_available_info = str(e)
                         else:
                             if (
-                                product.properties.get("order:status", ONLINE_STATUS)
-                                == ONLINE_STATUS
+                                self._get_order_status(product, asset) == ONLINE_STATUS
                             ) or timeout <= 0:
                                 return download
 
@@ -715,9 +973,12 @@ class Download(PluginTopic):
                                 f" {self.provider}, {not_available_info}"
                             )
 
-                    if datetime_now >= product.next_try and datetime_now < stop_time:
+                    stream = getattr(retried, "_stream", None) or getattr(
+                        product, "_stream", None
+                    )
+                    if datetime_now >= retried.next_try and datetime_now < stop_time:
                         wait_seconds: Union[float, int] = (
-                            datetime_now - product.next_try + dt.timedelta(minutes=wait)
+                            datetime_now - retried.next_try + dt.timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
                         retry_info = (
@@ -726,20 +987,18 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(product, "_stream"):
-                            retry_server_info = product._stream.headers.get(
-                                "Retry-After", ""
-                            )
+                        if stream is not None:
+                            retry_server_info = stream.headers.get("Retry-After", "")
                             if retry_server_info:
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
                                 )
                         logger.debug(retry_info)
                         nb_info.display_html(retry_info)
-                        product.next_try = datetime_now
-                    elif datetime_now < product.next_try and datetime_now < stop_time:
-                        wait_seconds = (product.next_try - datetime_now).seconds + (
-                            product.next_try - datetime_now
+                        retried.next_try = datetime_now
+                    elif datetime_now < retried.next_try and datetime_now < stop_time:
+                        wait_seconds = (retried.next_try - datetime_now).seconds + (
+                            retried.next_try - datetime_now
                         ).microseconds / 1e6
                         retry_count += 1
                         retry_info = (
@@ -748,10 +1007,8 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(product, "_stream"):
-                            retry_server_info = product._stream.headers.get(
-                                "Retry-After", ""
-                            )
+                        if stream is not None:
+                            retry_server_info = stream.headers.get("Retry-After", "")
                             if retry_server_info:
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
@@ -760,11 +1017,12 @@ class Download(PluginTopic):
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:
-                        if "order:status" not in product.properties:
-                            product.properties["order:status"] = "N/A status"
+                        order_status = self._get_order_status(product, asset)
+                        if asset is None or "order:status" not in asset:
+                            order_status = "N/A status"
                         logger.info(not_available_info)
                         raise NotAvailableError(
-                            f"{product.properties['title']} is not available ({product.properties['order:status']})"
+                            f"{product.properties['title']} is not available ({order_status})"
                             f" and order was not successfull, timeout reached"
                         )
                     elif datetime_now >= stop_time:

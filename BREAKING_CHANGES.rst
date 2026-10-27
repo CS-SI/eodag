@@ -3,6 +3,125 @@ Migration guide
 
 Full changelog available in `Release history <changelog.html>`_.
 
+v5.0.0
+++++++
+
+Asset-based downloads
+~~~~~~~~~~~~~~~~~~~~~
+
+Download URLs, local paths, sizes and order state now belong to assets, not
+product properties. Custom search configurations must replace
+``metadata_mapping.eodag:download_link`` with
+``assets_mapping.download_link.href``. Move ``order:status`` and
+``eodag:order_link`` into the corresponding asset mapping as well. There is no
+compatibility conversion for old provider configurations.
+
+``Asset.size`` is removed; use ``asset["file:size"]``. Downloaded filesystem paths
+are stored in ``file:local_path``, while ``href`` remains the remote URL.
+Order identifiers use ``order:id`` instead of ``eodag:order_id``.
+
+The ``ignore_assets`` download configuration option is removed. Without an
+``asset`` filter, downloads and streaming downloads select only ``download_link``
+when it exists; otherwise they select all available assets. An explicit filter
+selects matching asset keys, including when ``download_link`` exists. Plugin
+signatures remain ``download(product, asset=...)`` and
+``stream_download(product, asset=...)``; order and download processing happens
+per selected asset.
+
+``product.order()`` and ``product.get_storage_options()`` order assets
+individually, with an optional asset filter. ``SearchResult.filter_online()``
+keeps only products whose assets are all online; an asset without an explicit
+``order:status`` is treated as online.
+
+Legacy download records
+~~~~~~~~~~~~~~~~~~~~~~~
+
+During v5, an existing product download can be reused without downloading again.
+When a ``download_link`` asset has no cached statement, EODAG checks the legacy
+``.downloaded`` records named by the MD5 of ``{collection}-{id}`` or, for older
+downloads, the URL. If the archive or extracted directory still exists, the
+record is converted to an asset JSON statement containing ``file:local_path``
+and the old record is removed. A record without data is not treated as a cached
+download. Other assets do not use legacy product records.
+
+New ``download_link`` downloads retain the product-level output layout, rather
+than creating a file named after the asset key. Legacy-record migration is
+provided for v5 only and is scheduled for removal in v6.
+
+Order response mappings
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In download plugin configurations, ``order_on_response``, ``order_status`` and
+``order_status.on_success`` now distinguish two mappings:
+
+* ``asset_mapping`` updates the ordered asset directly. It is singular and is not
+  keyed by asset name. Use ``href`` instead of ``eodag:download_link`` and
+  ``order:id`` instead of ``eodag:order_id``, including in placeholders such as
+  ``{order:id}``.
+* ``metadata_mapping`` only updates product properties, such as ``created``,
+  ``published``, ``updated``, ``ecmwf:dataset`` and ``eodag:request_params``.
+
+Both mappings are parsed together, so placeholders can reference fields from either
+mapping. Keys beginning with ``_`` are parse-only helpers; they and unavailable
+values are not stored. Order IDs are stored as strings.
+
+Custom provider configurations must move asset order fields from
+``metadata_mapping`` to ``asset_mapping``. Legacy order configuration semantics
+are no longer supported.
+
+For example::
+
+    order_on_response:
+      asset_mapping:
+        order:id: $.json.jobID
+        eodag:status_link: https://example.test/jobs/{order:id}
+    order_status:
+      metadata_mapping:
+        created: $.json.created
+      on_success:
+        asset_mapping:
+          href: $.json.asset.href
+
+Asset order status
+~~~~~~~~~~~~~~~~~~
+
+Order state is stored only in the asset's ``order:status`` field, using
+``orderable``, ``ordered``, ``succeeded`` or ``failed``. Raw provider status and
+progress are no longer stored as ``eodag:order_status`` or ``eodag:order_percent``.
+Use parse-only ``_order_status`` and ``_order_percent`` in order response mappings,
+and update ``success`` / ``error`` matching to reference ``_order_status``.
+
+An asset becomes ``failed`` when the provider reports an order error, rejects an
+order with HTTP 400, or the successful order result cannot be parsed (including
+an XML search returning zero or multiple results). Authentication, quota, timeout
+and transient request errors do not mark an asset failed. Follow-up processing
+must finish before the asset becomes ``succeeded``.
+
+Failed assets are not ordered again automatically. Status polling can still
+report the provider error; search again to obtain a fresh asset before retrying
+the order. There is no compatibility conversion for legacy order configurations.
+
+Product location proxies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Reading or assigning ``EOProduct.location`` and ``EOProduct.remote_location`` now
+emits ``DeprecationWarning``. Both return ``None`` instead of an empty string when
+the ``download_link`` asset or its URL is missing. These properties no longer keep
+independent product-level location state.
+
+Use ``product.assets["download_link"]["href"]`` for the remote URL and
+``product.assets["download_link"]["file:local_path"]`` for the downloaded filesystem
+path. ``product.assets["download_link"].location`` returns the local path as a URI,
+falling back to ``href``. Setting the deprecated ``location`` to a local URI writes
+``file:local_path``; setting it to a remote URL updates ``href`` and clears the local
+path. Setting ``remote_location`` updates ``href`` without clearing the local path.
+
+Products without a ``download_link`` asset, including multi-asset downloads, have
+no product-level location. Read local paths from their individual assets and use
+the download method's returned path for the output directory. New saved results
+preserve URLs and local paths in assets; v5 still converts the legacy
+``eodag:download_link`` product property when importing old saved results.
+
 v4.0.0a2
 ++++++++
 

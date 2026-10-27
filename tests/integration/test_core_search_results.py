@@ -29,7 +29,6 @@ from stac_validator import stac_validator
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
     GENERIC_STAC_PROVIDER,
-    NOT_AVAILABLE,
     Download,
     EODataAccessGateway,
     EOProduct,
@@ -60,8 +59,24 @@ STAC_SCHEMA_MAP = _build_stac_schema_map()
 
 
 class TestCoreSearchResults(EODagTestCase):
+    def assert_stac_messages_valid(self, messages):
+        for msg in messages:
+            self.assertTrue(
+                msg.get("valid_stac"),
+                messages,
+            )
+
     def setUp(self):
         super(TestCoreSearchResults, self).setUp()
+        # Give deterministic, JSON-serializable payloads to globally mocked requests
+        # used by stac_validator while avoiding network access in tests.
+        self.requests_http_get.return_value.raise_for_status.return_value = None
+        self.requests_http_get.return_value.status_code = 200
+        self.requests_http_get.return_value.json.return_value = {}
+
+        self.requests_request.return_value.raise_for_status.return_value = None
+        self.requests_request.return_value.status_code = 200
+        self.requests_request.return_value.json.return_value = {}
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = tempfile.TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -90,10 +105,6 @@ class TestCoreSearchResults(EODagTestCase):
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "product:type": "OCN",
-                        "eodag:download_link": (
-                            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
-                            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
-                        ),
                         "eodag:provider": "cop_dataspace",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
@@ -117,6 +128,15 @@ class TestCoreSearchResults(EODagTestCase):
                     "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                     "type": "Feature",
                     "collection": "S1_SAR_OCN",
+                    "assets": {
+                        "download_link": {
+                            "href": (
+                                "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+                                "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
+                            ),
+                            "roles": ["archive", "data"],
+                        }
+                    },
                     "geometry": {
                         "coordinates": [
                             [
@@ -165,8 +185,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
             with open(path, "r") as f:
                 self.make_assertions(f)
 
@@ -195,8 +214,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.run()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
             with open(collection_path) as f:
                 collection_dict = json.load(f)
             self.assertEqual(len(collection_dict["links"]), 1)
@@ -228,8 +246,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
 
             # check associated serialized collection
             collection1_path = tmpdir_path / f"{self.search_result[0].collection}.json"
@@ -251,8 +268,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.run()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
 
     def test_core_serialize_search_results_without_filename(self):
         """The core api must serialize a search results to STAC feature collection without filename"""
@@ -449,6 +465,21 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertIsInstance(search_result, SearchResult)
         with open(search_results_geojson_path, "r") as f:
             self.make_assertions(f)
+
+    def test_core_deserialize_legacy_download_link_property(self):
+        """Deserialized legacy eodag:download_link property must become the download_link asset"""
+        search_results_geojson_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, "eodag:download_link"):
+            search_result = self.dag.deserialize(search_results_geojson_path)
+        product = search_result[0]
+        self.assertNotIn("eodag:download_link", product.properties)
+        self.assertEqual(
+            product.assets["download_link"]["href"],
+            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value",
+        )
 
     def make_assertions(self, f):
         d = json.load(f)
@@ -754,7 +785,8 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
         self.assertEqual(results[0].collection, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
-        self.assertEqual(results[0].location, NOT_AVAILABLE)
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertIsNone(results[0].location)
         self.assertIsInstance(results[0].downloader, Download)
 
         self.assertEqual(results[1].provider, "earth_search")

@@ -31,6 +31,76 @@ Depending on the provider, some parameters are queryable or not. This is configu
                - '$.jsonpath.in.result.to.parameter'
             nonQueryableParameter: '$.jsonpath.in.result.to.another_parameter'
 
+Asset mappings
+""""""""""""""
+
+Search ``metadata_mapping`` builds product properties. Download URLs and order
+state belong to assets, created by ``assets_mapping``. For example:
+
+.. code-block:: yaml
+
+   search:
+      assets_mapping:
+         download_link:
+            href: $.properties.downloadUrl
+            order:status: orderable
+            eodag:order_link: $.properties.orderUrl
+
+Each search asset mapping is parsed independently. Product metadata fields are
+not implicit template variables: extract any values needed by an asset into
+that asset's mapping. Keys beginning with ``_`` are temporary helpers and are
+removed before assets are exposed. Literal JSON braces in templates must be
+escaped as ``{{`` and ``}}``. For example:
+
+.. code-block:: yaml
+
+   search:
+      assets_mapping:
+         download_link:
+            _id: $.id
+            _qs: $.request
+            eodag:order_link: 'https://example.test/order?{{"id": "{_id}", "request": {_qs#to_geojson}}}'
+            order:status: orderable
+
+Order response mappings
+"""""""""""""""""""""""
+
+Download configurations use singular ``asset_mapping`` in ``order_on_response``,
+``order_status`` and ``order_status.on_success``. Unlike search
+``assets_mapping``, it is not keyed by asset name: it updates the asset being
+ordered. ``metadata_mapping`` updates only product properties.
+
+.. code-block:: yaml
+
+   download:
+      order_on_response:
+         asset_mapping:
+            order:id: $.json.id
+            eodag:status_link: 'https://example.test/jobs/{order:id}'
+      order_status:
+         asset_mapping:
+            _order_status: $.json.status
+            _order_percent: $.json.progress
+         metadata_mapping:
+            updated: $.json.updated
+         success:
+            _order_status: completed
+         error:
+            _order_status: rejected
+         on_success:
+            asset_mapping:
+               href: $.json.downloadUrl
+
+Asset and product mappings for an order response are parsed together, so
+placeholders can reference either mapping. Helpers beginning with ``_`` and
+unavailable values are not saved. Use ``_order_status`` for raw provider status
+matching and ``_order_percent`` for progress logging, not persisted
+``eodag:order_status`` or ``eodag:order_percent`` fields. EODAG manages the asset's
+``order:status`` using ``orderable``, ``ordered``, ``succeeded`` and ``failed``.
+``order:id`` is stored as a string. Legacy order configurations using
+``metadata_mapping`` for asset fields, ``eodag:download_link`` or
+``eodag:order_id`` must be migrated; they are not converted automatically.
+
 
 Formatters
 """"""""""

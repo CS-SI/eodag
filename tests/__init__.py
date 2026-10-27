@@ -122,7 +122,6 @@ class EODagTestBase(unittest.TestCase):
             "platform": self.platform,
             "instruments": [self.instrument],
             "title": self.local_filename,
-            "eodag:download_link": self.download_url,
         }
 
     def tearDown(self):
@@ -272,13 +271,25 @@ class EODagTestBase(unittest.TestCase):
         )
         return mock.DEFAULT
 
-    def _dummy_product(self, provider=None, properties=None, collection=None, **kwargs):
-        return EOProduct(
+    def _dummy_product(
+        self,
+        provider=None,
+        properties=None,
+        collection=None,
+        download_link=None,
+        **kwargs,
+    ):
+        product = EOProduct(
             self.provider if provider is None else provider,
             self.eoproduct_props if properties is None else properties,
             collection=self.collection if collection is None else collection,
             **kwargs,
         )
+        product.assets["download_link"] = {
+            "href": download_link or self.download_url,
+            "roles": ["archive", "data"],
+        }
+        return product
 
     def _dummy_downloadable_product(
         self,
@@ -296,7 +307,7 @@ class EODagTestBase(unittest.TestCase):
         with open(self.local_product_as_archive_path, "rb") as fh:
             responses.add(
                 responses.GET,
-                product.properties["eodag:download_link"],
+                product.assets["download_link"]["href"],
                 body=fh.read(),
                 status=200,
                 content_type="application/zip",
@@ -356,9 +367,12 @@ class EODagTestCase(EODagTestBase):
         super().setUp()
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
         self.requests_http_get = self.requests_http_get_patcher.start()
+        self.requests_request_patcher = mock.patch("requests.request", autospec=True)
+        self.requests_request = self.requests_request_patcher.start()
 
     def tearDown(self):
         self.requests_http_get_patcher.stop()
+        self.requests_request_patcher.stop()
         super().tearDown()
 
     def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):

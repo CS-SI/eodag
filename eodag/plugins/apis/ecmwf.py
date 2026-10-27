@@ -35,7 +35,6 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     get_geometry_from_various,
-    path_to_uri,
     sanitize,
     urlsplit,
 )
@@ -183,17 +182,11 @@ class EcmwfApi(Api, ECMWFSearch):
             "output_extension", f".{product_extension}"
         )
 
-        # Prepare download
-        fs_path, record_filename = self._prepare_download(
-            product,
-            progress_callback=progress_callback,
-            **kwargs,
-        )
-
-        if not fs_path or not record_filename:
-            if fs_path:
-                product.location = path_to_uri(fs_path)
-            return fs_path
+        if cached_path := self._cached_download_link(
+            product, progress_callback=progress_callback, **kwargs
+        ):
+            return cached_path
+        fs_path = self._product_output_path(product, **kwargs)
 
         new_fs_path = os.path.join(
             os.path.dirname(fs_path), sanitize(product.properties["title"])
@@ -202,9 +195,11 @@ class EcmwfApi(Api, ECMWFSearch):
             os.makedirs(new_fs_path)
         fs_path = os.path.join(new_fs_path, os.path.basename(fs_path))
 
-        # get download request dict from product.location/eodag:download_link url query string
-        # separate url & parameters
-        download_request = geojson.loads(urlsplit(product.location).query)
+        # get download request dict from download_link asset href query string
+        download_link = product.assets.get("download_link")
+        download_request = geojson.loads(
+            urlsplit(download_link["href"] if download_link else "").query
+        )
 
         # Set verbosity
         eodag_verbosity = get_logging_verbose()
@@ -241,10 +236,6 @@ class EcmwfApi(Api, ECMWFSearch):
             logger.error(e)
             raise DownloadError(e)
 
-        with open(record_filename, "w") as fh:
-            fh.write(product.properties["eodag:download_link"])
-        logger.debug("Download recorded in %s", record_filename)
-
         # do not try to extract a directory
         kwargs["extract"] = False
 
@@ -253,7 +244,7 @@ class EcmwfApi(Api, ECMWFSearch):
             progress_callback=progress_callback,
             **kwargs,
         )
-        product.location = path_to_uri(product_path)
+        self._record_download_link(product, product_path, **kwargs)
         return product_path
 
     def clear(self) -> None:

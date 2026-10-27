@@ -29,7 +29,15 @@ dedt_mn5:
         - dataset
         - $.dataset
       qs: $.qs
-      eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ''
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        _qs: $.qs
+        eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {_qs#to_geojson} }}'
+        order:status: 'orderable'
   products:
     DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
       discover_queryables:
@@ -269,27 +277,27 @@ dedt_mn5:
     order_enabled: True
     order_method: POST
     order_on_response:
-      metadata_mapping:
-        eodag:order_id: '{$.headers.Location#replace_str(r".*\W(\w+)$",r"\1")}'
+      asset_mapping:
+        order:id: '{$.headers.Location#replace_str(r".*\W(\w+)$",r"\1")}'
         _previous_order_id: '{$.json.eodag:order_id#replace_str("Not Available","")}'
-        eodag:combined_order_id: '{eodag:order_id#replace_str("Not Available","")}{_previous_order_id}'
+        eodag:combined_order_id: '{order:id#replace_str("Not Available","")}{_previous_order_id}'
         eodag:status_link: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{eodag:combined_order_id#replace_str(r'^$','Not Available')}"
     order_status:
       request:
         method: GET
         headers:
-      metadata_mapping:
-        eodag:order_status: $.json.status
+      asset_mapping:
+        _order_status: $.json.status
         eodag:order_message: $.json.message
         error_message: $.null
       success:
         http_code: 303
       error:
-        eodag:order_status: failed
+        _order_status: failed
       on_success:
         result_type: json
-        metadata_mapping:
-          eodag:download_link: $.json.location
+        asset_mapping:
+          href: $.json.location
     no_auth_download: True
   auth:
     type: OIDCAuthorizationCodeFlowAuth

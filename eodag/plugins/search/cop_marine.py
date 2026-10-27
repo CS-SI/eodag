@@ -32,12 +32,15 @@ from dateutil.tz import tzutc
 from dateutil.utils import today
 
 from eodag import EOProduct
-from eodag.api.product import AssetsDict
 from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
-from eodag.utils import get_bucket_name_and_prefix, get_geometry_from_various
+from eodag.utils import (
+    ONLINE_STATUS,
+    get_bucket_name_and_prefix,
+    get_geometry_from_various,
+)
 from eodag.utils.dates import parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import RequestError, UnsupportedCollection, ValidationError
 
@@ -207,11 +210,20 @@ class CopMarineSearch(StaticStacSearch):
             "id": item_id,
             "title": item_id,
             "geometry": geometry,
-            "eodag:download_link": download_url,
             "dataset": dataset_item["id"],
-            # order:status set to succeeded for consistency between providers
-            "order:status": "succeeded",
         }
+        assets = {
+            "download_link": {
+                "title": "downloadlink",
+                "href": download_url,
+                "roles": ["archive", "data"],
+                "type": "application/x-netcdf",
+                # order:status set to succeeded for consistency between providers
+                "order:status": ONLINE_STATUS,
+                **asset_properties,
+            }
+        }
+
         if use_dataset_dates:
             dates = _get_dates_from_dataset_data(dataset_item)
             if not dates:
@@ -254,24 +266,26 @@ class CopMarineSearch(StaticStacSearch):
 
         _check_int_values_properties(properties)
 
-        properties["eodag:thumbnail"] = collection_dict["assets"]["thumbnail"]["href"]
-        if "omiFigure" in collection_dict["assets"]:
-            properties["eodag:quicklook"] = collection_dict["assets"]["omiFigure"][
-                "href"
-            ]
-
-        asset_native = {
-            "title": "native",
-            "href": download_url,
-            "type": "application/x-netcdf",
+        assets["thumbnail"] = {
+            "title": "thumbnail",
+            "href": collection_dict["assets"]["thumbnail"]["href"],
+            "roles": ["thumbnail"],
+            "type": "image/jpeg",
         }
-        asset_native.update(asset_properties)
-        assets = {"native": asset_native}
-        additional_assets = self.get_assets_from_mapping(dataset_item)
-        assets.update(additional_assets)
+        if "omiFigure" in collection_dict["assets"]:
+            assets["quicklook"] = {
+                "title": "quicklook",
+                "href": collection_dict["assets"]["omiFigure"]["href"],
+                "roles": ["overview"],
+                "type": "image/jpeg",
+            }
 
+        # List current asset urls
         product = EOProduct(self.provider, properties, collection=collection)
-        product.assets = AssetsDict(product, assets)
+        merged_assets = self.build_assets_from_mapping(dataset_item, product)
+        merged_assets.update(assets)
+        product.assets.update(merged_assets)
+
         product._normalize_bands()
         return product
 

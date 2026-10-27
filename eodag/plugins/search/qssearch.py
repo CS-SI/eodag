@@ -37,7 +37,6 @@ from urllib.parse import (
     parse_qs,
     parse_qsl,
     quote,
-    quote_plus,
     unquote,
     unquote_plus,
     urlencode,
@@ -421,9 +420,6 @@ class QueryStringSearch(Search):
                     other_collection_mtd_mapping = mtd_cfg_as_conversion_and_querypath(
                         other_collection_def_params.get("metadata_mapping", {})
                     )
-                else:
-                    msg = f"Cannot reuse empty metadata_mapping from {other_product_for_mapping} for {collection}"
-                    raise MisconfiguredError(msg)
                 # update mapping
                 for metadata, mapping in other_collection_mtd_mapping.items():
                     collection_metadata_mapping.pop(metadata, None)
@@ -655,10 +651,7 @@ class QueryStringSearch(Search):
                             collection_data_id = collection_data.pop("id", None)
 
                             # remove collection if it must have be renamed but renaming failed
-                            if (
-                                collection_data_id
-                                and collection_data_id == NOT_AVAILABLE
-                            ):
+                            if collection_data_id == NOT_AVAILABLE:
                                 del conf_update_dict["collections_config"][
                                     generic_collection_id
                                 ]
@@ -1292,7 +1285,6 @@ class QueryStringSearch(Search):
             % normalize_remaining_count
         )
         products: list[EOProduct] = []
-        asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         product_kwargs = deepcopy(kwargs)
 
         # collection alias as collection property for product
@@ -1306,30 +1298,15 @@ class QueryStringSearch(Search):
             )
             product = EOProduct(self.provider, properties, **product_kwargs)
 
-            additional_assets = self.get_assets_from_mapping(result)
+            # "Technicals" assets as (downloadlink, quicklook, thumbnail)
+            product.assets.update(self.build_assets_from_mapping(result, product))
 
-            # move assets from properties to product's attr, normalize keys & roles
-            normalized_assets: dict[str, Any] = {}
-            for key, asset in product.properties.pop("assets", {}).items():
-                url = asset.get("href", "")
-                norm_key, roles = product.driver.guess_asset_key_and_roles(
-                    url if asset_key_from_href else key,
-                    product,
-                )
-                if norm_key is not None:
-                    asset["title"] = norm_key
-                    asset["roles"] = roles
-                    normalized_assets[norm_key] = asset
-                else:
-                    asset["title"] = asset.get("title", key)
-                    normalized_assets[key] = asset
-
-            # batch-update once to avoid assets sort and clean up  on every update
-            product.assets.update({**additional_assets, **normalized_assets})
             # move links from properties to product's attr
             product.links = product.properties.pop("links", [])
+
             product._normalize_bands()
             products.append(product)
+
         return products
 
     def extract_results_from_response(
@@ -1856,36 +1833,6 @@ class PostJsonSearch(QueryStringSearch):
             raise_errors=raise_errors,
         )
         return formated_result
-
-    def normalize_results(
-        self, results: RawSearchResult, **kwargs: Any
-    ) -> list[EOProduct]:
-        """Build EOProducts from provider results"""
-        normalized = super().normalize_results(results, **kwargs)
-        for product in normalized:
-            if "eodag:download_link" in product.properties:
-                decoded_link = unquote(product.properties["eodag:download_link"])
-                if decoded_link[0] == "{":  # not a url but a dict
-                    if product.collection is None:
-                        msg = (
-                            f"Cannot build download query parameters for "
-                            f"{product}: collection is undefined"
-                        )
-                        raise MisconfiguredError(msg)
-                    collection = product.collection
-                    default_values = deepcopy(self.config.products.get(collection, {}))
-                    default_values.pop("metadata_mapping", None)
-                    searched_values = orjson.loads(decoded_link)
-                    _dc_qs = orjson.dumps(
-                        format_query_params(
-                            collection,
-                            self.config,
-                            {**default_values, **searched_values},
-                        )
-                    )
-                    product.properties["_dc_qs"] = quote_plus(_dc_qs)
-
-        return normalized
 
     def collect_search_urls(
         self,
