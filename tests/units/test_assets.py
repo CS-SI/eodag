@@ -15,6 +15,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import tempfile
 import unittest
 
 from tests.context import (
@@ -121,14 +123,17 @@ class TestAssetLocationAndOrder(unittest.TestCase):
 
     def test_asset_locations_from_stac_fields(self):
         """Asset locations must be read from and written to href and file:local_path"""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "foo")
         self.product.assets["foo"] = {"href": "http://somewhere/foo"}
         asset = self.product.assets["foo"]
         self.assertEqual(asset.remote_location, "http://somewhere/foo")
         self.assertEqual(asset.location, "http://somewhere/foo")
 
-        asset.location = path_to_uri("/tmp/foo")
-        self.assertEqual(asset["file:local_path"], "/tmp/foo")
-        self.assertEqual(asset.location, path_to_uri("/tmp/foo"))
+        asset.location = path_to_uri(local_path)
+        self.assertEqual(asset["file:local_path"], local_path)
+        self.assertEqual(asset.location, path_to_uri(local_path))
         self.assertEqual(asset.remote_location, "http://somewhere/foo")
 
         asset.remote_location = "http://elsewhere/foo"
@@ -136,6 +141,10 @@ class TestAssetLocationAndOrder(unittest.TestCase):
 
     def test_product_locations_proxy_download_link_asset(self):
         """EOProduct locations must be proxied to the download_link asset"""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "dl")
+        other_path = os.path.join(temp_dir.name, "other")
         self.assertEqual(self.product.location, "")
         self.product.assets["download_link"] = {"href": "http://somewhere/dl"}
         self.assertEqual(self.product.remote_location, "http://somewhere/dl")
@@ -146,11 +155,11 @@ class TestAssetLocationAndOrder(unittest.TestCase):
             self.product.assets["download_link"]["href"], "http://elsewhere/dl"
         )
 
-        self.product.assets["download_link"]["file:local_path"] = "/tmp/dl"
-        self.assertEqual(self.product.location, path_to_uri("/tmp/dl"))
+        self.product.assets["download_link"]["file:local_path"] = local_path
+        self.assertEqual(self.product.location, path_to_uri(local_path))
 
-        self.product.location = path_to_uri("/tmp/other")
-        self.assertEqual(self.product.location, path_to_uri("/tmp/other"))
+        self.product.location = path_to_uri(other_path)
+        self.assertEqual(self.product.location, path_to_uri(other_path))
         self.assertEqual(self.product.remote_location, "http://elsewhere/dl")
 
     def test_asset_order(self):
