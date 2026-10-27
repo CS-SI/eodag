@@ -3574,9 +3574,9 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             download_asset["href"],
             f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
-        # check download_link asset order_link
+        # check download_link asset eodag:order_link
         self.assertEqual(
-            download_asset["order_link"],
+            download_asset["eodag:order_link"],
             f"{endpoint}?"
             + json.dumps(
                 {
@@ -3689,7 +3689,10 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         """Registering a product with no S3 objects must leave assets empty."""
         product = self._get_search_results(mock_request).data[0]
         product.driver = None
+        # remote location is proxied from the download_link asset, keep it without assets
+        remote_location = product.remote_location
         product.assets = AssetsDict(product)
+        product.remote_location = remote_location
 
         self._register_product_with_stubbed_s3_objects(product, [])
 
@@ -3977,7 +3980,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
         )
-        assert eoproduct.assets["download_link"]["order_link"].startswith("http")
+        assert eoproduct.assets["download_link"]["eodag:order_link"].startswith("http")
         assert eoproduct.location == ""
 
     def test_plugins_search_ecmwfsearch_with_collection(self):
@@ -4432,6 +4435,14 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertEqual(product.properties["ecmwf:day"], ["01"])
         self.assertEqual(product.properties["ecmwf:time"], ["00:00"])
         self.assertEqual(product.collection, "ERA5_SL")
+        download_link = product.assets["download_link"]
+        self.assertEqual(download_link["order:id"], "123")
+        self.assertEqual(download_link["eodag:order_status"], "accepted")
+        self.assertEqual(download_link["order:status"], "ordered")
+        self.assertTrue(
+            download_link["eodag:status_link"].endswith("/jobs/123?request=true")
+        )
+        self.assertNotIn("eodag:order_id", product.properties)
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""
@@ -6167,7 +6178,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
         default_config = load_provider_configs()["wekeo_main"]
-        # order_link is defined once at the provider-level assets_mapping
+        # eodag:order_link is defined once at the provider-level assets_mapping
         # (no per-product eodag:order_link in metadata_mapping anymore)
         self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
         self.assertNotIn(
@@ -6175,7 +6186,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             default_config.products["S1_SAR_GRD"].get("metadata_mapping", {}),
         )
         self.assertIn(
-            "order_link",
+            "eodag:order_link",
             default_config.search.assets_mapping["download_link"],
         )
 

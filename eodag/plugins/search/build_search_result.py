@@ -1254,18 +1254,23 @@ def _check_id(product: EOProduct) -> EOProduct:
     properties_update = properties_from_json(
         {}, {**on_response_mm_jsonpath, **{"eodag:order_id": (None, product_id)}}
     )
-    product.properties.update(
-        {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
+    asset = product.assets.get("download_link")
+    if asset is None:
+        # asset has neither href nor eodag:order_link yet, bypass AssetsDict checks
+        asset = product.assets._make_asset("download_link", {})
+        product.assets.data["download_link"] = asset
+    product.downloader._update_from_order(  # type: ignore
+        asset, {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
     )
 
     auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 
     # try to poll the job corresponding to the given id
     try:
-        product.downloader._order_status(product=product, auth=auth)  # type: ignore
+        product.downloader._order_status(asset=asset, auth=auth)  # type: ignore
     # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
     except NotAvailableError:
-        product.properties["order:status"] = STAGING_STATUS
+        asset["order:status"] = STAGING_STATUS
     except Exception as e:
         if (
             isinstance(e, DownloadError) or isinstance(e, ValidationError)

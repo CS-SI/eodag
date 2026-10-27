@@ -90,6 +90,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.download.http")
 
+# order fields parsed from provider responses that are stored on the ordered asset
+ORDER_ASSET_FIELDS = (
+    "order:",
+    "eodag:order_",
+    "eodag:download_",
+    "eodag:status_link",
+    "eodag:search_link",
+    "eodag:combined_order_id",
+)
+
 # hop-by-hop / transport-specific headers that must not be forwarded from the
 # provider's response to the eodag client
 EXCLUDED_RESPONSE_HEADERS = {
@@ -136,14 +146,15 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
           authentication; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to be ordered to download it;
-          if this parameter is set to true, a mapping for ``eodag:order_link`` has to be added to the metadata mapping
-          of the search plugin used for the provider; default: ``False``
+          if this parameter is set to true, an ``eodag:order_link`` has to be added to the orderable assets in the
+          ``assets_mapping`` of the search plugin used for the provider; default: ``False``
         * :attr:`~eodag.config.PluginConfig.order_method` (``str``): HTTP request method for the order request (``GET``
           or ``POST``); default: ``GET``
         * :attr:`~eodag.config.PluginConfig.order_headers` (``[dict[str, str]]``): headers to be added to the order
           request
         * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
-          a typed dictionary containing the key ``metadata_mapping`` which can be used to add new product properties
+          a typed dictionary containing the key ``metadata_mapping`` which can be used to update the ordered asset
+          (order fields like ``eodag:status_link``, ``eodag:download_link`` as ``href``) or add new product properties
           based on the data in response to the order request
         * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
           configuration to handle the order status; contains information which method to use, how the response data is
@@ -164,17 +175,31 @@ class HTTPDownload(Download):
             "ignore_assets", getattr(self.config, "ignore_assets", False)
         )
 
+    def _use_assets(self, product: EOProduct, **kwargs: Unpack[DownloadConf]) -> bool:
+        """Whether to download product assets instead of its ``download_link``
+
+        :param product: The EO product to download
+        :param kwargs: download additional kwargs
+        :returns: ``True`` if assets must be downloaded one by one
+        """
+        if len(product.assets) == 0:
+            return False
+        if kwargs.get("asset") is not None:
+            return True
+        return product.assets.get(
+            "download_link"
+        ) is None and not self._should_ignore_assets(product)
+
     def _order(
         self,
-        product: EOProduct,
+        asset: Asset,
         auth: Optional[AuthBase] = None,
-        **kwargs: Unpack[DownloadConf],
     ) -> Optional[dict[str, Any]]:
-        """Send product order request.
+        """Send asset order request.
 
-        It will be executed once before the download retry loop, if the product is orderable
-        and has ``eodag:order_link`` in its properties.
-        Product ordering can be configured using the following download plugin parameters:
+        It will be executed once before the download retry loop, if the asset is orderable
+        and has an ``eodag:order_link``.
+        Asset ordering can be configured using the following download plugin parameters:
 
             - :attr:`~eodag.config.PluginConfig.order_enabled`: Wether order is enabled or not (may not use this method
               if no ``eodag:order_link`` exists)
@@ -184,18 +209,18 @@ class HTTPDownload(Download):
             - :attr:`~eodag.config.PluginConfig.order_on_response`: (optional) things to do with obtained order
               response:
 
-              - *metadata_mapping*: edit or add new product propoerties properties
+              - *metadata_mapping*: edit or add new asset order fields or product properties
 
-        Product properties used for order:
+        Asset fields used for order:
 
             - **eodag:order_link**: order request URL
 
-        :param product: The EO product to order
+        :param asset: The asset to order
         :param auth: (optional) authenticated object
-        :param kwargs: download additional kwargs
         :returns: the returned json status response
         """
-        product.properties["order:status"] = STAGING_STATUS
+        product = asset.product
+        asset["order:status"] = STAGING_STATUS
 
         order_method = getattr(self.config, "order_method", "GET").upper()
         ssl_verify = getattr(self.config, "ssl_verify", True)
@@ -206,7 +231,7 @@ class HTTPDownload(Download):
         order_kwargs: OrderKwargs = {}
         if order_method == "POST":
             # separate url & parameters
-            parts = urlparse(str(product.properties["eodag:order_link"]))
+            parts = urlparse(str(asset["eodag:order_link"]))
             query_dict = {}
             # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
             # the resulting `query_dict` would be erroneous.
@@ -223,7 +248,7 @@ class HTTPDownload(Download):
             if query_dict:
                 order_kwargs["json"] = query_dict
         else:
-            order_url = product.properties["eodag:order_link"]
+            order_url = asset["eodag:order_link"]
             order_kwargs = {}
 
         headers = {**getattr(self.config, "order_headers", {}), **USER_AGENT}
@@ -242,7 +267,7 @@ class HTTPDownload(Download):
                     response.raise_for_status()
                     ordered_message = response.text
                     logger.debug(ordered_message)
-                    product.properties["order:status"] = STAGING_STATUS
+                    asset["order:status"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
                     QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
@@ -252,17 +277,43 @@ class HTTPDownload(Download):
                     else:
                         raise DownloadError.from_error(e, msg) from e
 
-                return self.order_response_process(response, product)
+                return self.order_response_process(response, asset)
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
 
+    @staticmethod
+    def _update_from_order(asset: Asset, fields: dict[str, Any]) -> None:
+        """Store order related fields on the asset, and other ones in its product properties.
+
+        ``eodag:download_link`` updates the asset ``href`` and ``eodag:order_id`` is stored as
+        ``order:id``.
+
+        :param asset: The ordered asset
+        :param fields: Fields parsed from order responses
+        """
+        product = asset.product
+        for key, value in fields.items():
+            if key.startswith("_"):
+                continue
+            if key == "eodag:download_link":
+                asset["href"] = value
+                if asset.key == "download_link":
+                    product.location = value
+                logger.debug(f"{product} {asset.key} asset href updated to {value}")
+            elif key == "eodag:order_id":
+                asset["order:id"] = str(value)
+            elif key.startswith(ORDER_ASSET_FIELDS):
+                asset[key] = value
+            else:
+                product.properties[key] = value
+
     def order_response_process(
-        self, response: Response, product: EOProduct
+        self, response: Response, asset: Asset
     ) -> Optional[dict[str, Any]]:
         """Process order response
 
         :param response: The order response
-        :param product: The orderd EO product
+        :param asset: The ordered asset
         :returns: the returned json status response
         """
         on_response_mm = getattr(self.config, "order_on_response", {}).get(
@@ -271,7 +322,7 @@ class HTTPDownload(Download):
         if not on_response_mm:
             return None
 
-        logger.debug("Parsing order response to update product metada-mapping")
+        logger.debug("Parsing order response to update asset order fields")
         on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
             on_response_mm,
         )
@@ -282,47 +333,41 @@ class HTTPDownload(Download):
             {"json": json_response, "headers": response.headers},
             on_response_mm_jsonpath,
         )
-        product.properties.update(
-            {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
+        self._update_from_order(
+            asset, {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
         )
+        product = asset.product
         # the job id becomes the product id for EcmwfSearch products
         if "ORDERABLE" in product.properties.get("id", ""):
-            product.properties["id"] = product.properties.get(
-                "eodag:order_id", product.properties["id"]
-            )
+            product.properties["id"] = asset.get("order:id", product.properties["id"])
             product.properties["title"] = (
                 (product.collection or product.provider).upper()
                 + "_"
                 + product.properties["id"]
             )
-        if "eodag:download_link" in product.properties:
-            product.remote_location = product.location = product.properties[
-                "eodag:download_link"
-            ]
-            logger.debug(f"Product location updated to {product.location}")
 
         return json_response
 
     def _order_status(
         self,
-        product: EOProduct,
+        asset: Asset,
         auth: Optional[AuthBase] = None,
     ) -> None:
-        """Send product order status request.
+        """Send asset order status request.
 
         It will be executed before each download retry.
-        Product order status request can be configured using the following download plugin parameters:
+        Asset order status request can be configured using the following download plugin parameters:
 
             - :attr:`~eodag.config.PluginConfig.order_status`: :class:`~eodag.config.PluginConfig.OrderStatus`
 
-        Product properties used for order status:
+        Asset fields used for order status:
 
             - **eodag:status_link**: order status request URL
 
-        :param product: The ordered EO product
+        :param asset: The ordered asset
         :param auth: (optional) authenticated object
-        :param kwargs: download additional kwargs
         """
+        product = asset.product
 
         status_config = getattr(self.config, "order_status", {})
         success_code: Optional[int] = status_config.get("success", {}).get("http_code")
@@ -374,14 +419,14 @@ class HTTPDownload(Download):
 
         if status_request_method == "POST":
             # separate url & parameters
-            parts = urlparse(str(product.properties["eodag:status_link"]))
+            parts = urlparse(str(asset["eodag:status_link"]))
             status_url = parts._replace(query="").geturl()
             query_dict = parse_qs(parts.query)
             if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             json_data = query_dict if query_dict else None
         else:
-            status_url = product.properties["eodag:status_link"]
+            status_url = asset["eodag:status_link"]
             json_data = None
 
         # check header for success before full status request
@@ -470,12 +515,12 @@ class HTTPDownload(Download):
                     f"{product.properties['title']} order status: {status_percent}"
                 )
 
-            product.properties.update(
-                {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
+            self._update_from_order(
+                asset, {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
             )
 
             order_status = status_dict.get("eodag:order_status")
-            product.properties["eodag:order_status"] = order_status
+            asset["eodag:order_status"] = order_status
 
             status_message = status_dict.get(
                 "eodag:order_message", f"request status: {order_status}"
@@ -488,7 +533,7 @@ class HTTPDownload(Download):
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
-        product.properties["order:status"] = STAGING_STATUS
+        asset["order:status"] = STAGING_STATUS
 
         success_status: dict[str, Any] = status_config.get("success", {}).get(
             "eodag:order_status"
@@ -497,11 +542,9 @@ class HTTPDownload(Download):
         if (
             success_status and success_status != status_dict.get("eodag:order_status")
         ) or (success_code and success_code != response.status_code):
-            # Remove the download link if the order has not been completed or was not successful
-            product.properties.pop("eodag:download_link", None)
             return None
 
-        product.properties["order:status"] = ONLINE_STATUS
+        asset["order:status"] = ONLINE_STATUS
 
         if not config_on_success:
             # Nothing left to do
@@ -509,13 +552,9 @@ class HTTPDownload(Download):
 
         # need search on success ?
         if config_on_success.get("need_search"):
-            logger.debug(
-                f"Search for new location: {product.properties['eodag:search_link']}"
-            )
+            logger.debug(f"Search for new location: {asset['eodag:search_link']}")
             try:
-                response = _request(
-                    product.properties["eodag:search_link"], timeout=timeout
-                )
+                response = _request(asset["eodag:search_link"], timeout=timeout)
             except RequestException as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
@@ -556,7 +595,7 @@ class HTTPDownload(Download):
                 if len(results) != 1:
                     raise DownloadError(
                         "Could not get a single result after order success for "
-                        f"{product.properties['eodag:search_link']} request. "
+                        f"{asset['eodag:search_link']} request. "
                         f"Please search and download {product} again"
                     )
                 assert isinstance(results, list), "results must be in a list"
@@ -610,14 +649,10 @@ class HTTPDownload(Download):
                 f"Could not parse result after order success. Please search and download {product} again"
             ) from e
 
-        # update product
-        product.properties.update(properties_update)
-        if "eodag:download_link" in properties_update:
-            product.location = product.remote_location = product.properties[
-                "eodag:download_link"
-            ]
-        else:
-            self.order_response_process(response, product)
+        # update asset
+        self._update_from_order(asset, properties_update)
+        if "eodag:download_link" not in properties_update:
+            self.order_response_process(response, asset)
 
     def download(
         self,
@@ -655,9 +690,7 @@ class HTTPDownload(Download):
             return fs_path
 
         # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
-        ):
+        if self._use_assets(product, **kwargs):
             try:
                 fs_path = self._download_assets(
                     product,
@@ -678,8 +711,9 @@ class HTTPDownload(Download):
                     pass
 
         url = product.remote_location
+        download_link = product.assets.get("download_link")
 
-        @self._order_download_retry(product, wait, timeout)
+        @self._order_download_retry(product, wait, timeout, download_link)
         def download_request(
             product: EOProduct,
             auth: AuthBase,
@@ -709,7 +743,7 @@ class HTTPDownload(Download):
                     raise DownloadError(f"product {product.properties['id']} is empty")
                 else:
                     # make sure storage status is online
-                    product.properties["order:status"] = ONLINE_STATUS
+                    self._set_order_status(product, download_link, ONLINE_STATUS)
 
                 return path
             else:
@@ -748,18 +782,17 @@ class HTTPDownload(Download):
         product.location = path_to_uri(product_path)
         return product_path
 
-    def _check_stream_size(self, product: EOProduct) -> int:
+    def _check_stream_size(
+        self, product: EOProduct, asset: Optional[Asset] = None
+    ) -> int:
         stream_size = int(product._stream.headers.get("content-length", 0))
-        if (
-            stream_size == 0
-            and "order:status" in product.properties
-            and product.properties["order:status"] != ONLINE_STATUS
-        ):
+        order_status = self._get_order_status(product, asset)
+        if stream_size == 0 and order_status != ONLINE_STATUS:
             raise NotAvailableError(
                 "%s(initially %s) ordered, got: %s"
                 % (
                     product.properties["title"],
-                    product.properties["order:status"],
+                    order_status,
                     product._stream.reason,
                 )
             )
@@ -819,9 +852,7 @@ class HTTPDownload(Download):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
-        ):
+        if self._use_assets(product, **kwargs):
             executor = ThreadPoolExecutor(
                 max_workers=getattr(self.config, "max_workers", None)
             )
@@ -853,7 +884,9 @@ class HTTPDownload(Download):
                     )
 
                     # do not use global size if one of the assets has no size
-                    missing_length = any(not (asset.size) for asset in assets_values)
+                    missing_length = any(
+                        not asset.get("file:size") for asset in assets_values
+                    )
 
                     zip_stream = (
                         ZipStream(sized=True) if not missing_length else ZipStream()
@@ -916,7 +949,11 @@ class HTTPDownload(Download):
             )
 
     def _process_exception(
-        self, e: Optional[RequestException], product: EOProduct, ordered_message: str
+        self,
+        e: Optional[RequestException],
+        product: EOProduct,
+        ordered_message: str,
+        asset: Optional[Asset] = None,
     ) -> None:
         self._check_auth_exception(e)
         if e is not None:
@@ -925,7 +962,8 @@ class HTTPDownload(Download):
             e.response.text.strip() if e is not None and e.response is not None else ""
         )
         # product not available
-        if product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS:
+        order_status = self._get_order_status(product, asset)
+        if order_status != ONLINE_STATUS:
             msg = (
                 ordered_message
                 if ordered_message and not response_text
@@ -936,7 +974,7 @@ class HTTPDownload(Download):
                 "%s(initially %s) requested, returned: %s"
                 % (
                     product.properties["title"],
-                    product.properties["order:status"],
+                    order_status,
                     msg,
                 )
             )
@@ -954,21 +992,21 @@ class HTTPDownload(Download):
 
     def _order_request(
         self,
-        product: EOProduct,
+        asset: Asset,
         auth: Optional[AuthBase],
     ) -> None:
         if (
-            "eodag:order_link" in product.properties
-            and product.properties.get("order:status") == OFFLINE_STATUS
-            and not product.properties.get("eodag:order_status")
+            "eodag:order_link" in asset
+            and asset.get("order:status") == OFFLINE_STATUS
+            and not asset.get("eodag:order_status")
         ):
-            self._order(product=product, auth=auth)
+            self._order(asset=asset, auth=auth)
 
         if (
-            product.properties.get("eodag:status_link")
-            and product.properties.get("order:status") != ONLINE_STATUS
+            asset.get("eodag:status_link")
+            and asset.get("order:status") != ONLINE_STATUS
         ):
-            self._order_status(product=product, auth=auth)
+            self._order_status(asset=asset, auth=auth)
 
     def order(
         self,
@@ -976,19 +1014,24 @@ class HTTPDownload(Download):
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Unpack[DownloadConf],
     ) -> None:
         """
-        Order product and poll to check its status
+        Order product assets that are not online yet and poll to check their status
 
-        :param product: The EO product to download
+        :param product: The EO product to order
         :param auth: (optional) authenticated object
         :param wait: (optional) Wait time in minutes between two order status check
         :param timeout: (optional) Maximum time in minutes before stop checking
                         order status
+        :param kwargs: `asset` (str) regex filter to identify assets to order
         """
-        self._order_download_retry(product, wait, timeout)(self._order_request)(
-            product, auth
-        )
+        for asset in product.assets.get_values(kwargs.get("asset") or ""):
+            if asset.get("order:status", ONLINE_STATUS) == ONLINE_STATUS:
+                continue
+            self._order_download_retry(product, wait, timeout, asset)(
+                self._order_request
+            )(asset, auth)
 
     def _raw_stream_download(
         self,
@@ -1017,16 +1060,22 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
         ordered_message = ""
+        download_link = product.assets.get("download_link")
         # retry handled at download level
-        self._order_request(product, auth)
+        if download_link is not None:
+            self._order_request(download_link, auth)
 
         params = kwargs.pop("dl_url_params", None) or getattr(
             self.config, "dl_url_params", {}
         )
 
+        download_method = (
+            download_link.get("eodag:download_method")
+            if download_link is not None
+            else None
+        ) or product.properties.get("eodag:download_method", "")
         req_method = (
-            product.properties.get("eodag:download_method", "").lower()
-            or getattr(self.config, "method", "GET").lower()
+            download_method.lower() or getattr(self.config, "method", "GET").lower()
         )
         url = product.remote_location
         if req_method == "post":
@@ -1068,7 +1117,7 @@ class HTTPDownload(Download):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
         except RequestException as e:
-            self._process_exception(e, product, ordered_message)
+            self._process_exception(e, product, ordered_message, download_link)
             raise DownloadError(
                 f"download of {product.properties['id']} is empty"
             ) from e
@@ -1084,9 +1133,9 @@ class HTTPDownload(Download):
             ).get(
                 "http_code"
             ):
-                product.properties["order:status"] = "ORDERED"
-                self._process_exception(None, product, ordered_message)
-            stream_size = self._check_stream_size(product) or None
+                self._set_order_status(product, download_link, "ORDERED")
+                self._process_exception(None, product, ordered_message, download_link)
+            stream_size = self._check_stream_size(product, download_link) or None
 
             product.headers = CaseInsensitiveDict(
                 {
@@ -1253,7 +1302,7 @@ class HTTPDownload(Download):
                     content=asset_chunks,
                     filename=getattr(asset, "filename", None),
                     arcname=getattr(asset, "rel_path", None),
-                    size=getattr(asset, "size", 0) or None,
+                    size=asset.get("file:size") or None,
                 )
             )
 
@@ -1490,20 +1539,19 @@ class HTTPDownload(Download):
                     logger.debug(f"HEAD request failed: {str(e)}")
                     asset_headers = CaseInsensitiveDict()
 
-                if not getattr(asset, "size", 0):
-                    # size from HEAD header / Content-Length
-                    asset.size = int(asset_headers.get("Content-Length", 0))
+                # size from HEAD header / Content-Length
+                size = int(asset_headers.get("Content-Length", 0))
 
                 header_content_disposition = Message()
-                if not getattr(asset, "size", 0) or not getattr(asset, "filename", 0):
+                if not size or not getattr(asset, "filename", 0):
                     # header Content-Disposition
                     header_content_disposition = parse_header(
                         asset_headers.get("Content-Disposition", "")
                     )
-                if not getattr(asset, "size", 0):
+                if not size:
                     # size from HEAD header / Content-Disposition / size
                     size_str = str(header_content_disposition.get_param("size", 0))
-                    asset.size = int(size_str) if size_str.isdigit() else 0
+                    size = int(size_str) if size_str.isdigit() else 0
                 if not getattr(asset, "filename", 0):
                     # filename from HEAD header / Content-Disposition / size
                     asset_filename = header_content_disposition.get_param(
@@ -1511,7 +1559,7 @@ class HTTPDownload(Download):
                     )
                     asset.filename = str(asset_filename) if asset_filename else None
 
-                if not getattr(asset, "size", 0):
+                if not size:
                     # GET request for size
                     with requests.get(
                         asset["href"],
@@ -1523,17 +1571,19 @@ class HTTPDownload(Download):
                         verify=ssl_verify,
                     ) as stream:
                         # size from GET header / Content-length
-                        asset.size = int(stream.headers.get("Content-Length", 0))
-                        if not getattr(asset, "size", 0):
+                        size = int(stream.headers.get("Content-Length", 0))
+                        if not size:
                             # size from GET header / Content-Disposition / size
                             size_str = str(
                                 parse_header(
                                     stream.headers.get("Content-Disposition", "")
                                 ).get_param("size", 0)
                             )
-                            asset.size = int(size_str) if size_str.isdigit() else 0
+                            size = int(size_str) if size_str.isdigit() else 0
 
-                total_size += asset.size
+                if size:
+                    asset["file:size"] = size
+                total_size += size
 
         # use parallelization if possible
         # when products are already downloaded in parallel but the executor has only one worker,
