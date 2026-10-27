@@ -105,7 +105,7 @@ wekeo_main:
         order:status: 'orderable'
         _location: '$.properties.location'
         _id: '{$.id#remove_extension}'
-        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{_location}","product_id":"{_id}", "dataset_id": "{_collection}"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{_location}","product_id":"{_id}", "dataset_id": "{_collection}"}}'
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"

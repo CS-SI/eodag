@@ -846,8 +846,40 @@ class Download(PluginTopic):
 
         return paths
 
+    @staticmethod
+    def _get_order_status(product: EOProduct, asset: Optional[Asset] = None) -> str:
+        """Get the asset ``order:status``, falling back on the product one
+
+        :param product: The EO product
+        :param asset: (optional) The asset carrying the order state
+        :returns: The order status, ``succeeded`` if not set
+        """
+        if asset is not None and "order:status" in asset:
+            return asset["order:status"]
+        # product-level order:status is still mapped by some providers
+        return product.properties.get("order:status", ONLINE_STATUS)
+
+    @staticmethod
+    def _set_order_status(
+        product: EOProduct, asset: Optional[Asset], status: str
+    ) -> None:
+        """Set the asset ``order:status``, or the product one if no asset is given
+
+        :param product: The EO product
+        :param asset: The asset carrying the order state
+        :param status: The order status to set
+        """
+        if asset is not None:
+            asset["order:status"] = status
+        else:
+            product.properties["order:status"] = status
+
     def _order_download_retry(
-        self, product: EOProduct, wait: float, timeout: float
+        self,
+        product: EOProduct,
+        wait: float,
+        timeout: float,
+        asset: Optional[Asset] = None,
     ) -> Callable[[Callable[..., T]], Callable[..., T]]:
         """
         Order download retry decorator.
@@ -859,15 +891,17 @@ class Download(PluginTopic):
         :param wait: If download fails, wait time in minutes between two download tries
         :param timeout: If download fails, maximum time in minutes before stop retrying
                         to download
+        :param asset: (optional) The asset to order/download, carrying the order state
         :returns: decorator
         """
+        retried: Union[EOProduct, Asset] = asset if asset is not None else product
 
         def decorator(order_download: Callable[..., T]) -> Callable[..., T]:
             def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
                 start_time = dt.datetime.now()
                 stop_time = start_time + dt.timedelta(minutes=timeout)
-                product.next_try = start_time
+                retried.next_try = start_time
                 retry_count = 0
                 not_available_info = "The product could not be downloaded"
                 # another output for notebooks
@@ -876,16 +910,15 @@ class Download(PluginTopic):
                 while "Loop until products download succeeds or timeout is reached":
                     datetime_now = dt.datetime.now()
 
-                    if datetime_now >= product.next_try:
-                        product.next_try += dt.timedelta(minutes=wait)
+                    if datetime_now >= retried.next_try:
+                        retried.next_try += dt.timedelta(minutes=wait)
                         try:
                             download = order_download(*args, **kwargs)
                         except NotAvailableError as e:
                             not_available_info = str(e)
                         else:
                             if (
-                                product.properties.get("order:status", ONLINE_STATUS)
-                                == ONLINE_STATUS
+                                self._get_order_status(product, asset) == ONLINE_STATUS
                             ) or timeout <= 0:
                                 return download
 
@@ -895,9 +928,12 @@ class Download(PluginTopic):
                                 f" {self.provider}, {not_available_info}"
                             )
 
-                    if datetime_now >= product.next_try and datetime_now < stop_time:
+                    stream = getattr(retried, "_stream", None) or getattr(
+                        product, "_stream", None
+                    )
+                    if datetime_now >= retried.next_try and datetime_now < stop_time:
                         wait_seconds: Union[float, int] = (
-                            datetime_now - product.next_try + dt.timedelta(minutes=wait)
+                            datetime_now - retried.next_try + dt.timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
                         retry_info = (
@@ -906,20 +942,18 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(product, "_stream"):
-                            retry_server_info = product._stream.headers.get(
-                                "Retry-After", ""
-                            )
+                        if stream is not None:
+                            retry_server_info = stream.headers.get("Retry-After", "")
                             if retry_server_info:
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
                                 )
                         logger.debug(retry_info)
                         nb_info.display_html(retry_info)
-                        product.next_try = datetime_now
-                    elif datetime_now < product.next_try and datetime_now < stop_time:
-                        wait_seconds = (product.next_try - datetime_now).seconds + (
-                            product.next_try - datetime_now
+                        retried.next_try = datetime_now
+                    elif datetime_now < retried.next_try and datetime_now < stop_time:
+                        wait_seconds = (retried.next_try - datetime_now).seconds + (
+                            retried.next_try - datetime_now
                         ).microseconds / 1e6
                         retry_count += 1
                         retry_info = (
@@ -928,10 +962,8 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(product, "_stream"):
-                            retry_server_info = product._stream.headers.get(
-                                "Retry-After", ""
-                            )
+                        if stream is not None:
+                            retry_server_info = stream.headers.get("Retry-After", "")
                             if retry_server_info:
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
@@ -940,11 +972,14 @@ class Download(PluginTopic):
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:
-                        if "order:status" not in product.properties:
-                            product.properties["order:status"] = "N/A status"
+                        order_status = self._get_order_status(product, asset)
+                        if "order:status" not in product.properties and (
+                            asset is None or "order:status" not in asset
+                        ):
+                            order_status = "N/A status"
                         logger.info(not_available_info)
                         raise NotAvailableError(
-                            f"{product.properties['title']} is not available ({product.properties['order:status']})"
+                            f"{product.properties['title']} is not available ({order_status})"
                             f" and order was not successfull, timeout reached"
                         )
                     elif datetime_now >= stop_time:

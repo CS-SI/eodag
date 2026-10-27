@@ -24,12 +24,26 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
-from eodag.api.product.metadata_mapping import NOT_AVAILABLE, OFFLINE_STATUS
-from eodag.utils import guess_file_type
+from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
+    OFFLINE_STATUS,
+    ONLINE_STATUS,
+)
+from eodag.utils import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    guess_file_type,
+    path_to_uri,
+    uri_to_path,
+)
 from eodag.utils.exceptions import NotAvailableError
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
+    import datetime as dt
+
+    import requests
+
     from eodag.api.product import EOProduct
     from eodag.types.download_args import DownloadConf
     from eodag.utils import StreamResponse, Unpack
@@ -75,7 +89,6 @@ class AssetsDict(UserDict):
             return
         super().__setitem__(key, self._make_asset(key, value))
         self.sort()
-        self._update_product_location()
 
     def _make_asset(self, key: str, value: dict[str, Any]) -> Asset:
         """Build the :class:`Asset` to store for the given key/value pair.
@@ -106,64 +119,52 @@ class AssetsDict(UserDict):
             for key, value in incoming.items():
                 self.data[key] = self._make_asset(key, value)
         self.sort()
-        self._update_product_location()
 
-    def _update_product_location(self) -> None:
-        """Backward-compat: propagate ``download_link`` asset to product location.
+    def order(
+        self,
+        asset_filter: str = "",
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+    ) -> None:
+        """Order the assets matching the given filter that are not online yet, and
+        poll their status until they become available.
 
-        ``EOProduct.location`` / ``EOProduct.remote_location`` are still expected to
-        carry the download URL by downstream code (download plugins, server-mode, ...).
-        Technical assets are NOT written back to ``EOProduct.properties``.
+        :param asset_filter: (optional) regex filter on asset keys; all assets if empty
+        :param wait: (optional) Wait time in minutes between two order status checks
+        :param timeout: (optional) Maximum time in minutes before stop checking order status
         """
-        dl = self.data.get("download_link")
-        if dl is None:
-            return
-        href = dl.get("href") or ""
-        if not href:
-            return
-
-        product = getattr(self, "product", None)
-        if product is None:
-            return
-        if not hasattr(product, "location"):
-            return
-        product_location = getattr(product, "location", None)
-        product_remote_location = getattr(product, "remote_location", None)
-
-        if not product_location:
-            product.location = href
-        if not product_remote_location:
-            product.remote_location = href
+        for asset in self.get_values(asset_filter):
+            asset.order(wait=wait, timeout=timeout)
 
     def _check(self, asset_key: str, asset_value: dict[str, Any]) -> bool:
         """Validate an asset before insertion.
 
-        Checks that the asset has a valid ``href`` or ``order_link`` and that its
+        Checks that the asset has a valid ``href`` or ``eodag:order_link`` and that its
         URL is not already used by another (non-technical) asset.  Mutates
-        *asset_value* in place by stripping empty/unavailable href/order_link entries.
+        *asset_value* in place by stripping empty/unavailable href/eodag:order_link entries.
 
         :param asset_key: Key under which the asset will be stored
         :param asset_value: Mutable asset dictionary (modified in place)
         :returns: ``True`` if the asset is valid and can be inserted, ``False`` otherwise
         """
-        # Asset must have href or order_link
+        # Asset must have href or eodag:order_link
         href = asset_value.pop("href", None)
         if href not in [None, "", NOT_AVAILABLE]:
             asset_value["href"] = href
-        order_link = asset_value.pop("order_link", None)
+        order_link = asset_value.pop("eodag:order_link", None)
         if order_link not in [None, "", NOT_AVAILABLE]:
-            asset_value["order_link"] = order_link
+            asset_value["eodag:order_link"] = order_link
 
-        if "href" not in asset_value and "order_link" not in asset_value:
+        if "href" not in asset_value and "eodag:order_link" not in asset_value:
             logger.warning(
-                "asset '{}' skipped ignored because neither href nor order_link is available".format(
+                "asset '{}' skipped ignored because neither href nor eodag:order_link is available".format(
                     asset_key
                 ),
             )
             return False
 
         def target_url(asset: dict[str, Any]) -> Optional[str]:
-            return asset.get("href") or asset.get("order_link")
+            return asset.get("href") or asset.get("eodag:order_link")
 
         assets = self.as_dict()
         used_urls = [
@@ -303,20 +304,16 @@ class Asset(UserDict):
 
     product: EOProduct
 
-    # Location
-    location: Optional[str]
-    remote_location: Optional[str]
-
-    # File
-    size: int
+    # Transient download state, not serialized (persistent state is stored in STAC fields
+    # like ``file:size``, ``file:local_path`` or ``order:status``)
     filename: Optional[str]
     rel_path: str
+    next_try: dt.datetime
+    _stream: requests.Response
 
     def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:
         self.product = product
         self.key = key
-        self.location = None
-        self.remote_location = None
         # Faster than UserDict.__init__, which goes through MutableMapping.update()
         self.data = dict(*args, **kwargs)
         self._update()
@@ -325,12 +322,36 @@ class Asset(UserDict):
         super().__setitem__(key, item)
         self._update()
 
+    @property
+    def remote_location(self) -> str:
+        """Remote location of the asset, alias of its ``href``"""
+        return self.data.get("href", "")
+
+    @remote_location.setter
+    def remote_location(self, value: str) -> None:
+        self["href"] = value
+
+    @property
+    def location(self) -> str:
+        """Local location of the asset as URI if downloaded (``file:local_path``),
+        otherwise its ``href``"""
+        if local_path := self.data.get("file:local_path"):
+            return path_to_uri(local_path)
+        return self.remote_location
+
+    @location.setter
+    def location(self, value: str) -> None:
+        if value.startswith("file:"):
+            self["file:local_path"] = uri_to_path(value)
+        else:
+            self.data.pop("file:local_path", None)
+            self.remote_location = value
+
     def _update(self):
-        """Normalize asset fields and sync ``location``/``remote_location`` from ``href``.
+        """Normalize asset fields.
 
         Fills in default ``title``, ``href``, ``order:status`` and ``type`` entries
-        when missing, and mirrors a non-empty ``href`` into the asset's
-        ``location`` / ``remote_location`` attributes.
+        when missing.
         """
 
         title = self.get("title")
@@ -338,7 +359,7 @@ class Asset(UserDict):
             super().__setitem__("title", self.key)
 
         # Order link behaviour require order:status state
-        orderlink = self.get("order_link")
+        orderlink = self.get("eodag:order_link")
         orderstatus = self.get("order:status")
         if orderlink is not None and orderstatus is None:
             super().__setitem__("order:status", OFFLINE_STATUS)
@@ -349,11 +370,6 @@ class Asset(UserDict):
             href = ""
 
         if href != "":
-            # Provide location and remote_location when undefined and href updated
-            if self.location is None:
-                self.location = href
-            if self.remote_location is None:
-                self.remote_location = href
             # With order behaviour, href can be fill later
             content_type = self.get("type")
             if content_type is None:
@@ -384,6 +400,35 @@ class Asset(UserDict):
         """
         kwargs["asset"] = self.key
         return self.product.stream_download(**kwargs)
+
+    def order(
+        self,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+    ) -> None:
+        """Order the asset if it is not online yet, and poll its status until it becomes
+        available.
+
+        :param wait: (optional) Wait time in minutes between two order status checks
+        :param timeout: (optional) Maximum time in minutes before stop checking order status
+        :raises: :class:`RuntimeError` if no download plugin is registered on the product
+        :raises: :class:`NotImplementedError` if the download plugin does not support ordering
+        """
+        if self.get("order:status", ONLINE_STATUS) == ONLINE_STATUS:
+            return
+        downloader = self.product.downloader
+        if downloader is None:
+            raise RuntimeError(
+                f"{self.product} asset {self.key} is unable to order itself due to "
+                "lacking of a download plugin"
+            )
+        if (order := getattr(downloader, "order", None)) is None:
+            raise NotImplementedError(
+                f"{type(downloader).__name__} plugin does not support ordering"
+            )
+        downloader_auth = self.product.downloader_auth
+        auth = downloader_auth.authenticate() if downloader_auth else None
+        order(self.product, auth, wait=wait, timeout=timeout, asset=self.key)
 
     def _repr_html_(self):
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>

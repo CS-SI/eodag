@@ -64,7 +64,6 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
-    OFFLINE_STATUS,
     normalize_bands,
 )
 from eodag.utils import (
@@ -144,10 +143,6 @@ class EOProduct:
     geometry: BaseGeometry
     #: The intersection between the product's geometry and the search area.
     search_intersection: Optional[BaseGeometry]
-    #: The path to the product, either remote or local if downloaded
-    location: str
-    #: The remote path to the product
-    remote_location: str
     #: Assets of the product
     assets: AssetsDict
     #: STAC item links of the product
@@ -179,7 +174,8 @@ class EOProduct:
             or properties.pop("collection", None)
             or properties.get("_collection")
         )
-        self.location = self.remote_location = properties.get("eodag:download_link", "")
+        self._remote_location: str = properties.get("eodag:download_link", "")
+        self._location: Optional[str] = None
         self.assets = AssetsDict(self)
         self.links = []
         self.properties = {
@@ -246,6 +242,46 @@ class EOProduct:
         self.driver = self.get_driver()
         self.downloader: Optional[Union[Api, Download]] = None
         self.downloader_auth: Optional[Authentication] = None
+
+    @property
+    def remote_location(self) -> str:
+        """The remote path to the product: ``href`` of its ``download_link`` asset if any.
+
+        .. deprecated:: v5.0.0
+            Use ``product.assets["download_link"]["href"]`` instead.
+        """
+        download_link = self.assets.get("download_link")
+        if download_link is not None and download_link.get("href"):
+            return download_link["href"]
+        return self._remote_location
+
+    @remote_location.setter
+    def remote_location(self, value: str) -> None:
+        if (download_link := self.assets.get("download_link")) is not None:
+            download_link["href"] = value
+        else:
+            self._remote_location = value
+
+    @property
+    def location(self) -> str:
+        """The path to the product, either remote or local if downloaded.
+
+        Falls back on the ``download_link`` asset ``file:local_path`` (as URI), then on
+        :attr:`remote_location`.
+
+        .. deprecated:: v5.0.0
+            Use ``product.assets["download_link"].location`` instead.
+        """
+        if self._location is not None:
+            return self._location
+        download_link = self.assets.get("download_link")
+        if download_link is not None and download_link.get("file:local_path"):
+            return download_link.location
+        return self.remote_location
+
+    @location.setter
+    def location(self, value: str) -> None:
+        self._location = value
 
     def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -500,8 +536,9 @@ class EOProduct:
         self.downloader = downloader
         self.downloader_auth = authenticator
 
-        # resolve locations and properties if needed with downloader configuration
-        location_attrs = ("location", "remote_location")
+        # resolve "%(...)s" placeholders in locations, assets and properties with downloader config
+        # remote_location first, as location may fall back on it
+        location_attrs = ("remote_location", "location")
         for location_attr in location_attrs:
             if "%(" in getattr(self, location_attr):
                 try:
@@ -515,6 +552,17 @@ class EOProduct:
                         f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
                         f" in register_downloader: {str(e)}"
                     )
+
+        for asset in self.assets.values():
+            for k in ("href", "eodag:order_link"):
+                v = asset.get(k)
+                if isinstance(v, str) and "%(" in v:
+                    try:
+                        asset[k] = v % vars(self.downloader.config)
+                    except (TypeError, ValueError) as e:
+                        logger.debug(
+                            f"Could not resolve {asset.key} asset {k} ({v}) in register_downloader: {str(e)}"
+                        )
 
         for k, v in self.properties.items():
             if isinstance(v, str) and "%(" in v:
@@ -644,6 +692,21 @@ class EOProduct:
             **kwargs,
         )
 
+    def order(
+        self,
+        asset: str = "",
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+    ) -> None:
+        """Order the product assets that are not online yet, and poll their status until
+        they become available.
+
+        :param asset: (optional) regex filter on asset keys; all assets if empty
+        :param wait: (optional) Wait time in minutes between two order status checks
+        :param timeout: (optional) Maximum time in minutes before stop checking order status
+        """
+        self.assets.order(asset, wait=wait, timeout=timeout)
+
     def get_storage_options(
         self,
         asset_key: Optional[str] = None,
@@ -658,11 +721,11 @@ class EOProduct:
         - for AWS/S3 authentication, credentials and S3 client options are returned
         - for HTTP authentication, request headers and a potentially signed URL are returned
 
-        If the product is offline, an order request is sent before generating access
-        options.
+        If the targeted assets are offline, an order request is sent before generating
+        access options.
 
         :param asset_key: (optional) Asset key to target. If ``None``, the product
-                          location is used.
+                          location is used, and all its assets are ordered if needed.
         :param wait: (optional) If order is needed, wait time in minutes between two
                      order status checks.
         :param timeout: (optional) If order is needed, maximum time in minutes before
@@ -677,17 +740,17 @@ class EOProduct:
         if self.downloader is None:
             return {}
 
-        # order if product is offline
-        if self.properties.get("order:status") == OFFLINE_STATUS and hasattr(
-            self.downloader, "order"
-        ):
-            self.downloader.order(self, auth, wait=wait, timeout=timeout)
+        if asset_key and asset_key not in self.assets:
+            raise AddressNotFound(f"{asset_key} not found in {self} assets")
+
+        if hasattr(self.downloader, "order"):
+            if asset_key:
+                self.assets[asset_key].order(wait=wait, timeout=timeout)
+            else:
+                self.order(wait=wait, timeout=timeout)
 
         # default url and headers
-        try:
-            url = self.assets[asset_key]["href"] if asset_key else self.location
-        except KeyError as e:
-            raise AddressNotFound(f"{asset_key} not found in {self} assets") from e
+        url = self.assets[asset_key]["href"] if asset_key else self.location
         headers = {**USER_AGENT}
 
         if (
