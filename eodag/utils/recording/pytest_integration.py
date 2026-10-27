@@ -58,6 +58,7 @@ change this.
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 from pathlib import Path
 from typing import Any, Callable, Iterator, Sequence
@@ -174,7 +175,7 @@ def eodag_cassette_name(request: pytest.FixtureRequest) -> str:
     node = request.node
     module = Path(node.path).stem
     cls = f"{node.cls.__name__}." if getattr(node, "cls", None) else ""
-    return f"{module}/{_sanitize(cls + node.name)}.yaml"
+    return os.path.join(module, f"{_sanitize(cls + node.name)}.yaml")
 
 
 def _as_list(value: Any) -> list:
