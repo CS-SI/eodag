@@ -1148,10 +1148,10 @@ def parse_discovery_config_jsonpath(
     }
     # parse jsonpath expressions for optional discovery configuration entries if they exist
     if "single_collection_parsable_metadata" in discovery_conf:
-        discovery_conf_parsed[
-            "single_collection_parsable_metadata"
-        ] = mtd_cfg_as_conversion_and_querypath(
-            discovery_conf["single_collection_parsable_metadata"]
+        discovery_conf_parsed["single_collection_parsable_metadata"] = (
+            mtd_cfg_as_conversion_and_querypath(
+                discovery_conf["single_collection_parsable_metadata"]
+            )
         )
     if "metadata_mapping" in discovery_conf.get(
         "generic_collection_unparsable_properties", {}

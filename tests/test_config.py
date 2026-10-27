@@ -25,7 +25,11 @@ from tempfile import TemporaryDirectory
 
 import yaml
 
-from eodag.api.provider import ProvidersDict, build_provider_configs, merge_provider_configs, _parse_env_provider_configs
+from eodag.api.provider import (
+    _parse_env_provider_configs,
+    build_provider_configs,
+    merge_provider_configs,
+)
 from eodag.config import PluginConfig
 from eodag.utils import deepcopy
 from tests.context import (
@@ -48,17 +52,13 @@ class TestProviderConfig(unittest.TestCase):
         unslugified_provider_name = "some $provider-name. Really ugly"
         slugified_provider_name = "some_provider_name_really_ugly"
 
-        stream = StringIO(
-            """!provider
+        stream = StringIO("""!provider
             name: {}
             api: !plugin
                 type: MyPluginClass
             products:
                 EODAG_COLLECTION: provider_collection
-            """.format(
-                unslugified_provider_name
-            )
-        )
+            """.format(unslugified_provider_name))
         provider_config = yaml.load(stream, Loader=yaml.Loader)
         self.assertEqual(provider_config.name, slugified_provider_name)
 
@@ -71,54 +71,44 @@ class TestProviderConfig(unittest.TestCase):
         )
 
         # Not defining a class for a plugin
-        invalid_stream = StringIO(
-            """!provider
+        invalid_stream = StringIO("""!provider
                 name: my_provider
                 search: !plugin
                     param: value
-            """
-        )
+            """)
         self.assertRaises(
             ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader
         )
 
         # Not giving a name to the provider
-        invalid_stream = StringIO(
-            """!provider
+        invalid_stream = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
-            """
-        )
+            """)
         self.assertRaises(
             ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader
         )
 
         # Specifying an api plugin and a search or download or auth plugin at the same
         # type
-        invalid_stream1 = StringIO(
-            """!provider
+        invalid_stream1 = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
                 search: !plugin
                     type: MyPluginClass2
-            """
-        )
-        invalid_stream2 = StringIO(
-            """!provider
+            """)
+        invalid_stream2 = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
                 download: !plugin
                     type: MyPluginClass3
-            """
-        )
-        invalid_stream3 = StringIO(
-            """!provider
+            """)
+        invalid_stream3 = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
                 auth: !plugin
                     type: MyPluginClass4
-            """
-        )
+            """)
         self.assertRaises(
             ValidationError, yaml.load, invalid_stream1, Loader=yaml.Loader
         )
@@ -131,16 +121,14 @@ class TestProviderConfig(unittest.TestCase):
 
     def test_provider_config_update(self):
         """A provider config must be update-able with a dict"""
-        valid_stream = StringIO(
-            """!provider
+        valid_stream = StringIO("""!provider
                 name: provider
                 provider_param: val
                 api: !plugin
                     type: MyPluginClass
                     plugin_param1: value1
                     pluginParam2: value2
-        """
-        )
+        """)
         provider_config = yaml.load(valid_stream, Loader=yaml.Loader)
         overrides = {
             "provider_param": "new val",
@@ -154,8 +142,7 @@ class TestProviderConfig(unittest.TestCase):
 
     def test_provider_config_merge(self):
         """Merge 2 providers configs"""
-        config_stream1 = StringIO(
-            """!provider
+        config_stream1 = StringIO("""!provider
                 name: provider1
                 provider_param: val
                 provider_param2: val2
@@ -163,18 +150,15 @@ class TestProviderConfig(unittest.TestCase):
                     type: MyPluginClass
                     plugin_param1: value1
                     pluginParam2: value2
-        """
-        )
-        config_stream2 = StringIO(
-            """!provider
+        """)
+        config_stream2 = StringIO("""!provider
                 name: provider1
                 provider_param: val1
                 provider_param3: val3
                 api: !plugin
                     type: MyPluginClass
                     pluginParam2: value3
-        """
-        )
+        """)
         provider1_config1 = yaml.load(config_stream1, Loader=yaml.Loader)
         provider1_config2 = yaml.load(config_stream2, Loader=yaml.Loader)
 
@@ -196,7 +180,7 @@ class TestProviderConfig(unittest.TestCase):
             {
                 "provider1": provider1_config2,
                 "provider3": provider3_config2,
-            }
+            },
         )
 
         self.assertEqual(len(providers), 3)
@@ -211,34 +195,28 @@ class TestPluginConfig(unittest.TestCase):
     def test_plugin_config_valid(self):
         """A plugin config must specify a valid plugin type"""
         # A stream configuring a plugin without specifying the "type" key
-        invalid_stream = StringIO(
-            """!plugin
+        invalid_stream = StringIO("""!plugin
                     param: value
-        """
-        )
+        """)
         self.assertRaises(
             ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader
         )
 
-        valid_stream = StringIO(
-            """!plugin
+        valid_stream = StringIO("""!plugin
                     type: MySearchPlugin
                     param1: value
-        """
-        )
+        """)
         self.assertIsInstance(yaml.load(valid_stream, Loader=yaml.Loader), PluginConfig)
 
     def test_plugin_config_update(self):
         """A plugin config must be update-able by a dict"""
-        valid_stream = StringIO(
-            """!plugin
+        valid_stream = StringIO("""!plugin
                     type: MyPluginClass
                     plugin_param1: value1
                     pluginParam2:
                         sub_param1: v1
                         subParam_2: v2
-        """
-        )
+        """)
         plugin_config = yaml.load(valid_stream, Loader=yaml.Loader)
         overrides = {
             "type": "MyOtherPlugin",
@@ -284,9 +262,20 @@ class TestConfigFunctions(unittest.TestCase):
     def test_load_config_providers_whitelist(self):
         """Config must be loaded with only the selected whitelist of providers"""
         try:
+            for value, expected in (
+                ("cop_dataspace", ["cop_dataspace"]),
+                ("cop_dataspace,geodes", ["cop_dataspace", "geodes"]),
+                ('"cop_dataspace"', ["cop_dataspace"]),
+                ('["cop_dataspace", "geodes"]', ["cop_dataspace", "geodes"]),
+            ):
+                with self.subTest(value=value):
+                    os.environ["EODAG_PROVIDERS_WHITELIST"] = value
+                    self.assertEqual(
+                        expected, config.EODAGSettings().providers_whitelist
+                    )
+
             os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
             providers = build_provider_configs(config.load_default_config())
-
             self.assertEqual({"creodias"}, set(providers.keys()))
         finally:
             os.environ.pop("EODAG_PROVIDERS_WHITELIST", None)
@@ -297,8 +286,7 @@ class TestConfigFunctions(unittest.TestCase):
         providers = build_provider_configs(config.load_default_config())
         merge_provider_configs(
             providers,
-            yaml.safe_load(
-                """
+            yaml.safe_load("""
                 my_new_provider:
                     priority: 4
                     search:
@@ -317,8 +305,7 @@ class TestConfigFunctions(unittest.TestCase):
                         credentials:
                             aws_access_key_id: access-key-id
                             aws_secret_access_key: secret-access-key
-                """
-            )
+                """),
         )
 
         my_new_provider_conf = providers["my_new_provider"].config
@@ -448,9 +435,9 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ["EODAG__USGS__API__CREDENTIALS__PASSWORD"] = "pwd"
         os.environ["EODAG__AWS_EOS__SEARCH__PRODUCT_LOCATION_SCHEME"] = "file"
         os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "api-key"
-        os.environ[
-            "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
-        ] = "access-key-id"
+        os.environ["EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"] = (
+            "access-key-id"
+        )
         os.environ[
             "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"
