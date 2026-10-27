@@ -406,8 +406,7 @@ class TestEOProduct(EODagTestBase):
                     "Product already present on this platform", str(cm.output)
                 )
 
-            # Check that product is not downloaded again even if location has not been updated
-            product.location = product.remote_location
+            product.assets["download_link"].pop("file:local_path", None)
             with self.assertLogs(level="INFO") as cm:
                 product.download()
                 self.assertIn("Product already downloaded", str(cm.output))
@@ -438,8 +437,7 @@ class TestEOProduct(EODagTestBase):
             product_zip = "{}.zip".format(product_dir_path)
             self.assertFalse(os.path.isfile(product_zip))
 
-            # Check that product is not downloaded again even if location has not been updated
-            product.location = product.remote_location
+            product.assets["download_link"].pop("file:local_path", None)
             with self.assertLogs(level="INFO") as cm:
                 product.download()
                 product.download()
@@ -680,8 +678,7 @@ class TestEOProduct(EODagTestBase):
             )
 
             needed_logs = [
-                f"Could not resolve product.location ({downloadable_product.location})",
-                f"Could not resolve product.remote_location ({downloadable_product.remote_location})",
+                f"Could not resolve download_link asset href ({downloadable_product.assets['download_link']['href']})",
                 f"Could not resolve otherProperty property ({downloadable_product.properties['otherProperty']})",
             ]
             for needed_log in needed_logs:

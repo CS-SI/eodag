@@ -47,7 +47,6 @@ from eodag.utils import (
     flatten_top_directories,
     format_string,
     get_bucket_name_and_prefix,
-    path_to_uri,
     rename_subfolder,
     sanitize,
 )
@@ -252,7 +251,12 @@ class AwsDownload(Download):
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any
+        :param executor: (optional) Executor for internal asset work, including individual S3 object
+                         downloads and extraction of requested entries from S3-hosted ZIP files.
+                         When called by ``download_all()``, this executor is shared with product-level
+                         downloads, so ``download_all()`` reserves worker capacity for nested tasks to
+                         avoid deadlocks. With a one-worker executor, nested AWS work runs sequentially
+                         instead of submitting tasks to the occupied pool.
         :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
@@ -290,7 +294,6 @@ class AwsDownload(Download):
         if download_link is not None and not assets_values_to_download:
             product_path = str(download_link["file:local_path"])
             logger.info(f"Product already downloaded: {product_path}")
-            product.location = path_to_uri(product_path)
             return product_path
 
         product_local_path = self._create_product_dir(product, **kwargs)
@@ -317,8 +320,6 @@ class AwsDownload(Download):
 
         # nothing to download (e.g. all selected assets are already cached)
         if not bucket_names_and_prefixes:
-            if asset_filter is None:
-                product.location = path_to_uri(product_local_path)
             return product_local_path
 
         # authenticate
@@ -568,9 +569,6 @@ class AwsDownload(Download):
         if download_link is not None:
             # the whole product is the download_link asset local copy
             self._set_asset_statement(download_link, product_path, per_asset_kwargs)
-
-        if asset_filter is None:
-            product.location = path_to_uri(product_path)
 
         return product_path
 
@@ -986,11 +984,11 @@ class AwsDownload(Download):
         """Extract bucket name and prefix from product URL.
 
         :param product: The EO product to download
-        :param url: (optional) URL to use as product.location
+        :param url: (optional) URL to use instead of the ``download_link`` asset ``href``
         :returns: bucket_name and prefix as str
         """
         if url is None:
-            url = product.location
+            url = product.assets.get("download_link", {}).get("href", "")
 
         bucket_path_level = getattr(self.config, "bucket_path_level", None)
 

@@ -236,7 +236,8 @@ creodias:
     assets_mapping:
       download_link:
         title: 'downloadlink'
-        href: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
+        href: 'https://zipper.creodias.eu/odata/v1/Products({_uid})/$value'
+        _uid: '$.Id'
         roles: '["archive", "data"]'
         type: '$.ContentType'
         file:checksum: '$.Checksum[?Algorithm="MD5"].Value'

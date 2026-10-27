@@ -785,7 +785,8 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
         self.assertEqual(results[0].collection, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
-        self.assertEqual(results[0].location, "")
+        with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
+            self.assertIsNone(results[0].location)
         self.assertIsInstance(results[0].downloader, Download)
 
         self.assertEqual(results[1].provider, "earth_search")

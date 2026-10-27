@@ -38,6 +38,7 @@ class TestSearchResult(unittest.TestCase):
             "online": {"download_link": "succeeded", "quicklook": None},
             "offline": {"download_link": "orderable"},
             "partially_online": {"download_link": "succeeded", "foo": "ordered"},
+            "failed": {"download_link": "failed"},
             "no_asset": {},
         }
         products = []

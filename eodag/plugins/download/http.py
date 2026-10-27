@@ -63,7 +63,6 @@ from eodag.utils import (
     guess_extension,
     guess_file_type,
     parse_header,
-    path_to_uri,
     rename_with_version,
     sanitize,
     string_to_jsonpath,
@@ -716,8 +715,6 @@ class HTTPDownload(Download):
             timeout,
             **kwargs,
         )
-        if kwargs.get("asset") is None:
-            product.location = path_to_uri(fs_path)
         return fs_path
 
     def _download_link(
@@ -895,7 +892,7 @@ class HTTPDownload(Download):
                 content=chain(iter([first_chunk]), chunk_iterator),
                 headers=getattr(product, "headers", {}),
                 filename=getattr(product, "filename", None),
-                size=getattr(product, "size", None),
+                size=assets_values[0].get("file:size") or None,
             )
 
         self._order_assets(product, assets_values, auth, wait, timeout)
@@ -1165,7 +1162,8 @@ class HTTPDownload(Download):
                 product.headers["Content-Type"] = guessed_content_type
 
             progress_callback.reset(total=stream_size)
-            product.size = stream_size
+            if stream_size is not None:
+                streamed_asset["file:size"] = stream_size
 
             product.filename = filename
             return product._stream.iter_content(chunk_size=64 * 1024)
