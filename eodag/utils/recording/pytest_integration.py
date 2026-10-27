@@ -15,41 +15,44 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This submodule defines a pytest plugin that permits to replay EODAG requests.
+
+"""Pytest plugin that records and replays EODAG calls.
 
 .. note::
-    This plugin has been strongly inspired by `pytest-recording
-    <https://pypi.org/project/pytest-recording/>`_
+    Strongly inspired by `pytest-recording <https://pypi.org/project/pytest-recording/>`_.
 
-    Yet, integration into pytest is done in
-    :mod:`eodag.utils.recording.pytest_integration`, and it is volontarily not imported
-    here. Indeed ``pytest`` is not an execution dependency of eodag.
+    It is deliberately not imported by :mod:`eodag.utils.recording`, as ``pytest`` is
+    not a runtime dependency of eodag: projects have to enable it explicitly. See the
+    :ref:`recording preparation procedure <recording-preparation>`.
 
-    You'll have to do it explicitely in the tests of your projets that depends on eodag.
-    See :ref:`recording preparation procedure <recording-preparation>`.
+At class level (so for every instance, including those created by the application
+under test), the plugin intercepts the following methods of
+:class:`eodag.EODataAccessGateway`:
 
-The plugin intercepts and supercedes the three following methods of
-:class:`eodag.EODataAccessGateway` at class level (meaning it will apply to all
-instances, even those created by the tested application).
+* ``search()``: ``search`` section of the cassette;
+* ``search_all()``: ``search_all`` section. The aggregated result of all pages is
+  recorded, so no pagination token is needed;
+* ``download()``: ``download`` section.
 
-* ``search()``      -> cassette, ``search`` section
-* ``search_all()``  -> cassette, ``search_all`` section (aggregated result of all pages:
-    no pagination token is recorded)
-* ``download()``    -> cassette, ``download`` section
+Each call is treated as a pure function: the answer of the provider is stored under a
+key made of the parameters actually passed, and the same call replayed later returns
+the same answer. No state is kept between two calls.
 
-Every call is considered as a pure function call, no context is kept. Given an execution
-in real mode, eodag response is registered under a key, and replaying under the same
-conditions (i.e. same key), the same response will be returned.
+The recording mode is chosen, by decreasing priority, with: the
+``--eodag-record-mode={none,once,all,new_episodes}`` CLI option, the ``record_mode``
+argument of the marker, the ``eodag_record_mode`` fixture, then ``none``. See
+:class:`~eodag.utils.recording.recorder.RecordMode` and the
+`VCR.py documentation <https://vcrpy.readthedocs.io/en/stable/usage.html#record-modes>`_
+for details about the modes.
 
+By default, cassettes are stored in ``<test directory>/cassettes/<module>/<test>.yaml``
+and downloaded products in ``<test directory>/cassettes/_downloads``. Override the
+fixtures ``eodag_cassette_dir``, ``eodag_archive_dir`` and ``eodag_cassette_name`` to
+change this.
 
+.. warning::
 
-At CLI level you can choose the execution mode:
-``--eodag-record-mode={none,once,all,new_episodes}``. See vcrpy documentation for more
-details about the various modes.
-
-Mode priority: CLI > marqueur > fixture ``eodag_record_mode`` > ``none``.
-
-.. warning: currently only Linux is supported (given how symbolic links are used internally)
+    Only Linux is currently supported, as replayed downloads rely on symbolic links.
 """
 
 from __future__ import annotations
@@ -80,12 +83,14 @@ def eodag_record(
     """
     Decorator equivalent to ``@pytest.mark.eodag_record(...)``.
 
-    :param cassettes: name, list of names (relative to :func:`eodag_cassette_dir`), or
-        callable ``f(request) -> name | list``. Default: name is derived from test name.
-    :param write_to: recording cassette (mandatory if several cassettes are specified and *if* we can
-        write).
+    :param cassettes: name, list of names (relative to the :func:`eodag_cassette_dir`
+        fixture), or callable ``f(request) -> name | list``. Default: the name is
+        derived from the test name.
+    :param write_to: cassette to write to. Mandatory when several cassettes are given
+        and the mode may write.
     :param record_mode: ``none`` | ``once`` | ``all`` | ``new_episodes``.
     :param archive_dir: directory where eodag actually downloads EO products.
+    :return: the ``pytest.mark.eodag_record`` marker, to be used as a decorator.
     """
     options = {
         "cassettes": cassettes,
@@ -105,7 +110,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--eodag-record-mode",
         choices=[m.value for m in RecordMode],
         default=None,
-        help="eodag recording mode (is prioritary over marker and fixtures).",
+        help="eodag recording mode (takes precedence over marker and fixtures).",
     )
 
 
@@ -114,13 +119,14 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
         f"{MARKER}(cassettes=None, write_to=None, record_mode=None, archive_dir=None): "
-        "records/replays search(), search_all() et download() from eodag.",
+        "records/replays search(), search_all() and download() from eodag.",
     )
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo):
-    """pytest runtest hook: Make sure to update casettes only on test success."""
+    """pytest runtest hook: stores the report of each phase on the test item, so that
+    cassettes are only written if the test succeeded."""
     outcome = yield
     report = outcome.get_result()
     item.stash.setdefault(_REPORT_KEY, {})[report.when] = report
@@ -146,25 +152,25 @@ def _sanitize(name: str) -> str:
 
 @pytest.fixture
 def eodag_record_mode() -> str:
-    """Default mode (can be overridden) ; has a lesser priority than marker or CLI"""
+    """Default recording mode (overridable). Has a lower priority than the marker and the CLI option."""
     return RecordMode.NONE.value
 
 
 @pytest.fixture
 def eodag_cassette_dir(request: pytest.FixtureRequest) -> Path:
-    """Cassettes root (can be overridden) : ``<test directory>/cassettes``."""
+    """Cassettes root directory (overridable): ``<test directory>/cassettes``."""
     return Path(request.node.path).parent / "cassettes"
 
 
 @pytest.fixture
 def eodag_archive_dir(eodag_cassette_dir: Path) -> Path:
-    """Download archive directory (can be overridden)."""
+    """Directory where products are actually downloaded (overridable)."""
     return eodag_cassette_dir / "_downloads"
 
 
 @pytest.fixture
 def eodag_cassette_name(request: pytest.FixtureRequest) -> str:
-    """Default cassette name (can be overridden): ``<module>/<[Class.]test[params]>.yaml``."""
+    """Default cassette name (overridable): ``<module>/<[Class.]test[params]>.yaml``."""
     node = request.node
     module = Path(node.path).stem
     cls = f"{node.cls.__name__}." if getattr(node, "cls", None) else ""
@@ -183,7 +189,7 @@ def eodag_recorder(
     eodag_archive_dir: Path,
     eodag_cassette_name: str,
 ) -> Iterator[EodagRecorder]:
-    """Activate recording/reply for the test (patches dateway class)."""
+    """Activates recording/replay for the test (patches the gateway class)."""
     options = _marker_options(request.node)
 
     mode = (
@@ -220,6 +226,6 @@ def eodag_recorder(
 
 @pytest.fixture(autouse=True)
 def _eodag_recording_auto(request: pytest.FixtureRequest) -> None:
-    """Activates ``eodag_recorder`` for tests marked."""
+    """Activates ``eodag_recorder`` for the tests carrying the ``eodag_record`` marker."""
     if request.node.get_closest_marker(MARKER) is not None:
         request.getfixturevalue("eodag_recorder")

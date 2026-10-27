@@ -16,28 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Errors and warnings raised by :mod:`eodag.utils.recording`."""
+
 from __future__ import annotations
 
 
 class EodagRecordingError(Exception):
-    """Plugin base error."""
+    """Base class of all the errors raised by :mod:`eodag.utils.recording`."""
 
 
 class NoMatchingRecordError(EodagRecordingError):
-    """Call with no match in cassettes, in replay mode"""
+    """Raised in replay mode when a call has no matching entry in the cassettes."""
 
 
 class DuplicateKeyError(EodagRecordingError):
-    """The same key is present several time (whithin one or several cassettes)"""
+    """Raised when the same key is present several times, within one cassette or
+    across several cassettes read together."""
 
 
 class CassetteFormatError(EodagRecordingError):
-    """Unreadable cassette, or unsupported version"""
+    """Raised when a cassette is unreadable, has an unsupported version, or contains
+    something that cannot be decoded."""
 
 
 class EodagRecordingConfigError(EodagRecordingError):
-    """Invalid configuration (cassettes, write_to, mode...)"""
+    """Raised on an invalid configuration (cassettes, ``write_to``, mode...)."""
 
 
 class EodagRecordingWarning(UserWarning):
-    """Plugin Warning."""
+    """Warning emitted by :mod:`eodag.utils.recording`."""

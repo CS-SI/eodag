@@ -1,4 +1,4 @@
-"""Tests unitaires de EodagRecorder (sans l'intégration pytest)."""
+"""Unit tests of de ``eodag.utils.recording`` (without pytest integration)."""
 
 import os
 from pathlib import Path
@@ -261,7 +261,7 @@ def test_download_missing_archive(gateway, cassette, tmp_path):
     import shutil
 
     shutil.rmtree(tmp_path / "archive" / "C_p1_0")
-    with pytest.raises(EodagRecordingError, match="cannot be found"):
+    with pytest.raises(EodagRecordingError, match="not found"):
         replay(cassette, tmp_path, flow)
 
 
@@ -273,7 +273,7 @@ def test_download_not_archived_is_not_recorded(gateway, cassette, tmp_path):
         {"id": "LOCAL_1", "title": "x", "geometry": fake.POLY},
         collection="C",
     )
-    with pytest.warns(EodagRecordingWarning, match="outside the recording directory"):
+    with pytest.warns(EodagRecordingWarning, match="outside of the archive directory"):
         path = record("all", cassette, tmp_path, lambda: gateway.download(product))
     assert path == "/somewhere/else/local_file"
     assert not cassette.exists()
@@ -281,7 +281,7 @@ def test_download_not_archived_is_not_recorded(gateway, cassette, tmp_path):
 
 # ------------------------------------------------------------------- modes --
 def test_mode_none_missing_cassette(gateway, cassette, tmp_path):
-    with pytest.raises(NoMatchingRecordError, match="empty"):
+    with pytest.raises(NoMatchingRecordError, match="No 'search' entry"):
         replay(cassette, tmp_path, lambda: gateway.search(collection="C"))
     # no eodag call, a test doesn't fail
     replay(cassette, tmp_path, lambda: None)

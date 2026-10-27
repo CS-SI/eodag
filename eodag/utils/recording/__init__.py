@@ -15,18 +15,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This submodule provides all the necessary classes and functions to record and replay
-EODAG requests over EO Providers.
+"""This subpackage provides the classes and functions needed to record and replay
+EODAG requests to EO providers.
 
 .. note::
-    This submodule has been strongly inspired by :external+vcrpy:std:doc:`VCR.py <index>`.
+    It has been strongly inspired by :external+vcrpy:std:doc:`VCR.py <index>`.
 
-    Yet, integration into pytest is done in
-    :mod:`eodag.utils.recording.pytest_integration`, and it is volontarily not imported
-    here. Indeed ``pytest`` is not an execution dependency of eodag.
+    The integration into pytest is done in
+    :mod:`eodag.utils.recording.pytest_integration`, which is deliberately not imported
+    here: ``pytest`` is not a runtime dependency of eodag.
 
-    You'll have to do it explicitely in the tests of your projets that depends on eodag.
-    See :ref:`recording preparation procedure <recording-preparation>`.
+    You have to enable it explicitly in the tests of your projects that depend on
+    eodag. See the :ref:`recording preparation procedure <recording-preparation>`.
 """
 
 from __future__ import annotations
