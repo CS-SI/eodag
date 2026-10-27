@@ -41,6 +41,7 @@ from typing_extensions import TypedDict
 from zipstream import ZipStream
 
 from eodag.api.product.metadata_mapping import (
+    FAILED_STATUS,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -89,16 +90,6 @@ if TYPE_CHECKING:
     from eodag.utils import Unpack
 
 logger = logging.getLogger("eodag.download.http")
-
-# order fields parsed from provider responses that are stored on the ordered asset
-ORDER_ASSET_FIELDS = (
-    "order:",
-    "eodag:order_",
-    "eodag:download_",
-    "eodag:status_link",
-    "eodag:search_link",
-    "eodag:combined_order_id",
-)
 
 # hop-by-hop / transport-specific headers that must not be forwarded from the
 # provider's response to the eodag client
@@ -150,9 +141,9 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.order_headers` (``[dict[str, str]]``): headers to be added to the order
           request
         * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
-          a typed dictionary containing the key ``metadata_mapping`` which can be used to update the ordered asset
-          (order fields like ``eodag:status_link``, ``eodag:download_link`` as ``href``) or add new product properties
-          based on the data in response to the order request
+                    ``asset_mapping`` updates the ordered asset, using fields like ``order:id``,
+                    ``eodag:status_link`` and ``href``;
+                    ``metadata_mapping`` updates product properties from the order response
         * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
           configuration to handle the order status; contains information which method to use, how the response data is
           interpreted, which status corresponds to success, ordered and error and what should be done on success.
@@ -209,7 +200,8 @@ class HTTPDownload(Download):
             - :attr:`~eodag.config.PluginConfig.order_on_response`: (optional) things to do with obtained order
               response:
 
-              - *metadata_mapping*: edit or add new asset order fields or product properties
+              - *asset_mapping*: edit or add fields on the ordered asset
+              - *metadata_mapping*: edit or add product properties
 
         Asset fields used for order:
 
@@ -273,6 +265,7 @@ class HTTPDownload(Download):
                     QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
                     msg = f"{product.properties['title']} could not be ordered"
                     if e.response is not None and e.response.status_code == 400:
+                        asset["order:status"] = FAILED_STATUS
                         raise ValidationError.from_error(e, msg) from e
                     else:
                         raise DownloadError.from_error(e, msg) from e
@@ -282,30 +275,29 @@ class HTTPDownload(Download):
             raise TimeOutError(exc, timeout=timeout) from exc
 
     @staticmethod
-    def _update_from_order(asset: Asset, fields: dict[str, Any]) -> None:
-        """Store order related fields on the asset, and other ones in its product properties.
-
-        ``eodag:download_link`` updates the asset ``href`` and ``eodag:order_id`` is stored as
-        ``order:id``.
+    def _update_from_order(
+        asset: Asset, asset_fields: dict[str, Any], product_fields: dict[str, Any]
+    ) -> None:
+        """Update the ordered asset and its product from their respective mappings.
 
         :param asset: The ordered asset
-        :param fields: Fields parsed from order responses
+        :param asset_fields: Fields parsed from the asset mapping
+        :param product_fields: Fields parsed from the metadata mapping
         """
-        product = asset.product
-        for key, value in fields.items():
-            if key.startswith("_"):
-                continue
-            if key == "eodag:download_link":
-                asset["href"] = value
-                if asset.key == "download_link":
-                    product.location = value
-                logger.debug(f"{product} {asset.key} asset href updated to {value}")
-            elif key == "eodag:order_id":
-                asset["order:id"] = str(value)
-            elif key.startswith(ORDER_ASSET_FIELDS):
-                asset[key] = value
-            else:
-                product.properties[key] = value
+        asset.update(
+            {
+                key: str(value) if key == "order:id" else value
+                for key, value in asset_fields.items()
+                if not key.startswith("_") and value != NOT_AVAILABLE
+            }
+        )
+        asset.product.properties.update(
+            {
+                key: value
+                for key, value in product_fields.items()
+                if not key.startswith("_") and value != NOT_AVAILABLE
+            }
+        )
 
     def order_response_process(
         self, response: Response, asset: Asset
@@ -316,15 +308,16 @@ class HTTPDownload(Download):
         :param asset: The ordered asset
         :returns: the returned json status response
         """
-        on_response_mm = getattr(self.config, "order_on_response", {}).get(
-            "metadata_mapping", {}
-        )
-        if not on_response_mm:
+        on_response_config = getattr(self.config, "order_on_response", {})
+        on_response_am = on_response_config.get("asset_mapping", {})
+        on_response_mm = on_response_config.get("metadata_mapping", {})
+        on_response_mapping = {**on_response_mm, **on_response_am}
+        if not on_response_mapping:
             return None
 
         logger.debug("Parsing order response to update asset order fields")
         on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
-            on_response_mm,
+            on_response_mapping,
         )
 
         json_response = response.json()
@@ -334,7 +327,17 @@ class HTTPDownload(Download):
             on_response_mm_jsonpath,
         )
         self._update_from_order(
-            asset, {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
+            asset,
+            {
+                key: properties_update[key]
+                for key in on_response_am
+                if key in properties_update
+            },
+            {
+                key: properties_update[key]
+                for key in on_response_mm
+                if key in properties_update
+            },
         )
         product = asset.product
         # the job id becomes the product id for EcmwfSearch products
@@ -359,6 +362,10 @@ class HTTPDownload(Download):
         Asset order status request can be configured using the following download plugin parameters:
 
             - :attr:`~eodag.config.PluginConfig.order_status`: :class:`~eodag.config.PluginConfig.OrderStatus`
+
+        In both ``order_status`` and ``order_status.on_success``, ``asset_mapping`` updates the ordered asset
+        and ``metadata_mapping`` updates product properties. Both mappings are parsed together so their
+        placeholders can reference each other.
 
         Asset fields used for order status:
 
@@ -433,12 +440,12 @@ class HTTPDownload(Download):
         skip_parsing_status_response = False
         status_dict: dict[str, Any] = {}
         config_on_success: dict[str, Any] = status_config.get("on_success", {})
+        on_success_am = config_on_success.get("asset_mapping", {})
         on_success_mm = config_on_success.get("metadata_mapping", {})
+        on_success_mapping = {**on_success_mm, **on_success_am}
 
-        status_response_content_needed = (
-            False
-            if not any([v.startswith("$.json.") for v in on_success_mm.values()])
-            else True
+        status_response_content_needed = any(
+            "$.json" in str(value) for value in on_success_mapping.values()
         )
 
         if success_code:
@@ -492,12 +499,14 @@ class HTTPDownload(Download):
                 raise RequestException("response content is not a dict")
             status_dict = json_response
 
+            status_am = status_config.get("asset_mapping", {})
             status_mm = status_config.get("metadata_mapping", {})
+            status_mapping = {**status_mm, **status_am}
             status_mm_jsonpath = (
                 mtd_cfg_as_conversion_and_querypath(
-                    status_mm,
+                    status_mapping,
                 )
-                if status_mm
+                if status_mapping
                 else {}
             )
             logger.debug("Parsing order status response")
@@ -507,8 +516,8 @@ class HTTPDownload(Download):
             )
 
             # display progress percentage
-            if "eodag:order_percent" in status_dict:
-                status_percent = str(status_dict["eodag:order_percent"])
+            if "_order_percent" in status_dict:
+                status_percent = str(status_dict["_order_percent"])
                 if status_percent.isdigit():
                     status_percent += "%"
                 logger.info(
@@ -516,11 +525,12 @@ class HTTPDownload(Download):
                 )
 
             self._update_from_order(
-                asset, {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
+                asset,
+                {key: status_dict[key] for key in status_am if key in status_dict},
+                {key: status_dict[key] for key in status_mm if key in status_dict},
             )
 
-            order_status = status_dict.get("eodag:order_status")
-            asset["eodag:order_status"] = order_status
+            order_status = status_dict.get("_order_status")
 
             status_message = status_dict.get(
                 "eodag:order_message", f"request status: {order_status}"
@@ -529,25 +539,25 @@ class HTTPDownload(Download):
             # handle status error
             errors: dict[str, Any] = status_config.get("error", {})
             if errors and errors.items() <= status_dict.items():
+                asset["order:status"] = FAILED_STATUS
                 raise DownloadError(
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
         asset["order:status"] = STAGING_STATUS
 
-        success_status: dict[str, Any] = status_config.get("success", {}).get(
-            "eodag:order_status"
+        success_status: Optional[str] = status_config.get("success", {}).get(
+            "_order_status"
         )
         # if not success
-        if (
-            success_status and success_status != status_dict.get("eodag:order_status")
-        ) or (success_code and success_code != response.status_code):
+        if (success_status and success_status != status_dict.get("_order_status")) or (
+            success_code and success_code != response.status_code
+        ):
             return None
-
-        asset["order:status"] = ONLINE_STATUS
 
         if not config_on_success:
             # Nothing left to do
+            asset["order:status"] = ONLINE_STATUS
             return None
 
         # need search on success ?
@@ -571,9 +581,8 @@ class HTTPDownload(Download):
         result_entry = config_on_success.get("results_entry")
 
         on_success_mm_querypath = (
-            # append product.properties as input for on success response parsing
-            mtd_cfg_as_conversion_and_querypath(on_success_mm)
-            if on_success_mm
+            mtd_cfg_as_conversion_and_querypath(on_success_mapping)
+            if on_success_mapping
             else {}
         )
         try:
@@ -635,13 +644,23 @@ class HTTPDownload(Download):
                         {"json": json_response, "headers": response.headers},
                         on_success_mm_querypath,
                     )
-                    # only keep properties to update (remove product.properties added for parsing)
-                    properties_update = {
-                        k: v for k, v in properties_update.items() if k in on_success_mm
-                    }
                 else:
                     properties_update = {}
+            asset_update = {
+                key: properties_update[key]
+                for key in on_success_am
+                if key in properties_update
+            }
+            product_update = {
+                key: properties_update[key]
+                for key in on_success_mm
+                if key in properties_update
+            }
+            self._update_from_order(asset, asset_update, product_update)
+            if "href" not in asset_update:
+                self.order_response_process(response, asset)
         except Exception as e:
+            asset["order:status"] = FAILED_STATUS
             if isinstance(e, DownloadError):
                 raise
             logger.debug(e)
@@ -649,10 +668,7 @@ class HTTPDownload(Download):
                 f"Could not parse result after order success. Please search and download {product} again"
             ) from e
 
-        # update asset
-        self._update_from_order(asset, properties_update)
-        if "eodag:download_link" not in properties_update:
-            self.order_response_process(response, asset)
+        asset["order:status"] = ONLINE_STATUS
 
     def download(
         self,
@@ -996,11 +1012,7 @@ class HTTPDownload(Download):
         asset: Asset,
         auth: Optional[AuthBase],
     ) -> None:
-        if (
-            "eodag:order_link" in asset
-            and asset.get("order:status") == OFFLINE_STATUS
-            and not asset.get("eodag:order_status")
-        ):
+        if "eodag:order_link" in asset and asset.get("order:status") == OFFLINE_STATUS:
             self._order(asset=asset, auth=auth)
 
         if (
@@ -1133,7 +1145,7 @@ class HTTPDownload(Download):
             ).get(
                 "http_code"
             ):
-                streamed_asset["order:status"] = "ORDERED"
+                streamed_asset["order:status"] = STAGING_STATUS
                 self._process_exception(None, product, ordered_message, streamed_asset)
             stream_size = self._check_stream_size(product, streamed_asset) or None
 
