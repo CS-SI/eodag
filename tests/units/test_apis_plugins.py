@@ -821,9 +821,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                     },
                 ),
             )
-            product.location = product.remote_location = product.properties[
-                "eodag:download_link"
-            ] = "http://somewhere"
+            product.location = product.remote_location = "http://somewhere"
             product.properties["id"] = "someproduct"
 
             responses.add(

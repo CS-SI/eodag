@@ -133,7 +133,6 @@ geodes_s3:
   download:
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
-    ignore_assets: True
   auth:
     type: AwsAuth
     auth_error_code: 403
