@@ -3,6 +3,62 @@ Migration guide
 
 Full changelog available in `Release history <changelog.html>`_.
 
+v5.0.0
+++++++
+
+Order response mappings
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In download plugin configurations, ``order_on_response``, ``order_status`` and
+``order_status.on_success`` now distinguish two mappings:
+
+* ``asset_mapping`` updates the ordered asset directly. It is singular and is not
+  keyed by asset name. Use ``href`` instead of ``eodag:download_link`` and
+  ``order:id`` instead of ``eodag:order_id``, including in placeholders such as
+  ``{order:id}``.
+* ``metadata_mapping`` only updates product properties, such as ``created``,
+  ``published``, ``updated``, ``ecmwf:dataset`` and ``eodag:request_params``.
+
+Both mappings are parsed together, so placeholders can reference fields from either
+mapping. Keys beginning with ``_`` are parse-only helpers; they and unavailable
+values are not stored. Order IDs are stored as strings.
+
+Custom provider configurations must move asset order fields from
+``metadata_mapping`` to ``asset_mapping``. Legacy order configuration semantics
+are no longer supported.
+
+For example::
+
+    order_on_response:
+      asset_mapping:
+        order:id: $.json.jobID
+        eodag:status_link: https://example.test/jobs/{order:id}
+    order_status:
+      metadata_mapping:
+        created: $.json.created
+      on_success:
+        asset_mapping:
+          href: $.json.asset.href
+
+Asset order status
+~~~~~~~~~~~~~~~~~~
+
+Order state is stored only in the asset's ``order:status`` field, using
+``orderable``, ``ordered``, ``succeeded`` or ``failed``. Raw provider status and
+progress are no longer stored as ``eodag:order_status`` or ``eodag:order_percent``.
+Use parse-only ``_order_status`` and ``_order_percent`` in order response mappings,
+and update ``success`` / ``error`` matching to reference ``_order_status``.
+
+An asset becomes ``failed`` when the provider reports an order error, rejects an
+order with HTTP 400, or the successful order result cannot be parsed (including
+an XML search returning zero or multiple results). Authentication, quota, timeout
+and transient request errors do not mark an asset failed. Follow-up processing
+must finish before the asset becomes ``succeeded``.
+
+Failed assets are not ordered again automatically. Status polling can still
+report the provider error; search again to obtain a fresh asset before retrying
+the order. There is no compatibility conversion for legacy order configurations.
+
 v4.0.0a2
 ++++++++
 
