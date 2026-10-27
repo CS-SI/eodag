@@ -16,6 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""YAML cassettes and (de)serialization of EODAG results.
+
+A cassette is a YAML file holding a ``version`` and, for each section (``search``,
+``search_all``, ``download``), a list of entries. Entries are sorted by key, to get
+readable diffs:
+
+.. code-block:: yaml
+
+    version: 1
+    search:
+      - params: {collection: S2_MSI_L1C, limit: 5}   # parameters actually passed
+        result:
+          number_matched: null
+          errors: []
+          products:
+            - provider: ...
+              collection: ...
+              geometry: <WKT>
+              search_intersection: <WKT or null>
+              properties: {...}
+        # or, if the call raised: raises: {type: RequestError, message: ...}
+    download:
+      - params: {provider: ..., id: ...}
+        result: {path: <relative to the archive directory>}
+"""
+
 from __future__ import annotations
 
 import copy
@@ -44,18 +70,18 @@ logger = logging.getLogger(__name__)
 #: changes)
 CASSETTE_VERSION = 1
 
-#: Sections that will be serialized in Cassettes.
+#: Sections that are serialized in cassettes.
 SECTIONS = ("search", "search_all", "download")
 
-#: Product properties never written down in cassettes.
-#: (e.g. we don't need URLs for replay, also they could be temporary, and thus completly useless in
-#: replay situations)
+#: Product properties never written to cassettes.
+#: (URLs are not needed for replay, and they may be temporary and thus useless anyway)
 _DROPPED_PROPERTIES = frozenset({"eodag:download_link"})
 
-#: Registered exceptions.
-#: (Matching is done on the exact type; :class:`eodag.utils.exceptions.TimeOutError` and
-#: :class:`eodag.utils.exceptions.DownloadError` which inherit
-#: :class:`eodag.utils.exceptions.RequestError` are voluntarilly not recorded)
+#: Exceptions recorded in cassettes, indexed by class name.
+#: Matching is done on the exact type (``isinstance`` cannot be used):
+#: :class:`~eodag.utils.exceptions.TimeOutError` and
+#: :class:`~eodag.utils.exceptions.DownloadError`, which inherit from
+#: :class:`~eodag.utils.exceptions.RequestError`, are deliberately not recorded.
 _RECORDABLE_EXCEPTIONS: dict[str, type[Exception]] = {
     "RequestError": eodag_exc.RequestError,
     "NotAvailableError": eodag_exc.NotAvailableError,
@@ -71,7 +97,9 @@ def normalize(value: Any) -> Any:
     * Geometries are transformed into a WKT
     * Dates to ISO format
     * Tuples/sets into lists
-    * Dictionaries are sorted by keys -- to guarantee reproductibility
+    * Dictionaries are sorted by keys -- to guarantee reproducibility
+
+    :raises TypeError: if ``value`` cannot be serialized.
     """
     if value is None or isinstance(value, (bool, int, float, str)):
         return value
@@ -101,7 +129,7 @@ def normalize(value: Any) -> Any:
 
 
 def canonical_key(params: dict[str, Any]) -> str:
-    """Matching key: Canonical JSON of normallized parameters"""
+    """Builds the matching key: canonical JSON of the normalized parameters."""
     return json.dumps(
         normalize(params), sort_keys=True, ensure_ascii=False, separators=(",", ":")
     )
@@ -110,7 +138,7 @@ def canonical_key(params: dict[str, Any]) -> str:
 def bind_passed_params(func: Callable, *args: Any, **kwargs: Any) -> dict[str, Any]:
     """Binds arguments *actually passed* to names from the signature.
 
-    Default values are not applied: ``search(a=1)`` and ``search(a=1, page=1)`` given
+    Default values are not applied: ``search(a=1)`` and ``search(a=1, page=1)`` give
     different keys, while ``search(1)`` and ``search(page=1)`` give the exact same key.
     ``**kwargs`` are flattened.  ``self`` is ignored.
     """
@@ -131,8 +159,13 @@ def bind_passed_params(func: Callable, *args: Any, **kwargs: Any) -> dict[str, A
 
 def encode_exception(exc: BaseException) -> dict[str, Any] | None:
     """
-    Encodes the exceptions into a serializable dictionary.
-    Returns None if the exception shall not be registered (e.g.: timeout).
+    Encodes an exception into a serializable dictionary.
+
+    Returns ``None`` if the exception shall not be recorded (e.g. a timeout). Only the
+    types of :py:const:`_RECORDABLE_EXCEPTIONS` are recorded, compared on their exact
+    type: :class:`~eodag.utils.exceptions.TimeOutError` and
+    :class:`~eodag.utils.exceptions.DownloadError` inherit from
+    :class:`~eodag.utils.exceptions.RequestError` but are not recorded.
     """
     name = type(exc).__name__
     if _RECORDABLE_EXCEPTIONS.get(name) is not type(exc):
@@ -145,7 +178,10 @@ def encode_exception(exc: BaseException) -> dict[str, Any] | None:
 
 
 def decode_exception(encoded: dict[str, Any]) -> Exception:
-    """Decode back an exception from a dictionary."""
+    """Decodes back an exception from a dictionary.
+
+    :raises CassetteFormatError: if the exception type is not a recordable one.
+    """
     cls = _RECORDABLE_EXCEPTIONS.get(encoded["type"])
     if cls is None:
         raise CassetteFormatError(
@@ -162,34 +198,14 @@ def _encode_product(product: EOProduct) -> dict[str, Any]:
     Encodes an :class:`eodag.api.product._product.EOProduct` into a dictionary ready for
     YAML serialization.
 
-    Discards :py:const:`_DROPPED_PROPERTIES` properties.
+    Discards :py:const:`_DROPPED_PROPERTIES` properties. ``collection`` and
+    ``search_intersection`` are stored explicitly, see :func:`_decode_product` for why.
 
     .. note::
 
         :func:`SearchResult.from_dict` and :func:`EOProduct.from_dict` exist, but they
-        do through a STAC validation that transforms properties.  Instead we use here a
-        dedicated and minimalist serialization and a real
-        ``EOProduct(provider, {**properties, "geometry": wkt})``
-
-    .. note::
-
-        :class:`EOProduct <eodag.api.product._product.EOProduct>` constructor removes
-        ``collection`` from properties and stores it as a different attribute. As a
-        consequence, we have to store it explicitly.
-
-    .. note::
-
-        ``search_intersection``is recomputed at construction only if we pass
-        ``geometry=`` in ``kwargs``. We have to restore it manually after construction
-        (it could be ``None``)
-
-    .. note::
-
-        :class:`RequestError`, :class:`NotAvailableError`, :class:`TimeOutError` and
-        :class:`DownloadError` are distinct. However :class:`TimeOutError` and
-        :class:`DownloadError` inherit from :class:`RequestError`.
-        As a consequence, a direct type comparison is required (with a with list
-        ``{RequestError, NotAvailableError}``), we cannot use ``isinstance``.
+        go through a STAC validation that transforms properties. A dedicated and
+        minimalist serialization is used instead.
     """
     intersection = getattr(product, "search_intersection", None)
     properties = {
@@ -207,6 +223,15 @@ def _encode_product(product: EOProduct) -> dict[str, Any]:
 def _decode_product(data: dict[str, Any]) -> EOProduct:
     """
     Decodes back an :class:`eodag.api.product._product.EOProduct` from a dictionary.
+
+    The product is rebuilt with ``EOProduct(provider, {**properties, "geometry": wkt})``
+    and then:
+
+    * ``collection`` is passed explicitly: the ``EOProduct`` constructor removes it from
+      the properties and stores it as a separate attribute.
+    * ``search_intersection`` is restored manually after construction (it can be
+      ``None``): the constructor only computes it if ``geometry`` is given in its
+      keyword arguments.
     """
     properties = copy.deepcopy(data["properties"])
     properties["geometry"] = data["geometry"]
@@ -260,7 +285,11 @@ def decode_search_result(data: dict[str, Any]) -> SearchResult:
 # Cassette
 # --------------------------------------------------------------------------- #
 class _Dumper(yaml.SafeDumper):
-    def ignore_aliases(self, data: Any) -> bool:  # no d'anchor/YAML alias
+    """YAML dumper that never emits anchors/aliases, which would make cassettes hard to
+    read and to diff."""
+
+    def ignore_aliases(self, data: Any) -> bool:
+        """Never use anchors/aliases, even for objects shared between entries."""
         return True
 
 
@@ -279,8 +308,8 @@ class Cassette:
         """
         :class:`Cassette` factory.
 
-        Either creates a new and empty cassette at the specified location, or load an
-        existing (YAML) casette at the specified location.
+        Either creates a new and empty cassette if the file does not exist, or loads the
+        existing YAML cassette at the specified location.
 
         :raises CassetteFormatError:
             - if the YAML is invalid,
@@ -289,8 +318,8 @@ class Cassette:
               :py:const:`CASSETTE_VERSION`,
             - or if unknown :py:const:`SECTIONS` are present in the cassette.
 
-        :raises DuplicateKeyError: if a key is present twice in the cassette. As keys
-            permit to identity *things* to replay, they need to be unique.
+        :raises DuplicateKeyError: if a key is present twice in the cassette. Keys
+            identify the entries to replay, so they need to be unique.
         """
         cassette = cls(path)
         if not cassette.path.exists():
@@ -302,12 +331,12 @@ class Cassette:
         if not isinstance(data, dict) or data.get("version") != CASSETTE_VERSION:
             raise CassetteFormatError(
                 f"{cassette.path}: version {data.get('version') if isinstance(data, dict) else '?'} "
-                f"is not supported (excepted : {CASSETTE_VERSION})"
+                f"is not supported (expected: {CASSETTE_VERSION})"
             )
         unknown = set(data) - {"version", *SECTIONS}
         if unknown:
             raise CassetteFormatError(
-                f"{cassette.path}: unkonwn sections {sorted(unknown)}"
+                f"{cassette.path}: unknown sections {sorted(unknown)}"
             )
         for section in SECTIONS:
             for entry in data.get(section) or []:
@@ -323,9 +352,12 @@ class Cassette:
         self, section: str, params: dict[str, Any], payload: dict[str, Any]
     ) -> bool:
         """
-        Add an entry ; ignore (False) if key already exists (the first wins).
+        Adds an entry.
 
         Keys are defined by the parameters actually passed to each eodag function.
+
+        :return: ``False``, leaving the cassette unchanged, if the key already exists
+            (the first entry wins), ``True`` otherwise.
         """
         key = canonical_key(params)
         if key in self.entries[section]:
@@ -334,7 +366,7 @@ class Cassette:
         return True
 
     def dump(self) -> None:
-        """Write cassette on disk (entries are sorted by key, atomic write)."""
+        """Writes the cassette on disk (entries are sorted by key, atomic write)."""
         data: dict[str, Any] = {"version": CASSETTE_VERSION}
         for section in SECTIONS:
             if self.entries[section]:
