@@ -104,6 +104,9 @@ tutorials = [
     "cartopy",
     "covjsonkit >= 0.0.18",
 ]
+recording = [
+    "pytest>=7"
+]
 test = [
     "eodag[all-providers,csw]",
     "moto[s3] >= 5",
@@ -142,7 +145,7 @@ stubs = [
     "types-urllib3",
 ]
 docs = [
-    "eodag[all,stubs,tutorials]",
+    "eodag[all,recording,stubs,tutorials]",
     "autodoc_pydantic",
     "nbconvert > 6.3.0 ",
     "nbsphinx",
