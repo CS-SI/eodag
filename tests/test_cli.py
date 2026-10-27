@@ -25,7 +25,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
-from typing import Annotated, Literal, Tuple
+from typing import Annotated, Literal
 
 import click
 import responses
@@ -99,7 +99,7 @@ class TestEodagCli(unittest.TestCase):
 
     def eodag_command(
         self, command_list: list | None = None, env: dict | None = None
-    ) -> Tuple[int, str, Exception | None]:
+    ) -> tuple[int, str, Exception | None]:
         """Eodag command line
 
         :param command_list: command line
@@ -1548,7 +1548,6 @@ class TestEodagCli(unittest.TestCase):
         product.register_downloader(
             dag._plugins_manager.get_download_plugin(product), None
         )
-        product.location = product.remote_location = "http://somewhere"
         search_result = SearchResult([product], 1)
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
