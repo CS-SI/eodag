@@ -74,6 +74,7 @@ NOT_MAPPED = "Not Mapped"
 ONLINE_STATUS = "succeeded"
 STAGING_STATUS = "ordered"
 OFFLINE_STATUS = "orderable"
+FAILED_STATUS = "failed"
 COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
@@ -1717,7 +1718,6 @@ def format_query_params(
             parts = provider_search_param.split("=")
 
             if len(parts) == 1:
-
                 # If part contains something to interprete (nested braces or a converter)
                 inner = parts[0].strip("{}")
                 if inner.find("{") >= 0 or "#" in inner:
