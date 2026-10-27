@@ -186,11 +186,14 @@ class TestAssetLocationAndOrder(unittest.TestCase):
 
     def test_product_location_setters_create_asset(self):
         """Deprecated setters create a download_link asset when one is missing."""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "local-product")
         with self.assertWarnsRegex(DeprecationWarning, "EOProduct.location"):
-            self.product.location = path_to_uri("/tmp/local-product")
+            self.product.location = path_to_uri(local_path)
         self.assertEqual(
             self.product.assets["download_link"]["file:local_path"],
-            "/tmp/local-product",
+            local_path,
         )
         self.product.assets.clear()
         with self.assertWarnsRegex(DeprecationWarning, "EOProduct.remote_location"):
@@ -215,9 +218,12 @@ class TestAssetLocationAndOrder(unittest.TestCase):
 
     def test_asset_locations_roundtrip_without_product_proxies(self):
         """Storage options and serialization use asset paths without deprecation warnings."""
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        local_path = os.path.join(temp_dir.name, "local-product")
         self.product.assets["download_link"] = {
             "href": "%(base_uri)s/product",
-            "file:local_path": "/tmp/local-product",
+            "file:local_path": local_path,
         }
         downloader = mock.Mock()
         downloader.config.base_uri = "https://example.test"
@@ -226,7 +232,7 @@ class TestAssetLocationAndOrder(unittest.TestCase):
             self.product.register_downloader(downloader, None)
             self.assertEqual(
                 self.product.get_storage_options(),
-                {"path": path_to_uri("/tmp/local-product")},
+                {"path": path_to_uri(local_path)},
             )
             serialized = self.product.as_dict()
             restored = EOProduct.from_dict(serialized)
@@ -234,7 +240,7 @@ class TestAssetLocationAndOrder(unittest.TestCase):
             restored.assets["download_link"]["href"], "https://example.test/product"
         )
         self.assertEqual(
-            restored.assets["download_link"]["file:local_path"], "/tmp/local-product"
+            restored.assets["download_link"]["file:local_path"], local_path
         )
         self.assertNotIn("eodag:download_link", serialized["properties"])
         self.assertNotIn("_location", vars(restored))
