@@ -52,7 +52,10 @@ change this.
 
 .. warning::
 
-    Only Linux is currently supported, as replayed downloads rely on symbolic links.
+    Replayed downloads rely on symbolic links. They are supported on Linux, and on
+    Windows with limitations: creating symbolic links requires Developer Mode (or the
+    corresponding privilege), and the archive directory and the download directory are
+    expected to be on the same drive.
 """
 
 from __future__ import annotations

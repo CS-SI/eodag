@@ -1,6 +1,7 @@
 """Unit tests of de ``eodag.utils.recording`` (without pytest integration)."""
 
 import os
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,21 @@ from eodag.utils.recording import (
 )
 from eodag.utils.recording.cassette import Cassette
 from tests.recording import fake_provider as fake
+
+
+def _symlinks_supported() -> bool:
+    """False e.g. on Windows without Developer Mode."""
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            os.symlink(tmp, os.path.join(tmp, "link"), target_is_directory=True)
+        except (OSError, NotImplementedError):
+            return False
+    return True
+
+
+requires_symlinks = pytest.mark.skipif(
+    not _symlinks_supported(), reason="symbolic links are not available"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -200,30 +216,7 @@ def test_search_all_single_entry(gateway, cassette, tmp_path):
 
 
 # ---------------------------------------------------------------- download --
-def _clean_windows_symlink_pathnames(pathname: str) -> str:
-    """
-    Workaround symlink pathname under windows.
-    See: https://github.com/python/cpython/issues/87123
-    """
-    _PREFIX = "\\\\?\\"
-    if pathname.startswith(_PREFIX):
-        return pathname[len(_PREFIX) :]
-    return pathname
-
-
-def test_clean_windows_symlink_pathnames():
-    """
-    Workaround we cannot test the function from from its docstring with doctest :(
-    """
-    assert _clean_windows_symlink_pathnames("") == ""
-
-    path = "D:\\a\\eodag\\eodag"
-    assert _clean_windows_symlink_pathnames(path) == path
-
-    winsympath = "\\\\?\\D:\\a\\eodag\\eodag"
-    assert _clean_windows_symlink_pathnames(winsympath) == path
-
-
+@requires_symlinks
 def test_download_symlink_roundtrip(gateway, cassette, tmp_path):
     def flow():
         product = gateway.search(collection="C")[0]
@@ -250,9 +243,8 @@ def test_download_symlink_roundtrip(gateway, cassette, tmp_path):
     assert path == str(tmp_path / "other_out" / "C_p1_0")
     assert (Path(path) / "data.txt").read_text() == "content of C_p1_0"
     assert Path(path).is_symlink()
-    assert _clean_windows_symlink_pathnames(os.readlink(path)) == str(
-        tmp_path / "archive" / "C_p1_0"
-    )
+    # not a string comparison: on Windows readlink() returns a "\\?\"-prefixed path
+    assert os.path.samefile(os.readlink(path), tmp_path / "archive" / "C_p1_0")
 
     data = yaml.safe_load(cassette.read_text())
     assert data["download"] == [
@@ -263,6 +255,7 @@ def test_download_symlink_roundtrip(gateway, cassette, tmp_path):
     ]
 
 
+@requires_symlinks
 def test_download_explicit_output_dir_and_existing_link(gateway, cassette, tmp_path):
     out = tmp_path / "explicit"
 
@@ -279,6 +272,7 @@ def test_download_explicit_output_dir_and_existing_link(gateway, cassette, tmp_p
     assert (Path(replay(cassette, tmp_path, flow)) / "data.txt").exists()
 
 
+@requires_symlinks
 def test_download_missing_archive(gateway, cassette, tmp_path):
     def flow():
         return gateway.download(gateway.search(collection="C")[0])
@@ -388,7 +382,7 @@ def test_duplicate_key_between_cassettes(gateway, tmp_path):
 def test_all_ignores_other_cassettes_with_warning(gateway, tmp_path):
     a, b = tmp_path / "a.yaml", tmp_path / "b.yaml"
     record("all", a, tmp_path, lambda: gateway.search(collection="A"))
-    with pytest.warns(EodagRecordingWarning, match="ignored"):
+    with pytest.warns(EodagRecordingWarning, match="ignored in replay"):
         record(
             "all",
             b,
@@ -425,3 +419,70 @@ def test_cannot_patch_twice(tmp_path, cassette):
         with pytest.raises(EodagRecordingError, match="already been patched"):
             with rec2.patched():
                 pass
+
+
+@requires_symlinks
+def test_download_nested_path_portable(gateway, cassette, tmp_path):
+    """The path stored in cassettes is ``/`` separated, on every OS."""
+    from eodag.api.product import EOProduct
+
+    product = EOProduct(
+        "fake_provider",
+        {"id": "NESTED_1", "title": "NESTED_1", "geometry": fake.POLY},
+        collection="C",
+    )
+    virtual = record("all", cassette, tmp_path, lambda: gateway.download(product))
+    default_out = tmp_path / "default_out"
+    assert Path(virtual) == default_out / "NESTED_1" / "inner"
+    assert (default_out / "NESTED_1").is_symlink()  # link on the first component only
+
+    data = yaml.safe_load(cassette.read_text())
+    assert data["download"][0]["result"]["path"] == "NESTED_1/inner"
+
+    other = fake.make_gateway(tmp_path / "other_out")
+    path = replay(cassette, tmp_path, lambda: other.download(product))
+    assert Path(path) == tmp_path / "other_out" / "NESTED_1" / "inner"
+    assert (Path(path) / "data.txt").read_text() == "content of NESTED_1"
+
+
+def test_cassette_uses_lf_newlines(gateway, cassette, tmp_path):
+    record("all", cassette, tmp_path, lambda: gateway.search(collection="C"))
+    assert b"\r\n" not in cassette.read_bytes()
+
+
+@requires_symlinks
+def test_symlink_failure_is_explained(gateway, cassette, tmp_path, monkeypatch):
+    def flow():
+        return gateway.download(gateway.search(collection="C")[0])
+
+    record("all", cassette, tmp_path, flow)
+
+    def deny(*args, **kwargs):
+        raise OSError("privilege not held")
+
+    monkeypatch.setattr(os, "symlink", deny)
+    other = fake.make_gateway(tmp_path / "other_out")
+    with pytest.raises(EodagRecordingError, match="Cannot create symbolic link"):
+        replay(
+            cassette, tmp_path, lambda: other.download(other.search(collection="C")[0])
+        )
+
+
+def test_download_on_another_drive_is_not_recorded(
+    gateway, cassette, tmp_path, monkeypatch
+):
+    """On Windows, ``os.path.relpath`` raises ValueError between two drives."""
+    from eodag.api.product import EOProduct
+
+    def other_drive(*args, **kwargs):
+        raise ValueError("path is on mount 'C:', start on mount 'D:'")
+
+    product = EOProduct(
+        "fake_provider",
+        {"id": "LOCAL_2", "title": "x", "geometry": fake.POLY},
+        collection="C",
+    )
+    monkeypatch.setattr(os.path, "relpath", other_drive)
+    with pytest.warns(EodagRecordingWarning, match="outside of the archive directory"):
+        record("all", cassette, tmp_path, lambda: gateway.download(product))
+    assert not cassette.exists()
