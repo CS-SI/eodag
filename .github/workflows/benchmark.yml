@@ -32,6 +32,9 @@ jobs:
       run: |
         set -euo pipefail
 
+        echo "pytest<9.2.0" > "${RUNNER_TEMP}/pytest-constraints.txt"
+        export UV_CONSTRAINT="${RUNNER_TEMP}/pytest-constraints.txt"
+
         CURRENT_SHA="$(git rev-parse HEAD)"
 
         echo "Running benchmark on ${TARGET_BRANCH}"
@@ -44,6 +47,7 @@ jobs:
 
         echo "Comparing benchmark results"
         uvx --python 3.14 \
+          --with "pytest<9.2.0" \
           --with "pytest-benchmark @ git+https://github.com/ionelmc/pytest-benchmark.git@master" \
           pytest-benchmark compare --between=median \
           baseline.json candidate.json \
