@@ -281,6 +281,8 @@ intersphinx_mapping = {
     "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
     "urllib3": ("https://urllib3.readthedocs.io/en/stable/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "vcrpy": ("https://vcrpy.readthedocs.io/en/stable/", None),
+    "pytest": ("https://docs.pytest.org/en/stable/", None),
 }
 
 suppress_warnings = ["misc.copy_overwrite"]
