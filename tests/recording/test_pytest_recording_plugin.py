@@ -1,11 +1,28 @@
 """Tests d'intégration pytest de ``eodag.utils.recording.pytest_integration``."""
 
+import os
+import tempfile
 from pathlib import Path
 
 import pytest
 import yaml
 
 pytest_plugins = ["pytester"]
+
+
+def _symlinks_supported() -> bool:
+    """False e.g. on Windows without Developer Mode."""
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            os.symlink(tmp, os.path.join(tmp, "link"), target_is_directory=True)
+        except (OSError, NotImplementedError):
+            return False
+    return True
+
+
+requires_symlinks = pytest.mark.skipif(
+    not _symlinks_supported(), reason="symbolic links are not available"
+)
 HERE = Path(__file__).parent
 
 TEST_MODULE = """
@@ -103,6 +120,7 @@ def cassettes(project):
     )
 
 
+@requires_symlinks
 def test_record_all_then_replay_none(project):
     # tout réenregistrer (CLI), hors test_fixture_only et test_default qui n'écrivent qu'en all
     result = run(project, "--eodag-record-mode=all")
@@ -125,6 +143,7 @@ def test_record_all_then_replay_none(project):
     result.assert_outcomes(passed=7)
 
 
+@requires_symlinks
 def test_once_via_marker_and_default_none(project):
     # Sans CLI : défaut « none » pour test_default / test_fixture_only (échec, cassette
     # absente), mais le marqueur « once » enregistre les 5 autres.
@@ -139,6 +158,7 @@ def test_once_via_marker_and_default_none(project):
     result.assert_outcomes(passed=5, failed=2)
 
 
+@requires_symlinks
 def test_cli_overrides_marker(project):
     # le marqueur dit « once » (enregistrerait), la CLI dit « none » et l'emporte
     result = run(project, "--eodag-record-mode=none", "-k", "test_marker_once")
@@ -152,6 +172,7 @@ def test_no_write_when_test_fails(project):
     assert cassettes(project) == []
 
 
+@requires_symlinks
 def test_new_episodes_via_cli(project):
     run(project, "--eodag-record-mode=all", "-k", "test_default").assert_outcomes(
         passed=1

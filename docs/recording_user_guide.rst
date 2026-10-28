@@ -212,7 +212,7 @@ Design Choices & Limitations
 
     .. note::
 
-        BTW, the page number is considered like any other search criteria.
+        The page number is considered like any other search criteria.
         Recording searches with multiple pages of 10 items par page, and replaying with
         42 items per page is not supported.
 
@@ -229,4 +229,9 @@ Design Choices & Limitations
   <eodag.utils.recording.pytest_integration.eodag_archive_dir>`.
 
   .. warning:: Your program shall not expect files that it can move around freely.
-  .. warning:: The symlinks may not work in Windows. Only Linux support is guaranteed.
+  .. warning::
+
+    Replayed downloads rely on symbolic links. They are supported on Linux, and on
+    Windows with limitations: creating symbolic links requires Developer Mode (or the
+    corresponding privilege), and the archive directory and the download directory are
+    expected to be on the same drive.

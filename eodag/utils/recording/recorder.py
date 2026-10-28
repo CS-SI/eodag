@@ -41,7 +41,7 @@ import tempfile
 import threading
 import warnings
 from contextlib import ExitStack, contextmanager
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterator, Sequence
 from unittest import mock
 
@@ -105,7 +105,8 @@ _PASSTHROUGH: contextvars.ContextVar[bool] = contextvars.ContextVar(
 
 
 def _first_component(rel: str) -> str:
-    return Path(rel).parts[0]
+    """First component of a relative path as stored in cassettes (``/`` separated)."""
+    return PurePosixPath(rel).parts[0]
 
 
 def _ensure_symlink(link: Path, target: Path) -> None:
@@ -127,9 +128,21 @@ def _ensure_symlink(link: Path, target: Path) -> None:
     link.parent.mkdir(parents=True, exist_ok=True)
     try:
         logger.debug("Create symlink from '%s' to '%s'", target, link)
-        os.symlink(target, link)
+        # On Windows a symlink is either a file or a directory one, so we say which
+        os.symlink(target, link, target_is_directory=target.is_dir())
     except FileExistsError:  # Race between two calls
         pass
+    except (OSError, NotImplementedError) as exc:
+        hint = (
+            " On Windows, enable Developer Mode (or run with the 'create symbolic "
+            "links' privilege). Only the case where the archive directory and the "
+            "output directory are on the same drive is supported."
+            if os.name == "nt"
+            else ""
+        )
+        raise EodagRecordingError(
+            f"Cannot create symbolic link '{link}' -> '{target}': {exc}.{hint}"
+        ) from exc
 
 
 def _default_output_dir(gateway: EODataAccessGateway, product: EOProduct) -> str:
@@ -481,12 +494,17 @@ class EodagRecorder:
         return wrapper
 
     def _relative_to_archive(self, path: Any) -> str | None:
+        """Path relative to the archive directory, ``/`` separated whatever the OS (so
+        that cassettes are portable), or ``None`` if ``path`` is not in the archive."""
         if not isinstance(path, (str, os.PathLike)):
             return None
-        rel = os.path.relpath(os.path.abspath(path), self.archive_dir)
+        try:
+            rel = os.path.relpath(os.path.abspath(path), self.archive_dir)
+        except ValueError:  # Windows: path and archive are on different drives
+            return None
         if rel == "." or rel.startswith(".." + os.sep) or rel == "..":
             return None
-        return rel
+        return Path(rel).as_posix()
 
     def _encode_download(self, path: Any, virtual_dir: Path) -> dict[str, Any] | None:
         rel = self._relative_to_archive(path)
