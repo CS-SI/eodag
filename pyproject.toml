@@ -37,6 +37,8 @@ dependencies = [
     "annotated-types",
     "boto3",
     "botocore",
+    # Enforce a secure CA bundle for requests and pyproj (GHSA-6q48-6c7w-9gw2).
+    "certifi >= 2026.10.19",
     "click",
     "geojson",
     "importlib_metadata >= 5.0",
@@ -211,7 +213,7 @@ include = ["eodag*"]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.10.2.dev0"
+fallback_version = "4.10.3.dev0"
 
 [tool.isort]
 multi_line_output = 3

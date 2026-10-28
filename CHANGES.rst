@@ -3,6 +3,41 @@ Release history
 ===============
 
 
+v4.10.2 (2026-10-28)
+====================
+
+Bug Fixes
+---------
+
+* **collections**: Correct bbox extent of some SPACENET collections (`#2393`_, `050dcb2`_)
+
+* **deps**: Require certifi >= 2026.10.19 (`#2416`_, `81436b4`_)
+
+* **plugins**: Extract all files of a flat archive when archive_depth > 1 (`#2395`_, `c281aa6`_)
+
+* **plugins**: Preserve DEDL next-page query body (`#2388`_, `28c6e46`_)
+
+* **settings**: Accept plain providers whitelist env values (`#2390`_, `59d038e`_)
+
+Continuous Integration
+----------------------
+
+* Pin pytest below 9.2 for benchmarks (`#2415`_, `9d44977`_)
+
+.. _#2388: https://github.com/CS-SI/eodag/pull/2388
+.. _#2390: https://github.com/CS-SI/eodag/pull/2390
+.. _#2393: https://github.com/CS-SI/eodag/pull/2393
+.. _#2395: https://github.com/CS-SI/eodag/pull/2395
+.. _#2415: https://github.com/CS-SI/eodag/pull/2415
+.. _#2416: https://github.com/CS-SI/eodag/pull/2416
+.. _050dcb2: https://github.com/CS-SI/eodag/commit/050dcb2d3a687503ac0912409ac74f7d55633b6f
+.. _28c6e46: https://github.com/CS-SI/eodag/commit/28c6e46ad447c7579bd4cd8f92e55af8b0a373da
+.. _59d038e: https://github.com/CS-SI/eodag/commit/59d038e12827abae68587b93d3c872f630dfc399
+.. _81436b4: https://github.com/CS-SI/eodag/commit/81436b434dccb5eae97b1b9d9c0f5b968b5dc02a
+.. _9d44977: https://github.com/CS-SI/eodag/commit/9d44977c1b37ef5d331ca18b0cba5128e1222f2c
+.. _c281aa6: https://github.com/CS-SI/eodag/commit/c281aa627f0f39b36fc465c76164e3d5538d6d0d
+
+
 v4.10.1 (2026-10-19)
 ====================
 

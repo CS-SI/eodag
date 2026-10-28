@@ -2274,6 +2274,37 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
 
 class TestSearchPluginStacSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_dedl_next_page_body(self, mock_request):
+        plugin = self.get_search_plugin(self.collection, "dedl")
+        body = {
+            "collections": ["EO.ESA.DAT.SENTINEL-2.MSI.L1C"],
+            "limit": 5,
+            "token": "5",
+            "query": {"federation:backends": {"eq": "external_fdp"}},
+        }
+        mock_request.return_value.json.side_effect = [
+            {"features": [], "links": [{"rel": "next", "body": body}]},
+            {"features": [], "links": []},
+        ]
+        first_page = plugin.query(
+            PreparedSearch(limit=5, next_page_token_key="token"),
+            collection=self.collection,
+        )
+        self.assertEqual(first_page.next_page_token, "5")
+        self.assertEqual(first_page.search_params["next_page_query_obj"], body)
+        next_params = dict(first_page.search_params)
+        next_params.pop("limit")
+        second_page = plugin.query(
+            PreparedSearch(limit=5, next_page_token="5", next_page_token_key="token"),
+            **next_params,
+        )
+        sent_body = mock_request.call_args.args[1].query_params
+        self.assertEqual(sent_body, body)
+        self.assertEqual(body["query"]["federation:backends"]["eq"], "external_fdp")
+        self.assertIsNone(second_page.next_page_token)
+        self.assertNotIn("next_page_query_obj", second_page.search_params)
+
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
     def test_plugins_search_stacsearch_mapping_earthsearch(self, mock__request):
         """The metadata mapping for earth_search should return well formatted results"""  # noqa
 
