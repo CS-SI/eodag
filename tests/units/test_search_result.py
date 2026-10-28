@@ -45,7 +45,7 @@ class TestSearchResult(unittest.TestCase):
         )
 
     def test_search_result_init(self):
-        """SearchResult.init must initialize attributes and federation metadata if given"""
+        """SearchResult.init must preserve search parameters independently of products"""
         # product with federation:backends
         product = EOProduct(
             provider=None,
@@ -73,7 +73,6 @@ class TestSearchResult(unittest.TestCase):
             search_result.search_params,
             {
                 "start_datetime": "2025-01-01T00:00:00Z",
-                "federation:backends": "backend-1",
             },
         )
         self.assertEqual(search_result.next_page_token, "token")
