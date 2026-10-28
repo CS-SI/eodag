@@ -1722,6 +1722,7 @@ class PostJsonSearch(QueryStringSearch):
     ) -> SearchResult:
         """Perform a search on an OpenSearch-like interface"""
         collection = kwargs.get("collection", "")
+        next_page_query_obj = kwargs.pop("next_page_query_obj", None)
         count = prep.count
         raise_errors = getattr(prep, "raise_errors", False)
         number_matched = kwargs.pop("number_matched", None)
@@ -1834,6 +1835,8 @@ class PostJsonSearch(QueryStringSearch):
                 result.number_matched = 0
             return result
         prep.query_params = dict(qp, **sort_by_qp)
+        if next_page_query_obj is not None:
+            update_nested_dict(prep.query_params, deepcopy(next_page_query_obj))
         prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
         if not count and getattr(prep, "need_count", False):
             # do not try to extract total_items from search results if count is False
@@ -1856,6 +1859,29 @@ class PostJsonSearch(QueryStringSearch):
             raise_errors=raise_errors,
         )
         return formated_result
+
+    def _build_raw_search_results(
+        self,
+        results: list[dict[str, Any]],
+        resp_as_json: dict[str, Any],
+        search_kwargs: dict[str, Any],
+        limit: Optional[int],
+        prep: PreparedSearch,
+    ) -> RawSearchResult:
+        """Build raw search results including next page query object if available"""
+        raw_results = super()._build_raw_search_results(
+            results, resp_as_json, search_kwargs, limit, prep
+        )
+        body_path = self.config.pagination.get("next_page_query_obj_key_path")
+        if isinstance(body_path, str):
+            body_path = string_to_jsonpath(body_path)
+        if isinstance(body_path, JSONPath) and raw_results.next_page_token is not None:
+            body_matches = body_path.find(resp_as_json)
+            if body_matches and isinstance(body_matches[0].value, dict):
+                raw_results.search_params["next_page_query_obj"] = deepcopy(
+                    body_matches[0].value
+                )
+        return raw_results
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
