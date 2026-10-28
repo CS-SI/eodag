@@ -375,15 +375,15 @@ class Cassette:
                 ]
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_name(self.path.name + ".tmp")
-        tmp.write_text(
+        # newline="\n": same file content on every OS (no CRLF on Windows, clean diffs)
+        with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
             yaml.dump(
                 data,
+                fh,
                 Dumper=_Dumper,
                 sort_keys=False,
                 allow_unicode=True,
                 width=1_000_000,
                 default_flow_style=False,
-            ),
-            encoding="utf-8",
-        )
+            )
         os.replace(tmp, self.path)

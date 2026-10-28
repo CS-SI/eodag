@@ -1,9 +1,9 @@
-"""Faux provider pour tester eodag_recording sans réseau.
+"""Fake provider to test the recording plugin without network access.
 
-``install()`` remplace search/search_all/download de EODataAccessGateway par des
-implémentations déterministes. Si la variable d'environnement FAKE_FORBID est
-définie, tout appel « réel » lève une AssertionError (utile pour vérifier qu'un
-rejeu ne contacte pas le provider).
+``install()`` replaces ``search``, ``search_all`` and ``download`` of
+``EODataAccessGateway`` with deterministic implementations. If the ``FAKE_FORBID``
+environment variable is set, any "real" call raises an ``AssertionError`` (useful to
+check that a replay does not hit the provider).
 """
 
 import os
@@ -23,9 +23,7 @@ INTERSECTION = "POLYGON ((0 0, 0.5 0, 0.5 0.5, 0 0.5, 0 0))"
 
 def _forbid(name):
     if os.environ.get("FAKE_FORBID"):
-        raise AssertionError(
-            f"appel réel à {name}() alors que FAKE_FORBID est positionné"
-        )
+        raise AssertionError(f"actual call to {name}() while FAKE_FORBID is set")
 
 
 def make_products(collection, page, n):
@@ -81,7 +79,7 @@ def fake_search(
             ("other_provider", RequestError("partial failure")),
             ("third_provider", TimeOutError("not recorded")),
         ]
-    # 3 produits sur les pages 1 et 2, puis plus rien
+    # 3 products on pages 1 and 2, then nothing
     n = 3 if page in (1, 2) else 0
     return SearchResult(
         make_products(collection, page, n),
@@ -102,7 +100,7 @@ def fake_search_all(
 ):
     _forbid("search_all")
     CALLS["search_all"].append(kwargs)
-    # comme eodag : la 1ʳᵉ page passe par self.search(), les autres non
+    # like eodag: the first page goes through self.search(), the others do not
     first = self.search(
         page=1,
         limit=limit,
@@ -127,6 +125,9 @@ def fake_download(
     if product.properties["id"].startswith("LOCAL"):
         return "/somewhere/else/local_file"
     target = os.path.join(out, product.properties["title"])
+    if product.properties["id"].startswith("NESTED"):
+        # like eodag with ``archive_depth``: the returned path is a sub-path
+        target = os.path.join(target, "inner")
     os.makedirs(target, exist_ok=True)
     with open(os.path.join(target, "data.txt"), "w") as fh:
         fh.write(f"content of {product.properties['id']}")
@@ -149,7 +150,7 @@ def install(monkeypatch=None):
 
 
 def make_gateway(default_output_dir):
-    """Gateway sans configuration réseau, avec un output_dir par défaut."""
+    """Gateway without network configuration, with a default ``output_dir``."""
     gateway = EODataAccessGateway.__new__(EODataAccessGateway)
     plugin = SimpleNamespace(config=SimpleNamespace(output_dir=str(default_output_dir)))
     gateway._plugins_manager = SimpleNamespace(
