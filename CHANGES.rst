@@ -3,6 +3,32 @@ Release history
 ===============
 
 
+v4.10.3 (2026-10-30)
+====================
+
+Bug Fixes
+---------
+
+* **queryables**: Preserve wekeo choices and correct format mapping (`#2420`_, `37ab5d5`_)
+
+Build System
+------------
+
+* **deps**: Update runtime minimums and test them in CI (`#2419`_, `47d53bb`_)
+
+Refactoring
+-----------
+
+* Remove deprecated collection DT_CLIMATE_ADAPTATION (`#2405`_, `81e9cac`_)
+
+.. _#2405: https://github.com/CS-SI/eodag/pull/2405
+.. _#2419: https://github.com/CS-SI/eodag/pull/2419
+.. _#2420: https://github.com/CS-SI/eodag/pull/2420
+.. _37ab5d5: https://github.com/CS-SI/eodag/commit/37ab5d54cb48a36e1398b90b5ac04db55c1c769c
+.. _47d53bb: https://github.com/CS-SI/eodag/commit/47d53bb7a648c3586fc8824a887b83900a3437ee
+.. _81e9cac: https://github.com/CS-SI/eodag/commit/81e9cacfedfcad64dc39f2fbcc0e344647716c1a
+
+
 v4.10.2 (2026-10-28)
 ====================
 
