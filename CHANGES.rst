@@ -6,6 +6,18 @@ Release history
 v4.10.3 (2026-10-30)
 ====================
 
+Continuous Integration
+----------------------
+
+* Fix deployment git authentication using USER_TOKEN (`#2422`_, `aee6ebd`_)
+
+.. _#2422: https://github.com/CS-SI/eodag/pull/2422
+.. _aee6ebd: https://github.com/CS-SI/eodag/commit/aee6ebd55d7444debd60b2c083c539ecc1ca5273
+
+
+v4.10.3 (2026-10-30)
+====================
+
 Bug Fixes
 ---------
 
