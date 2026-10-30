@@ -255,6 +255,7 @@ def json_field_definition_to_python(
     enum = json_field_definition.get("enum")
     const = json_field_definition.get("const")
     anyOf = json_field_definition.get("anyOf")
+    one_of = json_field_definition.get("oneOf")
 
     if python_type in (list, set):
         items = json_field_definition.get("items")
@@ -295,6 +296,10 @@ def json_field_definition_to_python(
     elif const:
         literal = Literal[const]
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
+    elif one_of and all(
+        isinstance(option, dict) and "const" in option for option in one_of
+    ):
+        python_type = Literal[tuple(option["const"] for option in one_of)]  # type: ignore
     elif anyOf:
         python_type = str
 
