@@ -39,8 +39,8 @@ Also available:
 * ``eodag[tutorials]``, includes dependencies to run notebooks (`eodag[ecmwf,notebook]`, visualisation and
   jupyter-related stuff)
 * ``eodag[stubs]``, includes dependencies stubs
-* ``eodag[dev]``, includes dependencies required for contributing (`eodag[all-providers,csw,stubs]`, testing
-  and linting tools)
+* ``eodag[test]``, includes dependencies required to run tests (`eodag[all-providers,csw]` and testing tools)
+* ``eodag[dev]``, includes dependencies required for contributing (`eodag[stubs,test]` and linting tools)
 * ``eodag[docs]``, includes dependencies required to build documentation
 
 Conda
