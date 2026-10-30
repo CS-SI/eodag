@@ -318,7 +318,7 @@ class CopGhslSearch(Search):
         else:
             list_years = params["year"]
         current_index = 0
-        alias = getattr(self.config, "collection_config", {}).get("alias", collection)
+        alias = getattr(self.config, "collection_config", {}).get("alias") or collection
         for year in list_years:
             properties = deepcopy(params)
             properties["order:status"] = "succeeded"
@@ -416,7 +416,7 @@ class CopGhslSearch(Search):
         start_index = per_page * (page - 1)
         end_index = start_index + per_page - 1
         grouped_by = filters.pop("grouped_by", None)
-        alias = getattr(self.config, "collection_config", {}).get("alias", collection)
+        alias = getattr(self.config, "collection_config", {}).get("alias") or collection
         if grouped_by:  # dataset with several files differentiated by one parameter
             format_params = {k: str(v) for k, v in filters.items() if v}
             format_params.pop("metadata_mapping", None)
