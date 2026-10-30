@@ -286,6 +286,28 @@ class TestQueryables(unittest.TestCase):
 
 
 class TestFieldDefinition(unittest.TestCase):
+    def test_json_field_definition_oneof_constants(self):
+        definition = json_field_definition_to_python(
+            {
+                "title": "Format",
+                "type": "string",
+                "oneOf": [
+                    {"const": "GeoPackage", "title": "GeoPackage", "group": None},
+                    {"const": "ESRI fgdb"},
+                    {"const": "GeoTiff100mt"},
+                ],
+            },
+            required=True,
+        )
+        model = create_model("FormatQueryables", format=get_args(definition))
+        self.assertEqual(
+            model.model_json_schema()["properties"]["format"]["enum"],
+            ["GeoPackage", "ESRI fgdb", "GeoTiff100mt"],
+        )
+        self.assertEqual(model(format="GeoPackage").format, "GeoPackage")
+        with self.assertRaises(ValidationError):
+            model(format="unsupported")
+
     def test_json_field_definition_to_python(self):
         """Python field definition reflects the provided configuration"""
 
