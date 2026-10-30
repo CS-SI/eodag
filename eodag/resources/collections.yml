@@ -5383,22 +5383,6 @@ DT_EXTREMES:
   title: Weather and Geophysical Extremes Digital Twin (DT)
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2024-04-04T00:00:00Z", "2024-06-07T00:00:00Z"]]}}
 
-DT_CLIMATE_ADAPTATION:
-  description: |
-    The Digital Twin on Climate Change Adaptation support the analysis and testing of
-    scenarios. This in turn will support sustainable development and climate adaptation
-    and mitigation policy-making at multi-decadal timescales, at regional and national
-    levels.
-  instruments:
-  constellation: Digital Twin
-  platform: DT
-  processing:level:
-  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate", "Change", "Adaptation"]
-  eodag:sensor_type: ATMOSPHERIC
-  license: other
-  title: Climate Change Adaptation Digital Twin (DT)
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
-
 DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   description: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -6510,29 +6494,25 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   title: Global Ocean 3D Chlorophyll-a concentration, Particulate Backscattering coefficient and Particulate Organic Carbon
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1998-01-07T00:00:00Z", "2021-12-29T00:00:00Z"]]}}
 
-MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
+
+MO_MULTIOBS_GLO_BGC_CARBON_SURFACE_MYNRT_015_008:
   description: |
-    This product corresponds to a REP L4 time series of monthly global reconstructed surface ocean pCO2, air-sea fluxes of CO2,
-    pH, total alkalinity, dissolved inorganic carbon, saturation state with respect to calcite and aragonite, and associated
-    uncertainties on a 0.25° x 0.25° regular grid. The product is obtained from an ensemble-based forward feed neural network
-    approach mapping situ data for surface ocean fugacity (SOCAT data base, Bakker et al.  2016, https://www.socat.info/) and
-    sea surface salinity, temperature, sea surface height, chlorophyll a, mixed layer depth and atmospheric CO2 mole fraction.
-    Sea-air flux fields are computed from the air-sea gradient of pCO2 and the dependence on wind speed of Wanninkhof (2014).
-    Surface ocean pH on total scale, dissolved inorganic carbon, and saturation states are then computed from surface ocean pCO2
-    and reconstructed surface ocean alkalinity using the CO2sys speciation software.\n\nProduct Citation: Please refer to our
-    Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
-    \n\nDOI (product):\nhttps://doi.org/10.48670/moi-00047\n\nReferences:\n\n Chau, T. T. T., Gehlen, M., and
-    Chevallier, F.: A seamless ensemble-based reconstruction of surface ocean pCO2 and air-sea CO2 fluxes over the global
-    coastal and open oceans, Biogeosciences, 19, 1087-1109, https://doi.org/10.5194/bg-19-1087-2022, 2022.\n
-  instruments:
+    This product corresponds to a L4 time series of monthly global reconstructed surface ocean pCO2, air-sea fluxes of CO2, pH,
+    total alkalinity, dissolved inorganic carbon, saturation state with respect to calcite and aragonite, and associated uncertainties on
+    a 0.25° x 0.25° regular grid. The product is obtained from an ensemble-based forward feed neural network approach mapping situ data
+    for surface ocean fugacity (SOCAT data base, Bakker et al. 2016, https://www.socat.info/) and sea surface salinity, temperature,
+    sea surface height, chlorophyll a, mixed layer depth and atmospheric CO2 mole fraction. Sea-air flux fields are computed from the
+    air-sea gradient of pCO2 and the dependence on wind speed of Wanninkhof (2014). Surface ocean pH on total scale, dissolved inorganic carbon,
+    and saturation states are then computed from surface ocean pCO2 and reconstructed surface ocean alkalinity using the CO2sys speciation software.
+  instruments: []
   constellation:
   platform:
   processing:level: L4
-  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "carbon", "L4", "REP"]
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "carbon", "L4", "MYNRT"]
   eodag:sensor_type:
   license: other
-  title: Global Ocean Surface Carbon
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1985-01-01T00:00:00Z", "2023-12-01T00:00:00Z"]]}}
+  title: Surface ocean carbon fields
+  extent: {"spatial": {"bbox": [[-179.875, -89.875, 179.875, 89.875]]}, "temporal": {"interval": [["1985-01-01T00:00:00Z", "2026-09-01T00:00:00Z"]]}}
 
 MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
   description: |

@@ -4549,10 +4549,6 @@
       qs: $.qs
       eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
-    DT_CLIMATE_ADAPTATION:
-      discover_queryables:
-        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
-      dataset: climate-dt
     DT_EXTREMES:
       discover_queryables:
         constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
@@ -5462,8 +5458,8 @@
       _collection: EO.MO.DAT.INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048
     MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
       _collection: EO.MO.DAT.MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
-    MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
-      _collection: EO.MO.DAT.MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008
+    MO_MULTIOBS_GLO_BGC_CARBON_SURFACE_MYNRT_015_008:
+      _collection: EO.MO.DAT.MULTIOBS_GLO_BGC_CARBON_SURFACE_MYNRT_015_008
     MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
       _collection: EO.MO.DAT.MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009
     MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
@@ -5545,11 +5541,6 @@
     # DT Output
     DT_EXTREMES:
       _collection: EO.ECMWF.DAT.DT_EXTREMES
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
-    DT_CLIMATE_ADAPTATION:
-      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
@@ -6243,8 +6234,8 @@
         index: 1
     MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
       _collection: MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
-    MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
-      _collection: MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008
+    MO_MULTIOBS_GLO_BGC_CARBON_SURFACE_MYNRT_015_008:
+      _collection: MULTIOBS_GLO_BGC_CARBON_SURFACE_MYNRT_015_008
     MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
       _collection: MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009
     MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
