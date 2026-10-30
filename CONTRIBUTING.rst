@@ -58,6 +58,15 @@ To run the default test suite in parallel:
 
     tox -p
 
+To test the lowest direct runtime dependency versions on Python 3.9:
+
+.. code-block:: bash
+
+    tox -e min-deps
+
+It requires ``uv`` on your ``PATH`` and runs the default test suite. Optional
+dependency minimums are not tested. Reports are written to ``test-reports/min-deps/``.
+
 To only run end-to-end tests:
 
 .. code-block:: bash

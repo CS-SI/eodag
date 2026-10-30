@@ -62,9 +62,34 @@ jobs:
           test-reports/junit-report.xml
           test-reports/coverage.xml
 
+  min-deps:
+    name: Minimum runtime dependencies (Python 3.9)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v9.0.0
+      with:
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: |
+          pyproject.toml
+          tox.ini
+    - name: Test minimum runtime dependencies with tox
+      run: uvx --python 3.9 --with tox-uv tox -e min-deps
+    - name: Upload minimum dependency test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-results-min-deps-python3.9-ubuntu-latest
+        path: test-reports/min-deps/
+
   publish-test-results:
     name: "Publish Unit Tests Results"
-    needs: tests
+    needs: [tests, min-deps]
     runs-on: ubuntu-latest
     if: always()
     permissions:
