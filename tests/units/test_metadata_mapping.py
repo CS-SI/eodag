@@ -991,6 +991,18 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         expected = Queryables.get_queryable_from_alias("year")
         self.assertEqual(result, expected)
 
+    def test_get_queryable_from_provider_prefers_matching_name(self):
+        metadata_mapping = {
+            "id": ['{{"format": "{id#get_group_name(GeoPackage)}"}}', "$.id"],
+            "format": ['{{"format": "{format}"}}', "$.id"],
+        }
+        self.assertEqual(
+            get_queryable_from_provider(
+                "format", metadata_mapping, provider="wekeo_main"
+            ),
+            "wekeo_main_format",
+        )
+
     def test_get_provider_queryable_path(self):
         """Test getting the provider queryable path"""
         metadata_mapping = {"id": "id", "path": ["path1", "path2"]}
