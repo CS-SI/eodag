@@ -1123,6 +1123,7 @@ class QueryStringSearch(Search):
         raw_search_results = self._build_raw_search_results(
             results, resp_as_json, kwargs, limit, prep
         )
+        response.close()
         return raw_search_results
 
     def _build_raw_search_results(
@@ -1467,9 +1468,12 @@ class QueryStringSearch(Search):
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
         except HTTPError as e:  # raised by urlopen
-            QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
-            err_msg = e.msg
-            self._raise_request_error(err_msg, exception_message, url, e)
+            try:
+                QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
+                err_msg = e.msg
+                self._raise_request_error(err_msg, exception_message, url, e)
+            finally:
+                e.close()
         except URLError as e:
             err_msg = str(e)
             self._raise_request_error(err_msg, exception_message, url, e)
