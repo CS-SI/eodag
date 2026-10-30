@@ -6263,7 +6263,7 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         super(TestSearchPluginDedtLumi, self).setUp()
         self.provider = "dedt_lumi"
         self.search_plugin = self.get_search_plugin(provider=self.provider)
-        self.collection = "DT_CLIMATE_ADAPTATION"
+        self.collection = "DT_CLIMATE_G1_CMIP6_HIST_ICON_R1"
 
     def test_plugins_apis_dedt_lumi_query_feature(self):
         """Test the proper handling of geom into ecmwf:feature"""

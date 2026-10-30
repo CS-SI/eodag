@@ -154,7 +154,6 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
-        "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION_IFS_NEMO": ["dedl"],
         "DT_CLIMATE_ADAPTATION_ICON": ["dedl"],

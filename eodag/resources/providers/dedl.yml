@@ -429,11 +429,6 @@ dedl:
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
-    DT_CLIMATE_ADAPTATION:
-      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
     DT_CLIMATE_ADAPTATION_IFS_NEMO:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_IFS-NEMO
       metadata_mapping:
