@@ -34,33 +34,33 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "annotated-types",
-    "boto3",
-    "botocore",
+    "annotated-types >= 0.6.0",
+    "boto3 >= 1.16.0",
+    "botocore >= 1.19.17",
     # Enforce a secure CA bundle for requests and pyproj (GHSA-6q48-6c7w-9gw2).
     "certifi >= 2026.10.19",
-    "click",
-    "geojson",
+    "click >= 8.1.8",
+    "geojson >= 2.5.0",
     "importlib_metadata >= 5.0",
-    "jsonpath-ng != 1.8.0",
-    "lxml",
-    "orjson",
+    "jsonpath-ng != 1.8.0, >= 1.6.0",
+    "lxml >= 4.6.1",
+    "orjson >= 3.4.0",
     "pydantic >= 2.13.0",
     "pydantic-settings>=2.11.0",
-    "pydantic_core",
+    "pydantic_core >= 2.46.0",
     "PyJWT[crypto] >= 2.5.0",
-    "pyproj >= 2.1.0",
-    "pyshp",
-    "pystac >= 1.0.0b1",
-    "python-dateutil",
-    "PyYAML",
-    "requests",
+    "pyproj >= 3.3.1",
+    "pyshp >= 2.0.0",
+    "pystac >= 1.9.0",
+    "python-dateutil >= 2.7.0",
+    "PyYAML >= 5.4",
+    "requests >= 2.32.3",
     "shapely >= 2.0.6",
-    "stac-pydantic",
-    "tqdm",
+    "stac-pydantic >= 3.5.0",
+    "tqdm >= 4.56.2",
     "typing_extensions >= 4.8.0",
-    "urllib3",
-    "zipstream-ng",
+    "urllib3 >= 1.26.0",
+    "zipstream-ng >= 1.4.0",
 ]
 dynamic = ["version"]
 
@@ -104,14 +104,12 @@ tutorials = [
     "cartopy",
     "covjsonkit >= 0.0.18; python_version > '3.9'",
 ]
-dev = [
-    "eodag[all-providers,csw,stubs]",
+test = [
+    "eodag[all-providers,csw]",
     "faker",
-    "flake8",
-    "moto >=5",
-    "mypy",
-    "prek",
-    "py >= 1.8.2",
+    "moto[s3] >= 5",
+    "mypy-boto3-s3",
+    "packaging",
     "pytest-cov",
     "pytest-html != 3.2.0",
     "pytest-instafail",
@@ -119,9 +117,16 @@ dev = [
     "pytest-xdist",
     "pytest",
     "responses != 0.24.0",
-    "stac-valid",
     "stdlib-list",
     "tomli; python_version < '3.11'",
+]
+dev = [
+    "eodag[stubs,test]",
+    "flake8",
+    "mypy",
+    "prek",
+    "py >= 1.8.2",
+    "stac-valid",
     "tox-uv",
     "tox",
     "twine",
@@ -213,7 +218,7 @@ include = ["eodag*"]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.10.3.dev0"
+fallback_version = "4.10.4.dev0"
 
 [tool.isort]
 multi_line_output = 3

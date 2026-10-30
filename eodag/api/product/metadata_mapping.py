@@ -1990,14 +1990,20 @@ def get_queryable_from_provider(
             list(metadata_mapping.keys())[ind]
         )
     else:
-        for param, param_conf in metadata_mapping.items():
-            if (
-                isinstance(param_conf, list)
-                and param_conf[0]
-                and re.search(pattern, param_conf[0])
-            ):
-                eodag_queryable = StacQueryables.get_queryable_from_alias(param)
-                break
+        matching_params = [
+            param
+            for param, param_conf in metadata_mapping.items()
+            if isinstance(param_conf, list)
+            and param_conf[0]
+            and re.search(pattern, param_conf[0])
+        ]
+        if matching_params:
+            param = (
+                provider_queryable
+                if provider_queryable in matching_params
+                else matching_params[0]
+            )
+            eodag_queryable = StacQueryables.get_queryable_from_alias(param)
 
     # no provider-specific resolution
     if provider is None:

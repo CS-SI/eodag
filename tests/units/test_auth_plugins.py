@@ -1435,7 +1435,7 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
             responses.GET,
             final_url,
             body="wants to access your account",
-            headers={"Content-Type": "text/html"},
+            content_type="text/html",
         )
 
         with self.assertRaisesRegex(
@@ -1491,7 +1491,7 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
             responses.GET,
             final_url,
             body="not yet performed the necessary steps in order to access this data.",
-            headers={"Content-Type": "text/html"},
+            content_type="text/html",
         )
 
         with self.assertRaisesRegex(
