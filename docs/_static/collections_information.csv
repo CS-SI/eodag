@@ -31,7 +31,6 @@ COP_DEM_GLO30_DGED,TerraSAR,,,,,,,,,,available,available,available,,,,,available
 COP_DEM_GLO30_DTED,TerraSAR,,,,,,,,,,available,available,available,,,,,,,,,,,,,,,,,,,,,available
 COP_DEM_GLO90_DGED,TerraSAR,,,,,,,,,,available,available,available,,,,,available,,,,,,,,,,,,,,,,available
 COP_DEM_GLO90_DTED,TerraSAR,,,,,,,,,,available,available,available,,,,,,,,,,,,,,,,,,,,,available
-DT_CLIMATE_ADAPTATION,Digital Twin,,,,,,,,,,,,available,,available,,,,,,,,,,,,,,,,,,,
 DT_CLIMATE_ADAPTATION_ICON,Digital Twin,,,,,,,,,,,,available,,,,,,,,,,,,,,,,,,,,,
 DT_CLIMATE_ADAPTATION_IFS_NEMO,Digital Twin,,,,,,,,,,,,available,,,,,,,,,,,,,,,,,,,,,
 DT_CLIMATE_G1_CMIP6_HIST_ICON_R1,Digital Twin,,,,,,,,,,,,available,,available,,,,,,,,,,,,,,,,,,,
@@ -184,9 +183,9 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,
 MO_INSITU_GLO_PHY_TS_OA_MY_013_052,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
 MO_INSITU_GLO_PHY_TS_OA_NRT_013_002,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
 MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048,,L2,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
+MO_MULTIOBS_GLO_BGC_CARBON_SURFACE_MYNRT_015_008,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
 MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009,,L3,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
 MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
-MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
 MO_MULTIOBS_GLO_PHY_MYNRT_015_003,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
 MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
 MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012,,L4,,,,,,,,available,,,available,,,,,,,,,,,,,,,,,,,,,
