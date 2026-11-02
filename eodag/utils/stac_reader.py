@@ -63,18 +63,18 @@ class _TextOpener:
         ssl_ctx = get_ssl_context(self.ssl_verify)
 
         try:
-            res = urlopen(url, timeout=self.timeout, context=ssl_ctx)
-            content_type = res.getheader("Content-Type")
-            if content_type is None:
-                encoding = "utf-8"
-            else:
-                m = re.search(r"charset\s*=\s*(\S+)", content_type, re.I)
-                if m is None:
+            with urlopen(url, timeout=self.timeout, context=ssl_ctx) as res:
+                content_type = res.getheader("Content-Type")
+                if content_type is None:
                     encoding = "utf-8"
                 else:
-                    encoding = m.group(1)
-            content = res.read().decode(encoding)
-            return orjson.loads(content) if as_json else content
+                    m = re.search(r"charset\s*=\s*(\S+)", content_type, re.I)
+                    if m is None:
+                        encoding = "utf-8"
+                    else:
+                        encoding = m.group(1)
+                content = res.read().decode(encoding)
+                return orjson.loads(content) if as_json else content
         except URLError as e:
             if isinstance(e.reason, socket.timeout):
                 logger.error("%s: %s", url, e)

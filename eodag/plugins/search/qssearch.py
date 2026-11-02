@@ -1042,7 +1042,11 @@ class QueryStringSearch(Search):
                 "next_page_merge_key_path"
             )
             if self.config.result_type == "xml":
-                root_node = etree.fromstring(response.content)
+                try:
+                    response_content = response.content
+                finally:
+                    response.close()
+                root_node = etree.fromstring(response_content)
                 namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
                 resp_as_json = {}
                 results_xpath = root_node.xpath(
@@ -1084,7 +1088,10 @@ class QueryStringSearch(Search):
                             "Could not extract total_items_nb from search results"
                         )
             else:
-                resp_as_json = response.json()
+                try:
+                    resp_as_json = response.json()
+                finally:
+                    response.close()
                 if next_page_url_key_path:
                     path_parsed = next_page_url_key_path
                     found_paths = path_parsed.find(resp_as_json)
@@ -1525,9 +1532,12 @@ class QueryStringSearch(Search):
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
         except HTTPError as e:  # raised by urlopen
-            QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
-            err_msg = e.msg
-            self._raise_request_error(err_msg, exception_message, url, e)
+            try:
+                QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
+                err_msg = e.msg
+                self._raise_request_error(err_msg, exception_message, url, e)
+            finally:
+                e.close()
         except URLError as e:
             err_msg = str(e)
             self._raise_request_error(err_msg, exception_message, url, e)
