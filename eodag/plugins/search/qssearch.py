@@ -992,7 +992,11 @@ class QueryStringSearch(Search):
                 "next_page_merge_key_path"
             )
             if self.config.result_type == "xml":
-                root_node = etree.fromstring(response.content)
+                try:
+                    response_content = response.content
+                finally:
+                    response.close()
+                root_node = etree.fromstring(response_content)
                 namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
                 resp_as_json = {}
                 results_xpath = root_node.xpath(
@@ -1034,7 +1038,10 @@ class QueryStringSearch(Search):
                             "Could not extract total_items_nb from search results"
                         )
             else:
-                resp_as_json = response.json()
+                try:
+                    resp_as_json = response.json()
+                finally:
+                    response.close()
                 if next_page_url_key_path:
                     path_parsed = next_page_url_key_path
                     found_paths = path_parsed.find(resp_as_json)

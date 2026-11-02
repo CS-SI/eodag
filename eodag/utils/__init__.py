@@ -1374,6 +1374,10 @@ class MockResponse:
             response.status_code = self.status_code
             raise HTTPError(response=response)
 
+    def close(self):
+        """mock for closing the response"""
+        pass
+
 
 def md5sum(file_path: str) -> str:
     """Get file MD5 checksum

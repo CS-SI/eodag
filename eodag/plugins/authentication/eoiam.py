@@ -148,7 +148,10 @@ class EOIAMAuth(Authentication):
         content_type = resp_final.headers.get("Content-Type", "")
 
         if content_type.startswith(("text/html", "text/xml")):
-            error_text = resp_final.text
+            try:
+                error_text = resp_final.text
+            finally:
+                resp_final.close()
 
             if "wants to access your account" in error_text:
                 msg = (
@@ -189,10 +192,12 @@ class _EOIAMSessionAuth(AuthBase):
             resp = session.get(request.url, allow_redirects=True)
             if "Earth Observation Identity and Access Management System" in resp.text:
                 resp = self.auth_plugin._login_from_html(resp.text, request.url)
+                resp.close()
 
             # Copy cookies from session to the request
             request.prepare_cookies(self.auth_plugin.session.cookies)
 
             return request
         finally:
+            session.close()
             self.auth_plugin.session = requests.Session()

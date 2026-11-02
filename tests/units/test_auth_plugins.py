@@ -1474,9 +1474,11 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
                 auth_plugin.session.cookies = jar
 
                 auth = _EOIAMSessionAuth(auth_plugin)
-                returned = auth(req)
+                with mock.patch.object(login_result, "close") as mock_close:
+                    returned = auth(req)
 
                 mock_login.assert_called_once_with(initial_resp.text, req.url)
+                mock_close.assert_called_once_with()
                 self.assertIs(returned, req)
 
         self.assertIsInstance(auth_plugin.session, requests.Session)

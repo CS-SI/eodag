@@ -3074,6 +3074,9 @@ class MockResponse:
     def headers(self):
         return self.headers
 
+    def close(self):
+        pass
+
 
 class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     def setUp(self):
