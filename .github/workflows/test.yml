@@ -52,6 +52,8 @@ jobs:
           pyproject.toml
           tox.ini
     - name: Test with tox
+      env:
+        PYTEST_REPORT_ARGS: ${{ matrix.python-version == '3.14' && '--junitxml=test-reports/junit-report.xml --cov=eodag --cov-report=xml:test-reports/coverage.xml' || '--junitxml=test-reports/junit-report.xml' }}
       run: uvx --python ${{ matrix.python-version }} --with tox-uv --with tox-gh-actions tox
     - name: Upload Unit Test Results
       if: always()
@@ -79,6 +81,8 @@ jobs:
           pyproject.toml
           tox.ini
     - name: Test minimum runtime dependencies with tox
+      env:
+        PYTEST_REPORT_ARGS: --junitxml=test-reports/min-deps/junit-report.xml
       run: uvx --python 3.9 --with tox-uv tox -e min-deps
     - name: Upload minimum dependency test results
       if: always()

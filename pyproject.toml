@@ -110,7 +110,6 @@ test = [
     "mypy-boto3-s3",
     "packaging",
     "pytest-cov",
-    "pytest-html != 3.2.0",
     "pytest-instafail",
     "pytest-socket",
     "pytest-xdist",
