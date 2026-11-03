@@ -7307,31 +7307,1635 @@ DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R5:
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2017-01-01T00:00:00Z", "2025-12-31T23:59:59Z"]]}}
 
 # Digital Twin data cubes
-DT_CLIMATE_ADAPTATION_IFS_NEMO:
-  description: |
-    A selection of datasets derived from the DestinE Climate Change Adaptation Digital Twin according to the output of the IFS-NEMO model coupled with the Shared Socioeconomic Pathway 3-7.0 (experiment: SSP3-7.0) as defined in the Scenario Model Intercomparison Project (activity: ScenarioMIP)
+DT_CLIMATE_G2_SSP3_7_0_IFS_NEMO_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the SSP3-7.0 Scenario (2015–2049) of the IFS-NEMO model.
+    This data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily.
   instruments: []
-  constellation: Digital Twin
-  platform: DT
+  constellation:
+  platform:
   processing:level:
-  keywords: ["DT", "Digital-Twin", "Climate Change", "Atmosphere", "Sea Ice", "SCENARIOMIP", "IFS-NEMO","Socioeconomic", "SSP3-7.0"]
-  eodag:sensor_type: ATMOSPHERIC
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","daily","single-level","surface","sea
+    ice","IFS-NEMO","SSP3-7.0","high resolution"]
+  eodag:sensor_type:
   license: CC-BY-4.0
-  title: DestinE Climate Adaptation DT, activity ScenarioMIP, experiment SSP3-7.0, model IFS-NEMO
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2020-07-01T00:00:00Z", "2040-01-01T00:00:00Z"]]}}
+  title: Climate DT high resolution daily data on ocean and sea ice, IFS-NEMO model,
+    SSP3-7.0 scenario
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-SSP3-7.0-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, IFS-NEMO model,
+      SSP3-7.0 scenario
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-SSP3-7.0-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2049-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_NEMO_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the IFS-NEMO model. This data
+    was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","control","high
+    resolution","map visualisation"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+    Control, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-cont-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+      Control, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-cont-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_NEMO_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the IFS-NEMO model. This data
+    was regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44° resolution. The temporal resolution is 1 hour.The
+    dataset's chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","control","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, IFS-NEMO,
+    Control
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-cont-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      IFS-NEMO, Control
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-cont-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_ICON_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the ICON model. This data was
+    regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for regional timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","control","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, ICON,
+    Control, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-cont-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, ICON,
+      Control, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-cont-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_FESOM_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the IFS-FESOM model. This data was
+    regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044° resolution. The temporal resolution is 1 hour. The
+    dataset's chunking is optimized for regional timeseries analisys.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","historical","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+    Historical, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-hist-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+      Historical, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-hist-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_NEMO_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the IFS-NEMO model. This data
+    was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for regional timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","control","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+    Control, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-cont-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+      Control, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-cont-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_NEMO_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the Historical Simulation (1990–2015) of the IFS-NEMO model.
+    This data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","daily","single-level","surface","sea
+    ice","IFS-NEMO","historical","high resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, IFS-NEMO model,
+    Historical simulation
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-hist-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, IFS-NEMO model,
+      Historical simulation
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-hist-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_IFS_NEMO_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the SSP3-7.0 Scenario (2015–2049) of the IFS-NEMO model. This data was
+    regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44°. The temporal resolution is 1-hour. The dataset's
+    chunking is optimized for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","SSP3-7.0","high
+    resolution","map visualisation"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+    SSP3-7.0, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-SSP3-7.0-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+      SSP3-7.0, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-SSP3-7.0-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2049-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_IFS_FESOM_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the Historical Run (1990–2014) of the IFS-FESOM model. This
+    data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","SSP3-7.0","high
+    resolution","sea ice"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, IFS-FESOM model,
+    SSP3-7.0 Scenario
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-SSP3-7.0-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, IFS-FESOM model,
+      SSP3-7.0 Scenario
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-SSP3-7.0-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2049-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_ICON_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the SSP3-7.0 Scenario (2015–2049) of the ICON model. This
+    data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","SSP3-7.0","high
+    resolution","sea ice"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, ICON model, SSP3-7.0
+    Scenario
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-SSP3-7.0-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, ICON model,
+      SSP3-7.0 Scenario
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-SSP3-7.0-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2040-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_ICON_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the ICON model. This data was regridded
+    from the original HEALPix H128 grid to a regular latitude-longitude grid at approximately
+    0.44°. The temporal resolution is 1 hour. The dataset's chunking is optimized
+    for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","historical","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, ICON,
+    Historical
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-hist-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      ICON, Historical
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-hist-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_ICON_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the SSP3-7.0 Scenario (2015–2040) of the ICON model. This data was regridded
+    from the original HEALPix H128 grid to a regular latitude-longitude grid at approximately
+    0.44° resolution. The temporal resolution is 1 hour. The dataset's chunking is
+    optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","SSP3-7.0","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, ICON,
+    SSP3-7.0
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-SSP3-7.0-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      ICON, SSP3-7.0
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-SSP3-7.0-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2040-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_ICON_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the Control run (1990–2000) of the ICON model. This data
+    was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","control","high
+    resolution","sea ice"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, ICON model, Control
+    run
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-cont-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, ICON model,
+      Control run
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-cont-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_ICON_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the Historical Simulation (1990–2015) of the ICON model.
+    This data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","historical","high
+    resolution","sea ice"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, ICON model, Historical
+    simulation
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-hist-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, ICON model,
+      Historical simulation
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-hist-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_IFS_NEMO_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the SSP3-7.0 Scenario (2015–2049) of the IFS-NEMO model. This data was
+    regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044° resolution. The temporal resolution is 1 hour. The
+    dataset's chunking is optimized for regional timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","SSP3-7.0","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+    SSP3-7.0, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-SSP3-7.0-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+      SSP3-7.0, timeseries on Earth Data Hub
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-SSP3-7.0-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2049-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_ICON_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the ICON model. This data was
+    regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44° resolution. The temporal resolution is 1 hour. The
+    dataset's chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","control","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, ICON,
+    Control
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-cont-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      ICON, Control
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-cont-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_IFS_FESOM_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the IFS-FESOM model. This data was
+    regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44°. The temporal resolution is 1-hour. The dataset's
+    chunking is optimized for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","SSP3-7.0","high
+    resolution","maps"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+    SSP3-7.0, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-SSP3-7.0-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+      SSP3-7.0, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-SSP3-7.0-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2049-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_FESOM_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the IFS-FESOM model. This data
+    was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for regional timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","control","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+    Control, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-cont-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+      Control, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-cont-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_IFS_NEMO_HOURLY_STANDARD:
+  description: "This dataset contains surface variables from the second generation\
+    \ Climate Adaptation Digital Twin of the Destination Earth initiative. It includes\
+    \ data from the SSP3-7.0 Scenario (2015–2049) of the IFS-NEMO model. This data\
+    \ was regridded from the original HEALPix H128 grid to a regular latitude-longitude\
+    \ grid at approximately 0.44° resolution. The temporal resolution is 1 hour. \n\
+    \ The dataset's chunking is optimized for regional and timeseries analysis."
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","SSP3-7.0","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, IFS-NEMO,
+    SSP3-7.0
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-SSP3-7.0-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      IFS-NEMO, SSP3-7.0 on Earth Data Hub
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/tutorials/tutorial-climate-dt-heating-degree-days-in-darmstadt
+    type: text/html
+    title: 'Tutorial Climate Adaptation Digital Twin: heating degree days'
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/tutorials/tutorial-climate-dt-climatological-analysis-of-temperature-in-germany
+    type: text/html
+    title: 'Tutorial Climate Adaptation Digital Twin: climatological analysis of temperature
+      in Germany'
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-SSP3-7.0-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180,-90,180,90]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2050-01-01T00:00:00Z"]]}}
+DT_CLIMATE_G2_HIST_ICON_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the ICON model. This data was regridded
+    from the original HEALPix H1024 grid to a regular latitude-longitude grid at approximately
+    0.044°. The temporal resolution is 1 hour. The dataset's chunking is optimized
+    for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","historical","high
+    resolution","maps"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, ICON,Historical,
+    maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-hist-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, ICON,Historical,
+      maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-hist-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_ICON_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the SSP3-7.0 Scenario (2015–2049) of the ICON model. This data was regridded
+    from the original HEALPix H1024 grid to a regular latitude-longitude grid at approximately
+    0.044°. The temporal resolution is 1 hour. The dataset's chunking is optimized
+    for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","SSP3-7.0","high
+    resolution","maps"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, ICON,
+    SSP3-7.0, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-SSP3-7.0-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, ICON,
+      SSP3-7.0, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-SSP3-7.0-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2040-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_IFS_FESOM_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the SSP3-7.0 Scenario (2015–2049) of the IFS-FESOM model. This data
+    was regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44° resolution. The temporal resolution is 1 hour. The
+    dataset's chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","SSP3-7.0","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, IFS-FESOM,
+    SSP3-7.0
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-SSP3-7.0-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      IFS-FESOM, SSP3-7.0
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-SSP3-7.0-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2049-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_FESOM_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the Historical Simulation (1990–2015) of the IFS-FESOM model.
+    This data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","historical","high
+    resolution","sea ice"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, IFS-FESOM model,
+    Historical simulation
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-hist-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, IFS-FESOM model,
+      Historical simulation
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-hist-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_NEMO_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the Control run (1990–2000) of the IFS-NEMO model. This
+    data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","daily","single-level","surface","sea
+    ice","IFS-NEMO","control","high resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, IFS-NEMO model,
+    Control run
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-cont-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, IFS-NEMO model,
+      Control run
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-cont-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_FESOM_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the IFS-FESOM model. This data was
+    regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","historical","high
+    resolution","maps"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+    Historical, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-hist-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+      Historical, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-hist-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_ICON_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the ICON model. This data was
+    regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","control","high
+    resolution","maps"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, ICON,
+    Control, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-cont-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, ICON,
+      Control, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-cont-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_NEMO_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the IFS-NEMO model. This data was
+    regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","historical","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, IFS-NEMO,
+    Historical
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-hist-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      IFS-NEMO, Historical
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-hist-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_FESOM_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the IFS-FESOM model. This data
+    was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","control","high
+    resolution","maps"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+    Control, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-cont-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+      Control, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-cont-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_NEMO_HOURLY_HIGH_MAPS:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the IFS-NEMO model. This data was
+    regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is 1 hour. The dataset's
+    chunking is optimized for map visualization.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","Historical","high
+    resolution","maps"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+    Historical, maps
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-hist-sfc-hourly-high-maps
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+      Historical, maps
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-hist-sfc-hourly-high-maps-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_FESOM_DAILY_HIGH:
+  description: This dataset contains surface ocean and sea ice variables from the
+    second generation Climate Adaptation Digital Twin of the Destination Earth initiative.
+    It includes data from the Control run (1990–2000) of the IFS-FESOM model. This
+    data was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044°. The temporal resolution is daily. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","control","high
+    resolution","sea ice"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution daily data on ocean and sea ice, IFS-FESOM model,
+    Control run
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-cont-o2d-daily-high
+    type: text/html
+    title: Climate DT high resolution daily data on ocean and sea ice, IFS-FESOM model,
+      Control run
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-cont-o2d-daily-high-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_ICON_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the SSP3-7.0 Scenario (2015–2049) of the ICON model. This data was regridded
+    from the original HEALPix H1024 grid to a regular latitude-longitude grid at approximately
+    0.044° resolution. The temporal resolution is 1 hour. The dataset's chunking is
+    optimized for regional timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","SSP3-7.0","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, ICON,
+    SSP3-7.0, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-SSP3-7.0-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, ICON,
+      SSP3-7.0, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-SSP3-7.0-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2040-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_SSP3_7_0_IFS_FESOM_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the SSP3-7.0 Scenario (2015–2049) of the IFS-FESOM model. This data
+    was regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044° resolution. The temporal resolution is 1 hour. The
+    dataset's chunking is optimized for regional timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","SSP3-7.0","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+    SSP3-7.0, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-SSP3-7.0-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-FESOM,
+      SSP3-7.0, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-SSP3-7.0-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2015-01-01T00:00:00Z","2049-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_CONT_IFS_FESOM_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Control Simulation (1990–2000) of the IFS-FESOM model. This data
+    was regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44° resolution. The temporal resolution is 1 hour. The
+    dataset's chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","control","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, IFS-FESOM,
+    Control
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-cont-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      IFS-FESOM, Control
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-cont-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","1999-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_ICON_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the ICON model. This data was regridded
+    from the original HEALPix H1024 grid to a regular latitude-longitude grid at approximately
+    0.044° resolution. The temporal resolution is 1 hour. The dataset's chunking is
+    optimized for regional timeseries analisys.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","ICON","historical","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, ICON,
+    Historical, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/ICON-hist-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, ICON,
+      Historical, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/ICON-hist-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_FESOM_HOURLY_STANDARD:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the IFS-FESOM model. This data was
+    regridded from the original HEALPix H128 grid to a regular latitude-longitude
+    grid at approximately 0.44°. The temporal resolution is 1-hour. The dataset's
+    chunking is optimized for regional and timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-FESOM","historical","standard
+    resolution"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT standard resolution hourly data on single-level or surface, IFS-FESOM,
+    Historical
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-FESOM-hist-sfc-hourly-standard
+    type: text/html
+    title: Climate DT standard resolution hourly data on single-level or surface,
+      IFS-FESOM, Historical
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-FESOM-hist-sfc-hourly-standard-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
+DT_CLIMATE_G2_HIST_IFS_NEMO_HOURLY_HIGH_TIMESERIES:
+  description: This dataset contains surface variables from the second generation
+    Climate Adaptation Digital Twin of the Destination Earth initiative. It includes
+    data from the Historical Run (1990–2014) of the IFS-NEMO model. This data was
+    regridded from the original HEALPix H1024 grid to a regular latitude-longitude
+    grid at approximately 0.044° resolution. The temporal resolution is 1 hour. The
+    dataset's chunking is optimized for regional timeseries analysis.
+  instruments: []
+  constellation:
+  platform:
+  processing:level:
+  keywords: ["Digital Twins","Climate Change","Climate Adaptation","hourly","single-level","surface","IFS-NEMO","historical","high
+    resolution","timeseries"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+    Historical, timeseries
+  links:
+  - rel: describedby
+    href: https://platform.destine.eu/services/documents-and-api/doc/?service_name=climate-dt-user-guide
+    type: text/html
+    title: Climate Digital Twin User Guide
+  - rel: describedby
+    href: https://earthdatahub.destine.eu/collections/climate-dt-2/datasets/IFS-NEMO-hist-sfc-hourly-high-timeseries
+    type: text/html
+    title: Climate DT high resolution hourly data on single-level or surface, IFS-NEMO,
+      Historical, timeseries
+  - rel: cite-as
+    href: https://doi.org/10.21957/79c6af3105
+    type: text/html
+    title: Destination Earth Digital Twin for Climate Change Adaptation (DestinE Climate
+      DT Generation 2)
+  - rel: store
+    href: https://api.earthdatahub.destine.eu/climate-dt-2/IFS-NEMO-hist-sfc-hourly-high-timeseries-v0.zarr
+    type: application/vnd.zarr; version=3
+    title: Zarr Store
+  - rel: describedby
+    href: https://platform.destine.eu/climate-dt/
+    type: text/html
+    title: Climate Digital Twin Information Page
+  - rel: license
+    href: https://spdx.org/licenses/CC-BY-4.0
+    type: text/html
+    title: Creative Commons Attribution 4.0 International
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1990-01-01T00:00:00Z","2014-12-31T23:59:59Z"]]}}
 
-DT_CLIMATE_ADAPTATION_ICON:
-  description: |
-    A selection of datasets derived from the DestinE Climate Change Adaptation Digital Twin according to the output of the ICON model coupled with the Shared Socioeconomic Pathway 3-7.0 (experiment: SSP3-7.0) as defined in the Scenario Model Intercomparison Project (activity: ScenarioMIP)
-  instruments: []
-  constellation: Digital Twin
-  platform: DT
-  processing:level:
-  keywords: ["DT", "Digital-Twin", "Climate Change", "Atmosphere", "Sea Ice", "SCENARIOMIP", "ICON","Socioeconomic", "SSP3-7.0"]
-  eodag:sensor_type: ATMOSPHERIC
-  license: CC-BY-4.0
-  title: DestinE Climate Adaptation DT, activity ScenarioMIP, experiment SSP3-7.0, model ICON
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2021-07-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 # MARK: METOP --------------------------------------------------------------------------
 METOP_AMSU_L1:

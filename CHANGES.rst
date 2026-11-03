@@ -3,6 +3,51 @@ Release history
 ===============
 
 
+v4.10.4 (2026-11-03)
+====================
+
+Bug Fixes
+---------
+
+* **http**: Close responses after use (`#2425`_, `bd4bb25`_)
+
+Continuous Integration
+----------------------
+
+* Fix deployment git authentication using USER_TOKEN (`#2422`_, `aee6ebd`_)
+
+* Optimize tox dependency installs and uv caching (`#2429`_, `ffd3b2f`_)
+
+* Use pytest-benchmark fixed version (`#2430`_, `c907bdb`_)
+
+Refactoring
+-----------
+
+* **collections**: Update dt climate zarr collections for dedl provider (`#2426`_, `05e4461`_)
+
+Testing
+-------
+
+* Optimize tox coverage reporting (`#2428`_, `859f7f6`_)
+
+* Reduce unit test setup overhead (`#2427`_, `eeab211`_)
+
+.. _#2422: https://github.com/CS-SI/eodag/pull/2422
+.. _#2425: https://github.com/CS-SI/eodag/pull/2425
+.. _#2426: https://github.com/CS-SI/eodag/pull/2426
+.. _#2427: https://github.com/CS-SI/eodag/pull/2427
+.. _#2428: https://github.com/CS-SI/eodag/pull/2428
+.. _#2429: https://github.com/CS-SI/eodag/pull/2429
+.. _#2430: https://github.com/CS-SI/eodag/pull/2430
+.. _05e4461: https://github.com/CS-SI/eodag/commit/05e44619fe0114633d23e5fd8c309e587a275e43
+.. _859f7f6: https://github.com/CS-SI/eodag/commit/859f7f63070f20f4063ecacbc289280fa78f5fd0
+.. _aee6ebd: https://github.com/CS-SI/eodag/commit/aee6ebd55d7444debd60b2c083c539ecc1ca5273
+.. _bd4bb25: https://github.com/CS-SI/eodag/commit/bd4bb25ed502023f60794ed6e850665607414e90
+.. _c907bdb: https://github.com/CS-SI/eodag/commit/c907bdb6cc235465a9c2f5a6578efb96dc3acf7b
+.. _eeab211: https://github.com/CS-SI/eodag/commit/eeab211b1246f30830a123dd88b5357204702926
+.. _ffd3b2f: https://github.com/CS-SI/eodag/commit/ffd3b2fc98f1453837e7b4b6dfa94b73a120ecf9
+
+
 v4.10.3 (2026-10-30)
 ====================
 

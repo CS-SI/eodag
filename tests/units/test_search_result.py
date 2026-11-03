@@ -31,18 +31,6 @@ class TestSearchResult(unittest.TestCase):
     def setUp(self):
         super(TestSearchResult, self).setUp()
         self.search_result = SearchResult([])
-        self.search_result2 = SearchResult(
-            [
-                EOProduct(
-                    provider=None,
-                    properties={"geometry": "POINT (0 0)", "order:status": "succeeded"},
-                ),
-                EOProduct(
-                    provider=None,
-                    properties={"geometry": "POINT (0 0)", "order:status": "orderable"},
-                ),
-            ]
-        )
 
     def test_search_result_init(self):
         """SearchResult.init must preserve search parameters independently of products"""
@@ -107,6 +95,18 @@ class TestSearchResult(unittest.TestCase):
 
     def test_search_result_filter_online(self):
         """SearchResult.filter_online must only keep online results"""
+        self.search_result2 = SearchResult(
+            [
+                EOProduct(
+                    provider=None,
+                    properties={"geometry": "POINT (0 0)", "order:status": "succeeded"},
+                ),
+                EOProduct(
+                    provider=None,
+                    properties={"geometry": "POINT (0 0)", "order:status": "orderable"},
+                ),
+            ]
+        )
         filtered_products = self.search_result2.filter_online()
         origin_size = len(self.search_result2)
         filtered_size = len(filtered_products)
