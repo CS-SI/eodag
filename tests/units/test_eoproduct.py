@@ -621,7 +621,7 @@ class TestEOProduct(EODagTestBase):
             ),
             extract=False,
         )
-        progress_callback = ProgressCallback()
+        progress_callback = ProgressCallback(disable=False)
 
         # progress bar did not start
         self.assertEqual(progress_callback.n, 0)
