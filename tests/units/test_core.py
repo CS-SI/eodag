@@ -1886,9 +1886,17 @@ class TestCore(TestCoreBase):
 
         # Only provider
         # when only a provider is specified, return the union of the queryables for all collections
-        queryables_cop_dataspace_none = self.dag.list_queryables(
-            provider="cop_dataspace"
-        )
+        with mock.patch.object(
+            self.dag,
+            "list_collections",
+            return_value=[
+                self.dag.collections_config["S1_SAR_GRD"],
+                self.dag.collections_config["S2_MSI_L1C"],
+            ],
+        ):
+            queryables_cop_dataspace_none = self.dag.list_queryables(
+                provider="cop_dataspace"
+            )
         queryables_fields = Queryables.from_stac_models().model_fields
         expected_longer_result = model_fields_to_annotated(queryables_fields)
         self.assertGreater(
@@ -1978,16 +1986,13 @@ class TestCore(TestCoreBase):
         self.assertTrue(queryables_none_s1grd.additional_properties)
 
         # model_validate should validate input parameters using the queryables result
-        queryables_validated = (
-            queryables_cop_dataspace_s1grd.get_model().model_validate(
-                {"collection": "S1_SAR_GRD", "gsd": 10}
-            )
+        queryables_model = queryables_cop_dataspace_s1grd.get_model()
+        queryables_validated = queryables_model.model_validate(
+            {"collection": "S1_SAR_GRD", "gsd": 10}
         )
         self.assertIn("gsd", queryables_validated.__dict__)
         with self.assertRaises(PydanticValidationError):
-            queryables_cop_dataspace_s1grd.get_model().model_validate(
-                {"collection": "S1_SAR_GRD", "gsd": -1}
-            )
+            queryables_model.model_validate({"collection": "S1_SAR_GRD", "gsd": -1})
 
     @mock.patch(
         "eodag.plugins.search.base.Search.list_queryables",
@@ -2045,7 +2050,15 @@ class TestCore(TestCoreBase):
                 "auto_discovery"
             ]
         )
-        cop_marine_queryables = self.dag.list_queryables(provider="cop_marine")
+        with mock.patch.object(
+            self.dag,
+            "list_collections",
+            return_value=[
+                self.dag.collections_config["MO_INSITU_GLO_PHY_TS_OA_NRT_013_002"],
+                self.dag.collections_config["MO_GLOBAL_ANALYSISFORECAST_PHY_001_024"],
+            ],
+        ):
+            cop_marine_queryables = self.dag.list_queryables(provider="cop_marine")
         self.assertFalse(cop_marine_queryables.additional_properties)
 
         item_cop_marine_queryables = self.dag.list_queryables(
@@ -2059,7 +2072,15 @@ class TestCore(TestCoreBase):
                 "auto_discovery"
             ]
         )
-        sara_queryables = self.dag.list_queryables(provider="sara")
+        with mock.patch.object(
+            self.dag,
+            "list_collections",
+            return_value=[
+                self.dag.collections_config["S2_MSI_L1C"],
+                self.dag.collections_config["S1_SAR_GRD"],
+            ],
+        ):
+            sara_queryables = self.dag.list_queryables(provider="sara")
         self.assertTrue(sara_queryables.additional_properties)
 
         item_sara_queryables = self.dag.list_queryables(
@@ -2076,7 +2097,15 @@ class TestCore(TestCoreBase):
         self.assertNotIn("end_datetime", item_sara_queryables)
 
         # additional_properties set to False for EcmwfSearch plugin
-        cop_cds_queryables = self.dag.list_queryables(provider="cop_cds")
+        with mock.patch.object(
+            self.dag,
+            "list_collections",
+            return_value=[
+                self.dag.collections_config["ERA5_SL"],
+                self.dag.collections_config["ERA5_PL"],
+            ],
+        ):
+            cop_cds_queryables = self.dag.list_queryables(provider="cop_cds")
         self.assertFalse(cop_cds_queryables.additional_properties)
 
     @mock.patch(
