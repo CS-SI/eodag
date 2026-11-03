@@ -69,6 +69,112 @@ from tests.context import (
 from tests.utils import write_eodag_conf_with_fake_credentials
 
 
+class TestUserConfTemplate(unittest.TestCase):
+    def test_user_conf_template_keeps_priority_and_credentials(self):
+        """The user configuration template should not include runtime settings."""
+        template_path = res_files("eodag") / "resources" / "user_conf_template.yml"
+        with template_path.open(encoding="utf-8") as file:
+            user_conf = yaml.safe_load(file)
+
+        for provider_conf in user_conf.values():
+            self.assertIn("priority", provider_conf)
+            self.assertTrue(
+                set(provider_conf).issubset(
+                    {"priority", "auth", "search_auth", "download_auth", "api"}
+                )
+            )
+            if "api" in provider_conf:
+                self.assertEqual(set(provider_conf["api"]), {"credentials"})
+
+
+class TestQueryablesDict(unittest.TestCase):
+    def test_queryables_dict_get_model_json_schema_ecmwf_date(self):
+        """ECMWF date bounds remain in the schema without restricting valid subranges."""
+        from typing import Annotated, Literal
+
+        from pydantic import AliasChoices, Field
+
+        date_field = Field(
+            validation_alias=AliasChoices("ecmwf:date", "date"),
+            serialization_alias="ecmwf:date",
+            title="Date",
+            description="date formatted like yyyy-mm-dd/yyyy-mm-dd",
+        )
+        date_field.metadata.append("json_schema_required")
+        queryables = QueryablesDict(
+            ecmwf_date=Annotated[
+                Literal["2004-01-01/2026-10-08", "2004-02-01/2026-10-08"],
+                date_field,
+            ],
+        )
+
+        for by_alias in (False, True):
+            with self.subTest(by_alias=by_alias):
+                schema = queryables.get_model_json_schema(by_alias=by_alias)
+                key = "ecmwf:date" if by_alias else "ecmwf_date"
+                self.assertEqual(schema["required"], [key])
+                self.assertEqual(
+                    schema["properties"][key],
+                    {
+                        "description": "date formatted like yyyy-mm-dd/yyyy-mm-dd",
+                        "enum": ["2004-01-01/2026-10-08", "2004-02-01/2026-10-08"],
+                        "title": "Date",
+                        "type": "string",
+                    },
+                )
+
+        model = queryables.get_model()
+        for alias in ("ecmwf:date", "date"):
+            self.assertEqual(
+                model.model_validate({alias: "2026-10-01/2026-10-02"}).ecmwf_date,
+                "2026-10-01/2026-10-02",
+            )
+        with self.assertRaises(PydanticValidationError):
+            model.model_validate({"ecmwf:date": "2026-10-09"})
+
+    def test_queryables_dict_required_aliases(self):
+        """Required names follow property names in both JSON schema modes."""
+        from typing import Annotated
+
+        from pydantic import AliasChoices, AliasPath, Field
+
+        queryables = QueryablesDict(
+            simple=Annotated[
+                str, Field("default", alias="simple:alias"), "json_schema_required"
+            ],
+            choices=Annotated[
+                str,
+                Field(
+                    "default",
+                    validation_alias=AliasChoices(
+                        AliasPath("nested", "value"), "input"
+                    ),
+                    serialization_alias="output",
+                ),
+                "json_schema_required",
+            ],
+            path=Annotated[
+                str,
+                Field("default", validation_alias=AliasPath("path:alias")),
+                "json_schema_required",
+            ],
+        )
+        model = queryables.get_model()
+        for by_alias in (False, True):
+            for mode in ("validation", "serialization"):
+                with self.subTest(by_alias=by_alias, mode=mode):
+                    schema = model.model_json_schema(by_alias=by_alias, mode=mode)
+                    expected = {"simple", "choices", "path"}
+                    if by_alias:
+                        expected = {
+                            "simple:alias",
+                            "input" if mode == "validation" else "output",
+                            "path",
+                        }
+                    self.assertEqual(set(schema["required"]), expected)
+                    self.assertEqual(set(schema["properties"]), expected)
+
+
 class TestCoreBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1673,22 +1779,6 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
 
-    def test_user_conf_template_keeps_priority_and_credentials(self):
-        """The user configuration template should not include runtime settings."""
-        template_path = res_files("eodag") / "resources" / "user_conf_template.yml"
-        with template_path.open(encoding="utf-8") as file:
-            user_conf = yaml.safe_load(file)
-
-        for provider_conf in user_conf.values():
-            self.assertIn("priority", provider_conf)
-            self.assertTrue(
-                set(provider_conf).issubset(
-                    {"priority", "auth", "search_auth", "download_auth", "api"}
-                )
-            )
-            if "api" in provider_conf:
-                self.assertEqual(set(provider_conf["api"]), {"credentials"})
-
     @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
@@ -2439,92 +2529,6 @@ class TestCore(TestCoreBase):
         self.assertEqual(complex_class, "stac_pydantic.shared.Provider")
         self.assertIn("Provider", json_schema["$defs"])
         self.assertIsInstance(json_schema["$defs"]["Provider"]["properties"], dict)
-
-    def test_queryables_dict_get_model_json_schema_ecmwf_date(self):
-        """ECMWF date bounds remain in the schema without restricting valid subranges."""
-        from typing import Annotated, Literal
-
-        from pydantic import AliasChoices, Field
-
-        date_field = Field(
-            validation_alias=AliasChoices("ecmwf:date", "date"),
-            serialization_alias="ecmwf:date",
-            title="Date",
-            description="date formatted like yyyy-mm-dd/yyyy-mm-dd",
-        )
-        date_field.metadata.append("json_schema_required")
-        queryables = QueryablesDict(
-            ecmwf_date=Annotated[
-                Literal["2004-01-01/2026-10-08", "2004-02-01/2026-10-08"],
-                date_field,
-            ],
-        )
-
-        for by_alias in (False, True):
-            with self.subTest(by_alias=by_alias):
-                schema = queryables.get_model_json_schema(by_alias=by_alias)
-                key = "ecmwf:date" if by_alias else "ecmwf_date"
-                self.assertEqual(schema["required"], [key])
-                self.assertEqual(
-                    schema["properties"][key],
-                    {
-                        "description": "date formatted like yyyy-mm-dd/yyyy-mm-dd",
-                        "enum": ["2004-01-01/2026-10-08", "2004-02-01/2026-10-08"],
-                        "title": "Date",
-                        "type": "string",
-                    },
-                )
-
-        model = queryables.get_model()
-        for alias in ("ecmwf:date", "date"):
-            self.assertEqual(
-                model.model_validate({alias: "2026-10-01/2026-10-02"}).ecmwf_date,
-                "2026-10-01/2026-10-02",
-            )
-        with self.assertRaises(PydanticValidationError):
-            model.model_validate({"ecmwf:date": "2026-10-09"})
-
-    def test_queryables_dict_required_aliases(self):
-        """Required names follow property names in both JSON schema modes."""
-        from typing import Annotated
-
-        from pydantic import AliasChoices, AliasPath, Field
-
-        queryables = QueryablesDict(
-            simple=Annotated[
-                str, Field("default", alias="simple:alias"), "json_schema_required"
-            ],
-            choices=Annotated[
-                str,
-                Field(
-                    "default",
-                    validation_alias=AliasChoices(
-                        AliasPath("nested", "value"), "input"
-                    ),
-                    serialization_alias="output",
-                ),
-                "json_schema_required",
-            ],
-            path=Annotated[
-                str,
-                Field("default", validation_alias=AliasPath("path:alias")),
-                "json_schema_required",
-            ],
-        )
-        model = queryables.get_model()
-        for by_alias in (False, True):
-            for mode in ("validation", "serialization"):
-                with self.subTest(by_alias=by_alias, mode=mode):
-                    schema = model.model_json_schema(by_alias=by_alias, mode=mode)
-                    expected = {"simple", "choices", "path"}
-                    if by_alias:
-                        expected = {
-                            "simple:alias",
-                            "input" if mode == "validation" else "output",
-                            "path",
-                        }
-                    self.assertEqual(set(schema["required"]), expected)
-                    self.assertEqual(set(schema["properties"]), expected)
 
     def test_queryables_dict_get_model_json_schema_options(self):
         """Test JSON schema alias options and preservation of custom schema extras."""

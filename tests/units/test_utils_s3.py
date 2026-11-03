@@ -46,6 +46,73 @@ def make_mock_fileinfo(
     return fi
 
 
+class TestComputeFileRanges(TestCase):
+    def test_compute_file_ranges(self):
+        """Test _compute_file_ranges to ensure it calculates correct byte ranges for files to download."""
+
+        range_size = 10
+
+        test_cases = [
+            {
+                "desc": "Full file, no byte_range limits (start=None, end=None)",
+                "file_info": make_mock_fileinfo("a", 50),
+                "byte_range": (None, None),
+                "expected": [
+                    (i, min(i + range_size - 1, 49)) for i in range(0, 50, range_size)
+                ],
+            },
+            {
+                "desc": "Partial overlap at start: range starts inside the file",
+                "file_info": make_mock_fileinfo("a", 50, 5, 100),
+                "byte_range": (110, 149),
+                "expected": [(15, 24), (25, 34), (35, 44), (45, 54)],
+            },
+            {
+                "desc": "Partial overlap at end: range ends inside the file",
+                "file_info": make_mock_fileinfo("a", 50, 0, 100),
+                "byte_range": (90, 120),
+                "expected": [(0, 9), (10, 19), (20, 20)],
+            },
+            {
+                "desc": "Range fully inside file",
+                "file_info": make_mock_fileinfo("a", 50, 0, 0),
+                "byte_range": (10, 29),
+                "expected": [(10, 19), (20, 29)],
+            },
+            {
+                "desc": "Range fully outside before file - should return None",
+                "file_info": make_mock_fileinfo("a", 50, 0, 100),
+                "byte_range": (0, 50),
+                "expected": None,
+            },
+            {
+                "desc": "Range fully outside after file - should return None",
+                "file_info": make_mock_fileinfo("a", 50, 0, 100),
+                "byte_range": (151, 200),
+                "expected": None,
+            },
+            {
+                "desc": "Open ended start range (None as start)",
+                "file_info": make_mock_fileinfo("a", 50, 2, 100),
+                "byte_range": (None, 105),
+                "expected": [(2, 7)],
+            },
+            {
+                "desc": "Open ended end range (None as end)",
+                "file_info": make_mock_fileinfo("a", 50, 2, 100),
+                "byte_range": (102, None),
+                "expected": [(4, 13), (14, 23), (24, 33), (34, 43), (44, 51)],
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(msg=case["desc"]):
+                result = _compute_file_ranges(
+                    case["file_info"], case["byte_range"], range_size
+                )
+                self.assertEqual(result, case["expected"])
+
+
 class TestUtilsS3(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -578,71 +645,6 @@ class TestUtilsS3(TestCase):
         self.assertEqual(fi.zip_filepath, "foo.txt")
         self.assertGreater(fi.data_start_offset, 0)
         self.assertEqual(fi.size, len("hello"))
-
-    def test_compute_file_ranges(self):
-        """Test _compute_file_ranges to ensure it calculates correct byte ranges for files to download."""
-
-        range_size = 10
-
-        test_cases = [
-            {
-                "desc": "Full file, no byte_range limits (start=None, end=None)",
-                "file_info": make_mock_fileinfo("a", 50),
-                "byte_range": (None, None),
-                "expected": [
-                    (i, min(i + range_size - 1, 49)) for i in range(0, 50, range_size)
-                ],
-            },
-            {
-                "desc": "Partial overlap at start: range starts inside the file",
-                "file_info": make_mock_fileinfo("a", 50, 5, 100),
-                "byte_range": (110, 149),
-                "expected": [(15, 24), (25, 34), (35, 44), (45, 54)],
-            },
-            {
-                "desc": "Partial overlap at end: range ends inside the file",
-                "file_info": make_mock_fileinfo("a", 50, 0, 100),
-                "byte_range": (90, 120),
-                "expected": [(0, 9), (10, 19), (20, 20)],
-            },
-            {
-                "desc": "Range fully inside file",
-                "file_info": make_mock_fileinfo("a", 50, 0, 0),
-                "byte_range": (10, 29),
-                "expected": [(10, 19), (20, 29)],
-            },
-            {
-                "desc": "Range fully outside before file - should return None",
-                "file_info": make_mock_fileinfo("a", 50, 0, 100),
-                "byte_range": (0, 50),
-                "expected": None,
-            },
-            {
-                "desc": "Range fully outside after file - should return None",
-                "file_info": make_mock_fileinfo("a", 50, 0, 100),
-                "byte_range": (151, 200),
-                "expected": None,
-            },
-            {
-                "desc": "Open ended start range (None as start)",
-                "file_info": make_mock_fileinfo("a", 50, 2, 100),
-                "byte_range": (None, 105),
-                "expected": [(2, 7)],
-            },
-            {
-                "desc": "Open ended end range (None as end)",
-                "file_info": make_mock_fileinfo("a", 50, 2, 100),
-                "byte_range": (102, None),
-                "expected": [(4, 13), (14, 23), (24, 33), (34, 43), (44, 51)],
-            },
-        ]
-
-        for case in test_cases:
-            with self.subTest(msg=case["desc"]):
-                result = _compute_file_ranges(
-                    case["file_info"], case["byte_range"], range_size
-                )
-                self.assertEqual(result, case["expected"])
 
     def test_stream_download_from_s3(self):
         test_cases = [
