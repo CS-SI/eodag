@@ -27,6 +27,7 @@ jobs:
         cache-dependency-glob: |
           pyproject.toml
           tox.ini
+        cache-suffix: linters
     - name: Run linters with tox
       run: uvx --python 3.9 --with tox-uv tox -e linters
 
@@ -51,6 +52,7 @@ jobs:
         cache-dependency-glob: |
           pyproject.toml
           tox.ini
+        cache-suffix: tests-${{ matrix.python-version }}
     - name: Test with tox
       env:
         PYTEST_REPORT_ARGS: ${{ matrix.python-version == '3.14' && '--junitxml=test-reports/junit-report.xml --cov=eodag --cov-report=xml:test-reports/coverage.xml' || '--junitxml=test-reports/junit-report.xml' }}
@@ -80,6 +82,7 @@ jobs:
         cache-dependency-glob: |
           pyproject.toml
           tox.ini
+        cache-suffix: min-deps
     - name: Test minimum runtime dependencies with tox
       env:
         PYTEST_REPORT_ARGS: --junitxml=test-reports/min-deps/junit-report.xml
@@ -233,6 +236,7 @@ jobs:
         cache-dependency-glob: |
           pyproject.toml
           tox.ini
+        cache-suffix: docs
     - name: Install pandoc
       run: |
         curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep -o "https.*amd64.deb" | wget -O pandoc.deb -qi -
@@ -257,5 +261,6 @@ jobs:
         cache-dependency-glob: |
           pyproject.toml
           tox.ini
+        cache-suffix: pypi
     - name: Testing with tox and sphinx (to have rst2html.py utility available)
       run: uvx --with tox-uv --with sphinx tox -e pypi
