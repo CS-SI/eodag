@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime as dt
 import hashlib
 import io
 import os
@@ -23,8 +24,10 @@ import stat
 import tarfile
 import unittest
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
+from types import SimpleNamespace
 from typing import Any
 from unittest import mock
 
@@ -57,6 +60,35 @@ from tests.context import (
     path_to_uri,
     uri_to_path,
 )
+
+
+class _FakeClock:
+    """Provide deterministic time for retry-loop tests."""
+
+    def __init__(self):
+        self.current = dt.datetime(2020, 1, 1)
+
+    def now(self):
+        return self.current
+
+    def advance(self, seconds):
+        self.current += dt.timedelta(seconds=seconds)
+
+    def response(self, request, status=500):
+        self.advance(0.001)
+        return status, {}, b""
+
+    @contextmanager
+    def patched(self):
+        fake_datetime = SimpleNamespace(
+            datetime=SimpleNamespace(now=self.now),
+            timedelta=dt.timedelta,
+        )
+        with (
+            mock.patch("eodag.plugins.download.base.dt", fake_datetime),
+            mock.patch("eodag.plugins.download.base.sleep", side_effect=self.advance),
+        ):
+            yield
 
 
 class BaseDownloadPluginTest(unittest.TestCase):
@@ -1515,11 +1547,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
             expected_path = os.path.join(output_data_path, "CAMS_EAC4_dummy_request_id")
             # download
-            path = self.product.download(
-                output_dir=output_data_path,
-                wait=0.001 / 60,
-                timeout=0.2 / 60,
-            )
+            with _FakeClock().patched():
+                path = self.product.download(
+                    output_dir=output_data_path,
+                    wait=0.001 / 60,
+                    timeout=0.2 / 60,
+                )
             self.assertEqual(self.product.remote_location, expected_remote_location)
             self.assertEqual(
                 self.product.properties["eodag:download_link"], expected_remote_location
@@ -2021,16 +2054,18 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
+            clock = _FakeClock()
             url = "http://somewhere/"
-            responses.add(responses.GET, url, status=500)
+            responses.add_callback(responses.GET, url, callback=clock.response)
 
-            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
-                self.plugin.download(
-                    self.product,
-                    output_dir=self.output_dir,
-                    wait=0.001 / 60,
-                    timeout=0.2 / 60,
-                )
+            with clock.patched():
+                with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                    self.plugin.download(
+                        self.product,
+                        output_dir=self.output_dir,
+                        wait=0.001 / 60,
+                        timeout=0.2 / 60,
+                    )
 
             # there must have been many retries
             self.assertGreater(len(responses.calls), 2)
@@ -2038,13 +2073,15 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
             # Same test with longer wait time
             responses.calls.reset()
-            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
-                self.plugin.download(
-                    self.product,
-                    output_dir=self.output_dir,
-                    wait=0.09 / 60,
-                    timeout=0.2 / 60,
-                )
+            clock.current = dt.datetime(2020, 1, 1)
+            with clock.patched():
+                with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                    self.plugin.download(
+                        self.product,
+                        output_dir=self.output_dir,
+                        wait=0.09 / 60,
+                        timeout=0.2 / 60,
+                    )
 
             # there must have been many retries, but less than before
             self.assertGreater(len(responses.calls), 2)
@@ -2058,15 +2095,21 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
             url = "http://somewhere/"
-            responses.add(responses.GET, url, status=202)
+            clock = _FakeClock()
+            responses.add_callback(
+                responses.GET,
+                url,
+                callback=lambda request: clock.response(request, 202),
+            )
 
-            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
-                self.plugin.download(
-                    self.product,
-                    output_dir=self.output_dir,
-                    wait=0.001 / 60,
-                    timeout=0.2 / 60,
-                )
+            with clock.patched():
+                with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                    self.plugin.download(
+                        self.product,
+                        output_dir=self.output_dir,
+                        wait=0.001 / 60,
+                        timeout=0.2 / 60,
+                    )
 
             # there must have been many retries
             self.assertGreater(len(responses.calls), 2)
@@ -2091,12 +2134,13 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
                 auto_calculate_content_length=True,
             )
 
-            self.plugin.download(
-                self.product,
-                output_dir=self.output_dir,
-                wait=0.001 / 60,
-                timeout=0.2 / 60,
-            )
+            with _FakeClock().patched():
+                self.plugin.download(
+                    self.product,
+                    output_dir=self.output_dir,
+                    wait=0.001 / 60,
+                    timeout=0.2 / 60,
+                )
 
             # there must have been 2 retries
             self.assertEqual(len(responses.calls), 3)
@@ -2109,15 +2153,21 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
             url = "http://somewhere/"
-            responses.add(responses.GET, url, status=202)
+            clock = _FakeClock()
+            responses.add_callback(
+                responses.GET,
+                url,
+                callback=lambda request: clock.response(request, 202),
+            )
 
-            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
-                self.plugin.download(
-                    self.product,
-                    output_dir=self.output_dir,
-                    wait=0.1 / 60,
-                    timeout=1e-9 / 60,
-                )
+            with clock.patched():
+                with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                    self.plugin.download(
+                        self.product,
+                        output_dir=self.output_dir,
+                        wait=0.1 / 60,
+                        timeout=1e-9 / 60,
+                    )
 
             # there must have been only one try
             self.assertEqual(len(responses.calls), 1)
@@ -2130,15 +2180,21 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
             url = "http://somewhere/"
-            responses.add(responses.GET, url, status=202)
+            clock = _FakeClock()
+            responses.add_callback(
+                responses.GET,
+                url,
+                callback=lambda request: clock.response(request, 202),
+            )
 
-            with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
-                self.plugin.download(
-                    self.product,
-                    output_dir=self.output_dir,
-                    wait=0.1 / 60,
-                    timeout=0.1 / 60,
-                )
+            with clock.patched():
+                with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
+                    self.plugin.download(
+                        self.product,
+                        output_dir=self.output_dir,
+                        wait=0.1 / 60,
+                        timeout=0.1 / 60,
+                    )
 
             # there must have been one retry
             self.assertEqual(len(responses.calls), 2)
