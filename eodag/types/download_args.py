@@ -17,8 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Optional, Union
-
 from typing_extensions import TypedDict
 
 
@@ -35,8 +33,8 @@ class DownloadConf(TypedDict, total=False):
     """
 
     output_dir: str
-    output_extension: Union[str, None]
+    output_extension: str | None
     extract: bool
     dl_url_params: dict[str, str]
     delete_archive: bool
-    asset: Optional[str]
+    asset: str | None

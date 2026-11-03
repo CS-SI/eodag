@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import os
-from typing import Optional
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import EOProduct, Sentinel1Driver
@@ -42,7 +41,7 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
         def make_product(
             provider: str = "fake_provider",
             properties: dict = {},
-            collection: Optional[str] = None,
+            collection: str | None = None,
         ) -> EOProduct:
 
             if "id" not in properties:

@@ -23,16 +23,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Literal, cast
 
 import geojson
 import orjson
@@ -139,11 +130,11 @@ class EOProduct:
     #: The metadata of the product
     properties: dict[str, Any]
     #: The collection
-    collection: Optional[str]
+    collection: str | None
     #: The geometry of the product
     geometry: BaseGeometry
     #: The intersection between the product's geometry and the search area.
-    search_intersection: Optional[BaseGeometry]
+    search_intersection: BaseGeometry | None
     #: The path to the product, either remote or local if downloaded
     location: str
     #: The remote path to the product
@@ -165,7 +156,7 @@ class EOProduct:
     #: HTTP response headers, stored during streamed download
     headers: CaseInsensitiveDict[str]
     #: Product size in bytes, stored during streamed download
-    size: Optional[int]
+    size: int | None
     #: Backup of the original ``register_downloader``, set by search plugins that
     #: patch ``register_downloader`` on the instance
     register_downloader_only: Callable[..., None]
@@ -244,8 +235,8 @@ class EOProduct:
                 )
                 self.search_intersection = None
         self.driver = self.get_driver()
-        self.downloader: Optional[Union[Api, Download]] = None
-        self.downloader_auth: Optional[Authentication] = None
+        self.downloader: Api | Download | None = None
+        self.downloader_auth: Authentication | None = None
 
     def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -358,7 +349,7 @@ class EOProduct:
     def from_dict(
         cls,
         feature: dict[str, Any],
-        dag: Optional[EODataAccessGateway] = None,
+        dag: EODataAccessGateway | None = None,
         raise_errors: bool = False,
     ) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
@@ -394,7 +385,7 @@ class EOProduct:
     def from_file(
         cls,
         filepath: str,
-        dag: Optional[EODataAccessGateway] = None,
+        dag: EODataAccessGateway | None = None,
         raise_errors: bool = False,
     ) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from a file containing its serialized
@@ -418,7 +409,7 @@ class EOProduct:
     def from_pystac(
         cls,
         item: Item,
-        dag: Optional[EODataAccessGateway] = None,
+        dag: EODataAccessGateway | None = None,
         raise_errors: bool = False,
     ) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from a pystac Item.
@@ -487,7 +478,7 @@ class EOProduct:
         self.register_downloader(download_plugin, auth_plugin)
 
     def register_downloader(
-        self, downloader: Union[Api, Download], authenticator: Optional[Authentication]
+        self, downloader: Api | Download, authenticator: Authentication | None
     ) -> None:
         """Give to the product the information needed to download itself.
 
@@ -527,8 +518,8 @@ class EOProduct:
 
     def download(
         self,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -613,7 +604,7 @@ class EOProduct:
 
     def stream_download(
         self,
-        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        byte_range: tuple[int | None, int | None] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -657,7 +648,7 @@ class EOProduct:
 
     def get_storage_options(
         self,
-        asset_key: Optional[str] = None,
+        asset_key: str | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> dict[str, Any]:
@@ -738,8 +729,8 @@ class EOProduct:
 
     def _init_progress_bar(
         self,
-        progress_callback: Optional[ProgressCallback],
-        executor: Optional[ThreadPoolExecutor],
+        progress_callback: ProgressCallback | None,
+        executor: ThreadPoolExecutor | None,
     ) -> tuple[ProgressCallback, bool]:
         # determine position of the progress bar with a counter of executor passings
         # to avoid bar overwriting in case of parallel downloads
@@ -764,8 +755,8 @@ class EOProduct:
         self,
         quicklook_file: str,
         progress_callback: ProgressCallback,
-        ssl_verify: Optional[bool] = None,
-        auth: Optional[AuthBase] = None,
+        ssl_verify: bool | None = None,
+        auth: AuthBase | None = None,
     ):
         """Download the quicklook image from the EOProduct's quicklook URL.
 
@@ -802,9 +793,9 @@ class EOProduct:
 
     def get_quicklook(
         self,
-        filename: Optional[str] = None,
-        output_dir: Optional[str] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        filename: str | None = None,
+        output_dir: str | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> str:
         """Download the quicklook image of a given EOProduct from its provider if it
         exists.
@@ -997,12 +988,12 @@ class EOProduct:
 
     def to_xarray(
         self,
-        asset_key: Optional[str] = None,
+        asset_key: str | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         roles: Iterable[str] = {"data", "data-mask"},
         download_fallback: bool = False,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         **xarray_kwargs: Any,
     ):
         """
@@ -1037,7 +1028,7 @@ class EOProduct:
 
     @classmethod
     def _import_stac_item_from_serialized(
-        cls, feature: dict[str, Any], plugins_manager: Optional[PluginManager] = None
+        cls, feature: dict[str, Any], plugins_manager: PluginManager | None = None
     ) -> EOProduct:
         """Import a STAC item from a EODAG serialized EOProduct.
 
@@ -1078,9 +1069,9 @@ class EOProduct:
         cls,
         feature: dict[str, Any],
         plugins_manager: PluginManager,
-        provider: Optional[str] = None,
+        provider: str | None = None,
         raise_errors: bool = False,
-    ) -> Optional[EOProduct]:
+    ) -> EOProduct | None:
         """Create a SearchResult from a STAC item.
 
         :param feature: A STAC item as a dictionary
@@ -1092,7 +1083,7 @@ class EOProduct:
                              known provider, from unknown provider.
         :returns: An EOProduct created from the STAC item
         """
-        result: Optional[EOProduct] = None
+        result: EOProduct | None = None
         try:
             # try importing from a serialized EODAG EOProduct
             if result := cls._import_stac_item_from_serialized(

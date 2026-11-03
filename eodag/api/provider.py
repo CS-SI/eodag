@@ -29,9 +29,7 @@ from typing import (
     Iterator,
     Literal,
     Mapping,
-    Optional,
     TypedDict,
-    Union,
     get_type_hints,
 )
 
@@ -171,7 +169,7 @@ class ProviderConfig(yaml.YAMLObject):
 
     @staticmethod
     def validate(
-        config_keys: Union[tuple[str, ...], dict[str, Any]], check_name: bool = True
+        config_keys: tuple[str, ...] | dict[str, Any], check_name: bool = True
     ) -> None:
         """Validate a :class:`~eodag.api.provider.ProviderConfig`
 
@@ -189,7 +187,7 @@ class ProviderConfig(yaml.YAMLObject):
                 "type of plugin"
             )
 
-    def update(self, config: Union[Self, dict[str, Any]]) -> None:
+    def update(self, config: Self | dict[str, Any]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param config: The config from which to override configuration parameters
@@ -205,7 +203,7 @@ class ProviderConfig(yaml.YAMLObject):
             },
         )
         for key in PLUGINS_TOPICS_KEYS:
-            current_value: Optional[PluginConfig] = getattr(self, key, None)
+            current_value: PluginConfig | None = getattr(self, key, None)
             config_value = source.get(key, {})
             if current_value is not None:
                 current_value |= config_value
@@ -315,7 +313,7 @@ class Provider:
     _config: ProviderConfig
     collections_fetched: bool
 
-    def __init__(self, config: Union[ProviderConfig, dict[str, Any]]):
+    def __init__(self, config: ProviderConfig | dict[str, Any]):
         """Initialize provider with configuration."""
         if isinstance(config, dict):
             self._config = ProviderConfig.from_mapping(config)
@@ -399,12 +397,12 @@ class Provider:
         return self._name
 
     @property
-    def title(self) -> Optional[str]:
+    def title(self) -> str | None:
         """The title of the provider."""
         return getattr(self.config, "description", None)
 
     @property
-    def url(self) -> Optional[str]:
+    def url(self) -> str | None:
         """The url of the provider."""
         return getattr(self.config, "url", None)
 
@@ -419,12 +417,12 @@ class Provider:
         return self.config.priority
 
     @property
-    def group(self) -> Optional[str]:
+    def group(self) -> str | None:
         """Return the provider's group, if any."""
         return getattr(self.config, "group", None)
 
     @property
-    def search_config(self) -> Optional[PluginConfig]:
+    def search_config(self) -> PluginConfig | None:
         """Return the search plugin config, if any."""
         return getattr(self.config, "search", None) or getattr(self.config, "api", None)
 
@@ -451,12 +449,12 @@ class Provider:
         return set(props.keys()) if isinstance(props, dict) else set()
 
     @property
-    def api_config(self) -> Optional[PluginConfig]:
+    def api_config(self) -> PluginConfig | None:
         """Return the api plugin config, if any."""
         return getattr(self.config, "api", None)
 
     @property
-    def download_config(self) -> Optional[PluginConfig]:
+    def download_config(self) -> PluginConfig | None:
         """Return the download plugin config, if any."""
         return getattr(self.config, "download", None)
 
@@ -572,7 +570,7 @@ class Provider:
 
         return False
 
-    def update_from_config(self, config: Union[ProviderConfig, dict[str, Any]]) -> None:
+    def update_from_config(self, config: ProviderConfig | dict[str, Any]) -> None:
         """Update the provider's configuration from a given config.
 
         :param config: The new configuration to update from.
@@ -607,7 +605,7 @@ class ProvidersDict(UserDict[str, Provider]):
     :param providers: Initial providers to populate the dictionary.
     """
 
-    whitelist: Optional[list[str]] = None
+    whitelist: list[str] | None = None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -770,7 +768,7 @@ class ProvidersDict(UserDict[str, Provider]):
             provider.name: provider.config.priority for provider in self.data.values()
         }
 
-    def get_config(self, provider: str) -> Optional[ProviderConfig]:
+    def get_config(self, provider: str) -> ProviderConfig | None:
         """
         Get a :class:`~eodag.api.provider.ProviderConfig` from provider name.
 
@@ -780,7 +778,7 @@ class ProvidersDict(UserDict[str, Provider]):
         prov = self.get(provider)
         return prov.config if prov else None
 
-    def filter(self, q: Optional[str] = None) -> ProvidersDict:
+    def filter(self, q: str | None = None) -> ProvidersDict:
         """
         Return providers whose name, group, description, URL or collection matches the free-text query.
 
@@ -840,7 +838,7 @@ class ProvidersDict(UserDict[str, Provider]):
         return filtered
 
     def filter_by_name_or_group(
-        self, name_or_group: Optional[str] = None
+        self, name_or_group: str | None = None
     ) -> Iterator[Provider]:
         """
         Yield providers whose name or group matches the given ``name_or_group``.
@@ -917,9 +915,9 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @staticmethod
     def _get_whitelisted_configs(
-        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
-        whitelist: Optional[list[str]] = None,
-    ) -> Mapping[str, Union[ProviderConfig, dict[str, Any]]]:
+        configs: Mapping[str, ProviderConfig | dict[str, Any]],
+        whitelist: list[str] | None = None,
+    ) -> Mapping[str, ProviderConfig | dict[str, Any]]:
         """
         Filter configs according to the EODAG_PROVIDERS_WHITELIST environment variable, if set.
 
@@ -939,7 +937,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     def update_from_configs(
         self,
-        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+        configs: Mapping[str, ProviderConfig | dict[str, Any]],
     ) -> None:
         """
         Update providers from a dictionary of configurations.
@@ -1070,8 +1068,8 @@ class ProvidersDict(UserDict[str, Provider]):
     @classmethod
     def from_configs(
         cls,
-        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
-        whitelist: Optional[list[str]] = None,
+        configs: Mapping[str, ProviderConfig | dict[str, Any]],
+        whitelist: list[str] | None = None,
     ) -> Self:
         """
         Build a ProvidersDict from a configuration mapping.

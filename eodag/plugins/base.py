@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import importlib_metadata
 
@@ -62,7 +62,7 @@ class EODAGPluginMount(type):
 class PluginTopic(metaclass=EODAGPluginMount):
     """Base of all plugin topics in eodag"""
 
-    entrypoint_group: Optional[str] = None
+    entrypoint_group: str | None = None
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         self.config = config

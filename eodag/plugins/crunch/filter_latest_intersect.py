@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from shapely.errors import ShapelyError
 from shapely.geometry.base import BaseGeometry
@@ -66,9 +66,9 @@ class FilterLatestIntersect(Crunch):
         # Warning: May crash if start_datetime is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered: list[EOProduct] = []
-        search_extent: Optional[BaseGeometry]
+        search_extent: BaseGeometry | None
         add_to_filtered = filtered.append
-        footprint: Union[dict[str, Any], BaseGeometry, Any] = search_params.get(
+        footprint: dict[str, Any] | BaseGeometry | Any = search_params.get(
             "geometry"
         ) or search_params.get("geom")
         if not footprint:

@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict, UserList
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
@@ -60,7 +60,7 @@ class Collection(BaseModel):
     """
 
     id: str = Field()
-    title: Optional[str] = Field(default=None)
+    title: str | None = Field(default=None)
     description: str = Field(default=NOT_AVAILABLE)
     extent: Extent = Field(
         default=Extent(
@@ -74,34 +74,34 @@ class Collection(BaseModel):
             "), with date/time strings in RFC 3339 format"
         ),
     )
-    keywords: Optional[list[str]] = Field(default=None)
+    keywords: list[str] | None = Field(default=None)
     license: str = Field(default="other")
-    links: Optional[Links] = Field(default=None)
-    providers: Optional[list[Provider]] = Field(default=None)
+    links: Links | None = Field(default=None)
+    providers: list[Provider] | None = Field(default=None)
 
     # summaries
-    constellation: Optional[str] = Field(default=None)
-    instruments: Optional[list[str]] = Field(default=None)
-    platform: Optional[str] = Field(default=None)
-    processing_level: Optional[str] = Field(default=None, alias="processing:level")
-    sci_doi: Optional[str] = Field(default=None, alias="sci:doi")
-    eodag_sensor_type: Optional[str] = Field(default=None, alias="eodag:sensor_type")
+    constellation: str | None = Field(default=None)
+    instruments: list[str] | None = Field(default=None)
+    platform: str | None = Field(default=None)
+    processing_level: str | None = Field(default=None, alias="processing:level")
+    sci_doi: str | None = Field(default=None, alias="sci:doi")
+    eodag_sensor_type: str | None = Field(default=None, alias="eodag:sensor_type")
 
     # eodag-specific attribute
-    alias: Optional[str] = Field(
+    alias: str | None = Field(
         default=None,
         description="An alias given by a user to use his customized id intead of the internal id of EODAG",
         repr=False,
     )
 
     # path to external collection metadata file (required by stac-fastapi-eodag)
-    eodag_stac_collection: Optional[str] = Field(
+    eodag_stac_collection: str | None = Field(
         default=None, alias="stacCollection", exclude=True, repr=False
     )
 
     # Private property to store the eodag internal id value. Not part of the model schema.
     _id: str = PrivateAttr()
-    _dag: Optional[EODataAccessGateway] = PrivateAttr(default=None)
+    _dag: EODataAccessGateway | None = PrivateAttr(default=None)
 
     model_config = ConfigDict(
         extra="forbid", validate_by_name=True, serialize_by_alias=True

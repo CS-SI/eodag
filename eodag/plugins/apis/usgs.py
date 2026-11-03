@@ -22,7 +22,7 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -289,13 +289,13 @@ class UsgsApi(Api):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         """Download data from USGS catalogues"""
 
         if progress_callback is None:

@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging.config
-from typing import Any, Optional
+from typing import Any
 
 disable_tqdm = False
 
@@ -101,7 +101,7 @@ def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
     )
 
 
-def get_logging_verbose() -> Optional[int]:
+def get_logging_verbose() -> int | None:
     """Get logging verbose level
 
     >>> from eodag import setup_logging

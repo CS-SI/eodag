@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -205,7 +205,7 @@ class Asset(UserDict):
 
     product: EOProduct
     size: int
-    filename: Optional[str]
+    filename: str | None
     rel_path: str
 
     def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:

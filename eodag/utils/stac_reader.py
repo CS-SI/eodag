@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 import socket
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -149,7 +149,7 @@ def _fetch_stac_items_from_catalog(
 
     # pystac cannot yet return links from a single file catalog, see:
     # https://github.com/stac-utils/pystac/issues/256
-    extensions: Optional[Union[list[str], str]] = getattr(cat, "stac_extensions", None)
+    extensions: list[str] | str | None = getattr(cat, "stac_extensions", None)
     if extensions:
         extensions = extensions if isinstance(extensions, list) else [extensions]
         if "single-file-stac" in extensions:
@@ -160,7 +160,7 @@ def _fetch_stac_items_from_catalog(
 
     # Making the links absolutes allow for both relative and absolute links to be handled.
     if not recursive:
-        hrefs: list[Optional[str]] = [
+        hrefs: list[str | None] = [
             link.get_absolute_href() for link in cat.get_item_links()
         ]
     else:
@@ -187,7 +187,7 @@ def _fetch_stac_items_from_catalog(
 
 def fetch_stac_collections(
     stac_path: str,
-    collection: Optional[str] = None,
+    collection: str | None = None,
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
     ssl_verify: bool = True,
@@ -218,7 +218,7 @@ def fetch_stac_collections(
 
 def _fetch_stac_collections_from_catalog(
     cat: pystac.Catalog,
-    collection: Optional[str],
+    collection: str | None,
     max_connections: int,
     _text_opener: Callable[[str, bool], Any],
 ) -> list[Any]:
@@ -226,7 +226,7 @@ def _fetch_stac_collections_from_catalog(
     collections: list[dict[Any, Any]] = []
 
     # Making the links absolutes allow for both relative and absolute links to be handled.
-    hrefs: list[Optional[str]] = [
+    hrefs: list[str | None] = [
         link.get_absolute_href()
         for link in cat.get_child_links()
         if collection is not None and link.title == collection

@@ -21,7 +21,7 @@ import datetime as dt
 import logging
 import math
 from calendar import monthrange
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, cast
 
 import requests
 from pydantic.fields import FieldInfo
@@ -275,7 +275,7 @@ class CopGhslSearch(Search):
         unit: str,
         collection: str,
         params: dict[str, Any],
-        additional_filter: Optional[str] = None,
+        additional_filter: str | None = None,
         need_count=False,
     ) -> tuple[list[EOProduct], int]:
         """
@@ -388,7 +388,7 @@ class CopGhslSearch(Search):
 
     def _create_products_without_tiles(
         self, collection: str, prep: PreparedSearch, filter_params: dict[str, Any]
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], int | None]:
         filters = deepcopy(filter_params)
         default_geometry = getattr(self.config, "metadata_mapping")[
             "eodag:default_geometry"
@@ -478,7 +478,7 @@ class CopGhslSearch(Search):
 
     def _get_tile_from_product_id(
         self, query_params: dict[str, Any]
-    ) -> Optional[tuple[dict[str, list[dict[str, Any]]], str]]:
+    ) -> tuple[dict[str, list[dict[str, Any]]], str] | None:
         """fetch the tile for a specific product id from the provider
         returns a a dict with a list of length 1 to simplify further processing
         """
@@ -513,7 +513,7 @@ class CopGhslSearch(Search):
 
     def _get_tiles_for_filters(
         self, collection_config: dict[str, Any], params: dict[str, Any]
-    ) -> Optional[tuple[dict[str, list[dict[str, Any]]], str]]:
+    ) -> tuple[dict[str, list[dict[str, Any]]], str] | None:
         """fetch the tiles matching the given filters from the provider"""
 
         logger.debug(f"get tiles for filter parameters {params}")
@@ -684,7 +684,7 @@ class CopGhslSearch(Search):
 
     def discover_queryables(
         self, **kwargs
-    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
+    ) -> dict[str, Annotated[Any, FieldInfo]] | None:
         """Create queryables list based on constraints
 
         :param kwargs: additional filters for queryables (`collection` and other search

@@ -51,7 +51,7 @@ from eodag.utils.dates import get_datetime
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Union
+    from typing import Any
 
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
@@ -68,9 +68,9 @@ class Search(PluginTopic):
     :param config: An EODAG plugin configuration
     """
 
-    auth: Union[AuthBase, S3ServiceResource]
-    next_page_url: Optional[str]
-    next_page_query_obj: Optional[dict[str, Any]]
+    auth: AuthBase | S3ServiceResource
+    next_page_url: str | None
+    next_page_query_obj: dict[str, Any] | None
     total_items_nb: int
     need_count: bool
 
@@ -118,13 +118,13 @@ class Search(PluginTopic):
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
 
-    def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+    def discover_collections(self, **kwargs: Any) -> dict[str, Any] | None:
         """Fetch collections list from provider using `discover_collections` conf"""
         return None
 
     def discover_queryables(
         self, **kwargs: Any
-    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
+    ) -> dict[str, Annotated[Any, FieldInfo]] | None:
         """Fetch queryables list from provider using :attr:`~eodag.config.PluginConfig.discover_queryables` conf
 
         :param kwargs: additional filters for queryables (``collection`` and other search
@@ -152,7 +152,7 @@ class Search(PluginTopic):
             queryables[parameter] = Annotated[type(value), Field(default=value)]
         return queryables
 
-    def map_collection(self, collection: Optional[str], **kwargs: Any) -> Optional[str]:
+    def map_collection(self, collection: str | None, **kwargs: Any) -> str | None:
         """Get the provider collection from eodag collection
 
         :param collection: eodag collection
@@ -166,7 +166,7 @@ class Search(PluginTopic):
         )
 
     def get_collection_def_params(
-        self, collection: str, format_variables: Optional[dict[str, Any]] = None
+        self, collection: str, format_variables: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Get the provider collection definition parameters and specific settings
 
@@ -213,8 +213,8 @@ class Search(PluginTopic):
         return non_none_cfg.get(key, default)
 
     def get_collection_cfg_dates(
-        self, start_default: Optional[str] = None, end_default: Optional[str] = None
-    ) -> tuple[Optional[str], Optional[str]]:
+        self, start_default: str | None = None, end_default: str | None = None
+    ) -> tuple[str | None, str | None]:
         """
         Get start and end dates from the collection configuration.
 
@@ -231,8 +231,8 @@ class Search(PluginTopic):
         return col_start or start_default, col_end or end_default
 
     def get_metadata_mapping(
-        self, collection: Optional[str] = None
-    ) -> dict[str, Union[str, list[Optional[str]]]]:
+        self, collection: str | None = None
+    ) -> dict[str, str | list[str | None]]:
         """Get plugin metadata mapping configuration (collection-specific if set).
 
         Uses collection metadata mapping when available, otherwise falls back to
@@ -267,7 +267,7 @@ class Search(PluginTopic):
 
         return self.config.metadata_mapping
 
-    def get_sort_by_arg(self, kwargs: dict[str, Any]) -> Optional[SortByList]:
+    def get_sort_by_arg(self, kwargs: dict[str, Any]) -> SortByList | None:
         """Extract the ``sort_by`` argument from the kwargs or the provider default sort configuration
 
         :param kwargs: Search arguments
@@ -399,7 +399,7 @@ class Search(PluginTopic):
         return (sort_by_qs, sort_by_qp)
 
     def _get_collection_queryables(
-        self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
+        self, collection: str | None, alias: str | None, filters: dict[str, Any]
     ) -> QueryablesDict:
         default_values: dict[str, Any] = deepcopy(
             getattr(self.config, "products", {}).get(collection, {})
@@ -421,8 +421,8 @@ class Search(PluginTopic):
         filters: dict[str, Any],
         available_collections: list[Any],
         collection_configs: dict[str, dict[str, Any]],
-        collection: Optional[str] = None,
-        alias: Optional[str] = None,
+        collection: str | None = None,
+        alias: str | None = None,
     ) -> QueryablesDict:
         """
         Get queryables
@@ -482,7 +482,7 @@ class Search(PluginTopic):
     def validate(
         self,
         search_params: dict[str, Any],
-        auth: Optional[Union[AuthBase, S3ServiceResource]],
+        auth: AuthBase | S3ServiceResource | None,
     ) -> None:
         """Validate a search request.
 
@@ -509,7 +509,7 @@ class Search(PluginTopic):
             raise ValidationError(format_pydantic_error(e)) from e
 
     def queryables_from_metadata_mapping(
-        self, collection: Optional[str] = None, alias: Optional[str] = None
+        self, collection: str | None = None, alias: str | None = None
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Extract queryable parameters from collection metadata mapping.

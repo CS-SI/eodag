@@ -17,7 +17,7 @@
 # limitations under the License.
 """STAC extensions."""
 
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal
 
 from annotated_types import Ge, Le
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
@@ -31,8 +31,8 @@ class Centroid(BaseModel):
     https://github.com/stac-extensions/projection#centroid-object
     """
 
-    lat: Optional[float] = Field(None)
-    lon: Optional[float] = Field(None)
+    lat: float | None = Field(None)
+    lon: float | None = Field(None)
 
 
 class CubeDimension(BaseModel):
@@ -41,14 +41,14 @@ class CubeDimension(BaseModel):
     https://github.com/stac-extensions/datacube#dimension-object
     """
 
-    type: Optional[str] = Field(None)
-    axis: Optional[str] = Field(None)
-    description: Optional[str] = Field(None)
-    extent: Optional[list[Union[float, str]]] = Field(None)
-    values: Optional[list[Union[float, str]]] = Field(None)
-    step: Optional[Union[float, str]] = Field(None)
-    unit: Optional[str] = Field(None)
-    reference_system: Optional[Union[str, int, dict[str, Any]]] = Field(None)
+    type: str | None = Field(None)
+    axis: str | None = Field(None)
+    description: str | None = Field(None)
+    extent: list[float | str] | None = Field(None)
+    values: list[float | str] | None = Field(None)
+    step: float | str | None = Field(None)
+    unit: str | None = Field(None)
+    reference_system: str | int | dict[str, Any] | None = Field(None)
 
 
 class CubeVariable(BaseModel):
@@ -57,14 +57,14 @@ class CubeVariable(BaseModel):
     https://github.com/stac-extensions/datacube#variable-object
     """
 
-    dimensions: Optional[list[str]] = Field(None)
-    type: Optional[str] = Field(None)
-    description: Optional[str] = Field(None)
-    extent: Optional[list[Union[float, str, None]]] = Field(None)
-    values: Optional[list[Union[float, str]]] = Field(None)
-    unit: Optional[str] = Field(None)
-    nodata: Optional[Union[float, str]] = Field(None)
-    data_type: Optional[str] = Field(None)
+    dimensions: list[str] | None = Field(None)
+    type: str | None = Field(None)
+    description: str | None = Field(None)
+    extent: list[float | str | None] | None = Field(None)
+    values: list[float | str] | None = Field(None)
+    unit: str | None = Field(None)
+    nodata: float | str | None = Field(None)
+    data_type: str | None = Field(None)
 
 
 class BaseStacExtension(BaseModel):
@@ -72,9 +72,9 @@ class BaseStacExtension(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    FIELDS: Optional[type[BaseModel]] = None
-    schema_href: Optional[str] = None
-    field_name_prefix: Optional[str] = None
+    FIELDS: type[BaseModel] | None = None
+    schema_href: str | None = None
+    field_name_prefix: str | None = None
 
     @model_validator(mode="after")
     def setup_field_aliases(self) -> "BaseStacExtension":
@@ -120,7 +120,7 @@ class SarExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = SarFields
 
     schema_href: str = "https://stac-extensions.github.io/sar/v1.3.0/schema.json"
-    field_name_prefix: Optional[str] = "sar"
+    field_name_prefix: str | None = "sar"
 
 
 class SatelliteFields(BaseModel):
@@ -142,7 +142,7 @@ class SatelliteExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = SatelliteFields
 
     schema_href: str = "https://stac-extensions.github.io/sat/v1.1.0/schema.json"
-    field_name_prefix: Optional[str] = "sat"
+    field_name_prefix: str | None = "sat"
 
 
 class TimestampFields(BaseModel):
@@ -181,7 +181,7 @@ class ProcessingExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = ProcessingFields
 
     schema_href: str = "https://stac-extensions.github.io/processing/v1.2.0/schema.json"
-    field_name_prefix: Optional[str] = "processing"
+    field_name_prefix: str | None = "processing"
 
 
 class ViewGeometryFields(BaseModel):
@@ -202,7 +202,7 @@ class ViewGeometryExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = ViewGeometryFields
 
     schema_href: str = "https://stac-extensions.github.io/view/v1.1.0/schema.json"
-    field_name_prefix: Optional[str] = "view"
+    field_name_prefix: str | None = "view"
 
 
 class ElectroOpticalFields(BaseModel):
@@ -212,7 +212,7 @@ class ElectroOpticalFields(BaseModel):
 
     eo_cloud_cover: Annotated[Percentage, Field(None)]
     eo_snow_cover: Annotated[Percentage, Field(None)]
-    eo_bands: Annotated[list[dict[str, Union[str, int]]], Field(None)]
+    eo_bands: Annotated[list[dict[str, str | int]], Field(None)]
 
 
 class ElectroOpticalExtension(BaseStacExtension):
@@ -221,7 +221,7 @@ class ElectroOpticalExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = ElectroOpticalFields
 
     schema_href: str = "https://stac-extensions.github.io/eo/v2.0.0/schema.json"
-    field_name_prefix: Optional[str] = "eo"
+    field_name_prefix: str | None = "eo"
 
 
 class ScientificCitationFields(BaseModel):
@@ -240,7 +240,7 @@ class ScientificCitationExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = ScientificCitationFields
 
     schema_href: str = "https://stac-extensions.github.io/scientific/v1.0.0/schema.json"
-    field_name_prefix: Optional[str] = "sci"
+    field_name_prefix: str | None = "sci"
 
 
 class ProductFields(BaseModel):
@@ -260,7 +260,7 @@ class ProductExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = ProductFields
 
     schema_href: str = "https://stac-extensions.github.io/product/v1.0.0/schema.json"
-    field_name_prefix: Optional[str] = "product"
+    field_name_prefix: str | None = "product"
 
 
 class StorageFields(BaseModel):
@@ -278,7 +278,7 @@ class StorageExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = StorageFields
 
     schema_href: str = "https://stac-extensions.github.io/storage/v2.0.0/schema.json"
-    field_name_prefix: Optional[str] = "storage"
+    field_name_prefix: str | None = "storage"
 
 
 class OrderFields(BaseModel):
@@ -297,7 +297,7 @@ class OrderExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = OrderFields
 
     schema_href: str = "https://stac-extensions.github.io/order/v1.1.0/schema.json"
-    field_name_prefix: Optional[str] = "order"
+    field_name_prefix: str | None = "order"
 
 
 class FileFields(BaseModel):
@@ -320,7 +320,7 @@ class FileExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = FileFields
 
     schema_href: str = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
-    field_name_prefix: Optional[str] = "file"
+    field_name_prefix: str | None = "file"
 
 
 class GridFields(BaseModel):
@@ -339,7 +339,7 @@ class GridExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = GridFields
 
     schema_href: str = "https://stac-extensions.github.io/grid/v1.1.0/schema.json"
-    field_name_prefix: Optional[str] = "grid"
+    field_name_prefix: str | None = "grid"
 
 
 class MgrsFields(BaseModel):
@@ -358,7 +358,7 @@ class MgrsExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = MgrsFields
 
     schema_href: str = "https://stac-extensions.github.io/mgrs/v1.0.0/schema.json"
-    field_name_prefix: Optional[str] = "mgrs"
+    field_name_prefix: str | None = "mgrs"
 
 
 class ProjectionFields(BaseModel):
@@ -382,7 +382,7 @@ class ProjectionExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = ProjectionFields
 
     schema_href: str = "https://stac-extensions.github.io/projection/v2.0.0/schema.json"
-    field_name_prefix: Optional[str] = "proj"
+    field_name_prefix: str | None = "proj"
 
 
 class DatacubeFields(BaseModel):
@@ -400,7 +400,7 @@ class DatacubeExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = DatacubeFields
 
     schema_href: str = "https://stac-extensions.github.io/datacube/v2.3.0/schema.json"
-    field_name_prefix: Optional[str] = "cube"
+    field_name_prefix: str | None = "cube"
 
 
 class LabelCountObject(BaseModel):
@@ -427,7 +427,7 @@ class LabelClassObject(BaseModel):
     """
 
     name: Annotated[str, Field(None)]  # required but may be null
-    classes: Annotated[list[Union[str, int]], Field(None)]
+    classes: Annotated[list[str | int], Field(None)]
 
 
 class LabelOverview(BaseModel):
@@ -461,7 +461,7 @@ class LabelFields(BaseModel):
                 values["methods"].remove(None)
         return values
 
-    label_properties: Annotated[Optional[list[str]], Field(None)]
+    label_properties: Annotated[list[str] | None, Field(None)]
     label_classes: Annotated[list[LabelClassObject], Field(None)]
     label_description: Annotated[str, Field("")]
     label_type: Annotated[str, Field("")]
@@ -476,7 +476,7 @@ class LabelExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = LabelFields
 
     schema_href: str = "https://stac-extensions.github.io/label/v1.0.1/schema.json"
-    field_name_prefix: Optional[str] = "label"
+    field_name_prefix: str | None = "label"
 
 
 class FederationFields(BaseModel):
@@ -484,7 +484,7 @@ class FederationFields(BaseModel):
     https://github.com/Open-EO/openeo-api/tree/master/extensions/federation
     """
 
-    federation_backends: Annotated[Union[list[str], str], Field(None)]
+    federation_backends: Annotated[list[str] | str, Field(None)]
 
 
 class FederationExtension(BaseStacExtension):
@@ -492,7 +492,7 @@ class FederationExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = FederationFields
 
-    field_name_prefix: Optional[str] = "federation"
+    field_name_prefix: str | None = "federation"
 
 
 class EcmwfItemProperties(BaseModel):
@@ -506,10 +506,10 @@ class EcmwfItemProperties(BaseModel):
     ecmwf_accuracy: Annotated[str, Field(None)]
     ecmwf_activity: Annotated[str, Field(None)]
     ecmwf_anoffset: Annotated[str, Field(None)]
-    ecmwf_area: Annotated[Union[str, list[float]], Field(None)]
+    ecmwf_area: Annotated[str | list[float], Field(None)]
     ecmwf_block: Annotated[str, Field(None)]
     ecmwf_channel: Annotated[str, Field(None)]
-    ecmwf_class: Optional[str] = Field(default=None)
+    ecmwf_class: str | None = Field(default=None)
     ecmwf_dataset: Annotated[str, Field(None)]
     ecmwf_date: Annotated[str, Field(None)]
     ecmwf_diagnostic: Annotated[str, Field(None)]
@@ -557,19 +557,19 @@ class EcmwfItemProperties(BaseModel):
     ecmwf_resolution: Annotated[str, Field(None)]
     ecmwf_rotation: Annotated[str, Field(None)]
     ecmwf_section: Annotated[str, Field(None)]
-    ecmwf_source: Annotated[Union[str, list[str]], Field(None)]
-    ecmwf_step: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_source: Annotated[str | list[str], Field(None)]
+    ecmwf_step: Annotated[str | list[str], Field(None)]
     ecmwf_stream: Annotated[str, Field(None)]
     ecmwf_system: Annotated[str, Field(None)]
     ecmwf_target: Annotated[str, Field(None)]
     ecmwf_time: Annotated[list[str], Field(None)]
     ecmwf_truncation: Annotated[str, Field(None)]
-    ecmwf_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_type: Annotated[str | list[str], Field(None)]
     ecmwf_use: Annotated[str, Field(None)]
 
     # additional properties from Copernicus Datastore
     ecmwf_system_version: Annotated[list[str], Field(None)]
-    ecmwf_variable: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_variable: Annotated[str | list[str], Field(None)]
     ecmwf_model_levels: Annotated[str, Field(None)]
     ecmwf_soil_level: Annotated[list[str], Field(None)]
     ecmwf_hyear: Annotated[list[str], Field(None)]
@@ -578,9 +578,9 @@ class EcmwfItemProperties(BaseModel):
     ecmwf_data_format: Annotated[str, Field(None)]
     ecmwf_download_format: Annotated[str, Field(None)]
     ecmwf_originating_centre: Annotated[str, Field(None)]
-    ecmwf_product_type: Annotated[Union[str, list[str]], Field(None)]
-    ecmwf_year: Annotated[Union[str, list[str]], Field(None)]
-    ecmwf_month: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_product_type: Annotated[str | list[str], Field(None)]
+    ecmwf_year: Annotated[str | list[str], Field(None)]
+    ecmwf_month: Annotated[str | list[str], Field(None)]
     ecmwf_day: Annotated[list[str], Field(None)]
     ecmwf_leadtime_hour: Annotated[list[str], Field(None)]
     ecmwf_hydrological_model: Annotated[list[str], Field(None)]
@@ -588,35 +588,35 @@ class EcmwfItemProperties(BaseModel):
     ecmwf_release_version: Annotated[str, Field(None)]
     ecmwf_pressure_level: Annotated[list[str], Field(None)]
     ecmwf_model_level: Annotated[list[str], Field(None)]
-    ecmwf_model: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_model: Annotated[str | list[str], Field(None)]
     ecmwf_level: Annotated[list[str], Field(None)]
     ecmwf_forcing_type: Annotated[str, Field(None)]
     ecmwf_band: Annotated[list[str], Field(None)]
-    ecmwf_sky_type: Annotated[Union[str, list[str]], Field(None)]
-    ecmwf_version: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_sky_type: Annotated[str | list[str], Field(None)]
+    ecmwf_version: Annotated[str | list[str], Field(None)]
     ecmwf_aerosol_type: Annotated[list[str], Field(None)]
     ecmwf_time_step: Annotated[str, Field(None)]
     ecmwf_time_reference: Annotated[str, Field(None)]
     ecmwf_quantity: Annotated[str, Field(None)]
     ecmwf_input_observations: Annotated[str, Field(None)]
-    ecmwf_time_aggregation: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_time_aggregation: Annotated[str | list[str], Field(None)]
     ecmwf_statistic: Annotated[list[str], Field(None)]
     ecmwf_hydrological_year: Annotated[list[str], Field(None)]
     ecmwf_product_version: Annotated[str, Field(None)]
-    ecmwf_processing_level: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_processing_level: Annotated[str | list[str], Field(None)]
     ecmwf_sensor_and_algorithm: Annotated[list[str], Field(None)]
     ecmwf_sensor: Annotated[str, Field(None)]
-    ecmwf_region: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_region: Annotated[str | list[str], Field(None)]
     ecmwf_nominal_day: Annotated[list[str], Field(None)]
-    ecmwf_cdr_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_cdr_type: Annotated[str | list[str], Field(None)]
     ecmwf_satellite_mission: Annotated[list[str], Field(None)]
-    ecmwf_temporal_resolution: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_temporal_resolution: Annotated[str | list[str], Field(None)]
     ecmwf_temporal_aggregation: Annotated[str, Field(None)]
     ecmwf_leadtime_month: Annotated[list[str], Field(None)]
     ecmwf_processing_type: Annotated[str, Field(None)]
     ecmwf_variable_type: Annotated[str, Field(None)]
     ecmwf_horizontal_resolution: Annotated[str, Field(None)]
-    ecmwf_experiment: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_experiment: Annotated[str | list[str], Field(None)]
     ecmwf_rcm: Annotated[str, Field(None)]
     ecmwf_gcm: Annotated[str, Field(None)]
     ecmwf_ensemble_member: Annotated[list[str], Field(None)]
@@ -658,7 +658,7 @@ class EcmwfExtension(ProviderStacExtension):
 
     FIELDS: type[BaseModel] = EcmwfItemProperties
 
-    field_name_prefix: Optional[str] = "ecmwf"
+    field_name_prefix: str | None = "ecmwf"
 
 
 class UsgsFields(BaseModel):
@@ -674,7 +674,7 @@ class UsgsExtension(ProviderStacExtension):
 
     FIELDS: type[BaseModel] = UsgsFields
 
-    field_name_prefix: Optional[str] = "usgs"
+    field_name_prefix: str | None = "usgs"
 
 
 class WekeoFields(BaseModel):
@@ -699,7 +699,7 @@ class WekeoExtension(ProviderStacExtension):
 
     FIELDS: type[BaseModel] = WekeoFields
 
-    field_name_prefix: Optional[str] = "wekeo_main"
+    field_name_prefix: str | None = "wekeo_main"
 
 
 STAC_EXTENSIONS = [

@@ -23,7 +23,6 @@
 """EODAG package"""
 
 from importlib.metadata import PackageNotFoundError, version
-from typing import Optional
 
 try:
     __version__ = version(__name__)
@@ -41,7 +40,7 @@ __all__ = [
 ]
 
 # Lazy imports (PEP 562) — avoid loading heavy dependencies on ``import eodag``
-_LAZY_IMPORTS: dict[str, tuple[str, Optional[str]]] = {
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "EODataAccessGateway": (".api.core", "EODataAccessGateway"),
     "EODAGSettings": (".config", "EODAGSettings"),
     "EOProduct": (".api.product", "EOProduct"),
