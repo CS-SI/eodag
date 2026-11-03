@@ -26,6 +26,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Generator,
     Literal,
     Mapping,
     Optional,
@@ -615,7 +616,7 @@ class PluginConfig(yaml.YAMLObject):
         return item in self.__dict__
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Generator[Self, None, None]:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         return loader.construct_yaml_object(node, cls)
