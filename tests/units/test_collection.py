@@ -33,6 +33,99 @@ from tests.context import (
 )
 
 
+class TestCollectionModel(unittest.TestCase):
+    def test_collection_set_ids_and_alias(self):
+        """Collection ids and alias must be correctly set"""
+        collection = Collection(id="foo", alias="bar")
+
+        # The alias is the public id; _id retains the original configured id.
+        self.assertIsInstance(collection, Collection)
+        self.assertEqual(collection.id, "bar")
+        self.assertEqual(collection.alias, "bar")
+        self.assertEqual(collection._id, "foo")
+
+    def test_collection_wrong_id(self):
+        """A missing or invalid id must fail even when collection validation is disabled."""
+        # A missing id is required-field validation.
+        with self.assertRaises(ValidationError) as context:
+            Collection()
+
+        self.assertIn("id\n  Field required", str(context.exception))
+
+        # An integer id is rejected rather than coerced to a string.
+        with self.assertRaises(ValidationError) as context:
+            Collection(id=1)
+
+        self.assertIn("id\n  Input should be a valid string", str(context.exception))
+
+    def test_collection_wrong_spatial_extent(self):
+        """Invalid spatial extents must raise the custom validation error."""
+        # Each malformed bbox coordinate should be reported.
+        with self.assertLogs(level="DEBUG") as cm:
+            Collection.create(
+                validate_collections=True,
+                id="foo",
+                extent={
+                    "spatial": {
+                        "bbox": [
+                            [
+                                "not-a-lonmin",
+                                "not-a-latmin",
+                                "not-a-lonmax",
+                                "not-a-latmax",
+                            ]
+                        ]
+                    },
+                    "temporal": {
+                        "interval": [["2025-01-01T00:00:00Z", "2025-01-02T00:00:00Z"]]
+                    },
+                },
+            )
+
+        for coordinate in range(4):
+            self.assertIn(
+                (
+                    "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
+                    "union[float,int]].{}.float\\n  Input should be a valid number, unable to parse string as a number"
+                ).format(coordinate),
+                str(cm.output),
+            )
+
+    def test_collection_wrong_temporal_extent(self):
+        """Invalid temporal extents must raise the custom validation error."""
+        # Both endpoints of the interval should be reported.
+        with self.assertLogs(level="DEBUG") as cm:
+            Collection.create(
+                validate_collections=True,
+                id="foo",
+                extent={
+                    "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                    "temporal": {"interval": [["not-a-datetime", "not-a-datetime"]]},
+                },
+            )
+
+        for endpoint in range(2):
+            self.assertIn(
+                (
+                    "extent.temporal.interval.0.{}\\n  Input should be a valid datetime or date, "
+                    "invalid character in year"
+                ).format(endpoint),
+                str(cm.output),
+            )
+
+    def test_collection_missing_dag(self):
+        """Collection.search must raise an error if no dag is set."""
+        with self.assertRaises(RuntimeError) as context:
+            Collection(id="foo").search()
+        self.assertIn(
+            (
+                "Collection 'foo' needs EODataAccessGateway to perform this operation. "
+                "Create with: Collection.create_with_dag(dag, id='...')"
+            ),
+            str(context.exception),
+        )
+
+
 class TestCollection(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -59,24 +152,11 @@ class TestCollection(unittest.TestCase):
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
-    def test_collection_set_ids_and_alias(self):
-        """Collection ids and alias must be correctly set"""
-        collection = Collection(id="foo", alias="bar")
-
-        # check that id attribute has the same value as alias attribute
-        self.assertIsInstance(collection, Collection)
-        self.assertEqual(collection.id, "bar")
-        self.assertEqual(collection.alias, "bar")
-
-        # check that the internal id attribute is set to the original id
-        self.assertEqual(collection._id, "foo")
-
     def test_collection_enable_validation(self):
         """Collection validation logging defaults from EODataAccessGateway settings."""
         self.dag.settings.validate_collections = True
 
-        # try to create a collection with bad formatted attributes
-        # and check that logs have been emitted
+        # Invalid fields are logged, while valid fields remain on the created collection.
         with self.assertLogs(level="DEBUG") as cm:
             collection = Collection.create_with_dag(
                 self.dag, id="foo", platform=0, bar="bat"
@@ -86,107 +166,10 @@ class TestCollection(unittest.TestCase):
         self.assertIn("platform\\n  Input should be a valid string", str(cm.output))
         self.assertIn("bar\\n  Extra inputs are not permitted", str(cm.output))
 
-        # check that the collection has been created
-        # and that its incorrectly formatted attribute is set to None
-        # and its extra attribute is removed
         self.assertIsInstance(collection, Collection)
         self.assertEqual(collection.id, "foo")
         self.assertIsNone(collection.platform)
         self.assertFalse(getattr(collection, "bar", False))
-
-    def test_collection_wrong_id(self):
-        """Collection with a missing or wrong id must raise an error
-        even if validation of collections is disabled"""
-        # try to create a collection with a missing id
-        with self.assertRaises(ValidationError) as context:
-            Collection()
-
-        self.assertIn("id\n  Field required", str(context.exception))
-
-        # try to create a collection with a wrong id
-        with self.assertRaises(ValidationError) as context:
-            Collection(id=1)
-
-        self.assertIn("id\n  Input should be a valid string", str(context.exception))
-
-    def test_collection_wrong_spatial_extent(self):
-        """Collection with a spatial extent bbox in a wrong format
-        must raise the custom pydantic error from their field validator"""
-        # try to create a collection with wrong start and end temporal extent datetimes
-        # and check that logs have been emitted
-        with self.assertLogs(level="DEBUG") as cm:
-            Collection.create(
-                validate_collections=True,
-                id="foo",
-                extent={
-                    "spatial": {
-                        "bbox": [
-                            [
-                                "not-a-lonmin",
-                                "not-a-latmin",
-                                "not-a-lonmax",
-                                "not-a-latmax",
-                            ]
-                        ]
-                    },
-                    "temporal": {
-                        "interval": [["2025-01-01T00:00:00Z", "2025-01-02T00:00:00Z"]]
-                    },
-                },
-            )
-
-        self.assertIn(
-            (
-                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                "union[float,int]].0.float\\n  Input should be a valid number, unable to parse string as a number"
-            ),
-            str(cm.output),
-        )
-        self.assertIn(
-            (
-                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                "union[float,int]].1.float\\n  Input should be a valid number, unable to parse string as a number"
-            ),
-            str(cm.output),
-        )
-        self.assertIn(
-            (
-                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                "union[float,int]].2.float\\n  Input should be a valid number, unable to parse string as a number"
-            ),
-            str(cm.output),
-        )
-        self.assertIn(
-            (
-                "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
-                "union[float,int]].3.float\\n  Input should be a valid number, unable to parse string as a number"
-            ),
-            str(cm.output),
-        )
-
-    def test_collection_wrong_temporal_extent(self):
-        """Collection with a start or end temporal extent date in a wrong format
-        must raise the custom pydantic error from their field validator"""
-        # try to create a collection with wrong start and end temporal extent datetimes
-        # and check that logs have been emitted
-        with self.assertLogs(level="DEBUG") as cm:
-            Collection.create(
-                validate_collections=True,
-                id="foo",
-                extent={
-                    "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
-                    "temporal": {"interval": [["not-a-datetime", "not-a-datetime"]]},
-                },
-            )
-
-        self.assertIn(
-            "extent.temporal.interval.0.0\\n  Input should be a valid datetime or date, invalid character in year",
-            str(cm.output),
-        )
-        self.assertIn(
-            "extent.temporal.interval.0.1\\n  Input should be a valid datetime or date, invalid character in year",
-            str(cm.output),
-        )
 
     def test_collection_missing_dag(self):
         """Collection.search must raise an error if no dag is set"""

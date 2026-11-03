@@ -106,7 +106,6 @@ tutorials = [
 ]
 test = [
     "eodag[all-providers,csw]",
-    "faker",
     "moto[s3] >= 5",
     "mypy-boto3-s3",
     "packaging",

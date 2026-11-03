@@ -23,7 +23,6 @@ import random
 import shutil
 import string
 import tempfile
-import time
 import zipfile
 
 import geojson
@@ -621,7 +620,8 @@ class TestEOProduct(EODagTestBase):
             ),
             extract=False,
         )
-        progress_callback = ProgressCallback(disable=False)
+        # An immediate refresh makes the completion assertions deterministic without a delay.
+        progress_callback = ProgressCallback(disable=False, mininterval=0)
 
         # progress bar did not start
         self.assertEqual(progress_callback.n, 0)
@@ -635,10 +635,6 @@ class TestEOProduct(EODagTestBase):
 
         # should be product id cast to str
         self.assertEqual(progress_callback.desc, "12345")
-
-        # Progressbar need at least "progress_callback.mininterval" seconds, here 0.1 second
-        # Wait 0.2 to be sure progress ends
-        time.sleep(0.2)
 
         # progress bar finished
         self.assertEqual(progress_callback.initial, 0)

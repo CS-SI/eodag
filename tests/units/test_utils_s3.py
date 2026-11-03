@@ -189,6 +189,50 @@ class TestS3MockedIO(TestCase):
 
             self.assertEqual(mock_fetch.call_count, 5)
 
+    def test_chunks_from_s3_objects_chunk_count_and_worker_usage(self):
+        """Test that correct number of chunks are requested and workers are used efficiently."""
+
+        # Only file metadata is needed because fetch_range is mocked below.
+        data_map = {
+            "file1": b"A" * 25,  # 3 chunks (10 + 10 + 5)
+            "file2": b"B" * 30,  # 3 chunks (10 + 10 + 10)
+        }
+        range_size = 10
+
+        file_infos = []
+        for key, body in data_map.items():
+            fi = make_mock_fileinfo(key, len(body))
+            fi.data_start_offset = 0
+            file_infos.append(fi)
+
+        with patch(
+            "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
+        ) as mock_fetch:
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                result = _chunks_from_s3_objects(
+                    self.s3_client,
+                    file_infos,
+                    byte_range=(None, None),
+                    range_size=range_size,
+                    executor=executor,
+                )
+
+                for _ in result:
+                    pass
+
+            # The final partial range is a separate fetch, just like full ranges.
+            expected_calls = [
+                call("mybucket", "file1", 0, 9, self.s3_client),
+                call("mybucket", "file1", 10, 19, self.s3_client),
+                call("mybucket", "file1", 20, 24, self.s3_client),
+                call("mybucket", "file2", 0, 9, self.s3_client),
+                call("mybucket", "file2", 10, 19, self.s3_client),
+                call("mybucket", "file2", 20, 29, self.s3_client),
+            ]
+
+            self.assertEqual(mock_fetch.call_count, 6)
+            mock_fetch.assert_has_calls(expected_calls, any_order=True)
+
 
 class TestUtilsS3(TestCase):
     @classmethod
@@ -590,50 +634,6 @@ class TestUtilsS3(TestCase):
             chunks = b"".join(gen)
             self.assertEqual(idx, 0)
             self.assertEqual(chunks, data)
-
-    def test_chunks_from_s3_objects_chunk_count_and_worker_usage(self):
-        """Test that correct number of chunks are requested and workers are used efficiently."""
-
-        data_map = {
-            "file1": b"A" * 25,  # 3 chunks (10 + 10 + 5)
-            "file2": b"B" * 30,  # 3 chunks (10 + 10 + 10)
-        }
-        range_size = 10
-
-        file_infos = []
-        for key, body in data_map.items():
-            self.s3_client.put_object(Bucket="mybucket", Key=key, Body=body)
-            fi = make_mock_fileinfo(key, len(body))
-            fi.data_start_offset = 0
-            file_infos.append(fi)
-
-        with patch(
-            "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
-        ) as mock_fetch:
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                result = _chunks_from_s3_objects(
-                    self.s3_client,
-                    file_infos,
-                    byte_range=(None, None),
-                    range_size=range_size,
-                    executor=executor,
-                )
-
-                for _ in result:
-                    pass
-
-            # Each 10-byte chunk corresponds to one fetch_range call
-            expected_calls = [
-                call("mybucket", "file1", 0, 9, self.s3_client),
-                call("mybucket", "file1", 10, 19, self.s3_client),
-                call("mybucket", "file1", 20, 24, self.s3_client),
-                call("mybucket", "file2", 0, 9, self.s3_client),
-                call("mybucket", "file2", 10, 19, self.s3_client),
-                call("mybucket", "file2", 20, 29, self.s3_client),
-            ]
-
-            self.assertEqual(mock_fetch.call_count, 6)
-            mock_fetch.assert_has_calls(expected_calls, any_order=True)
 
     def test_prepare_file_in_zip(self):
         """Test _prepare_file_in_zip to ensure it sets the correct attributes for retrieving a file inside a ZIP."""
