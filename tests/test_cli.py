@@ -32,7 +32,6 @@ import responses
 import shapely
 import yaml
 from click.testing import CliRunner
-from faker import Faker
 from packaging import version
 from pydantic import Field
 
@@ -72,8 +71,6 @@ class TestEodagCli(unittest.TestCase):
     def setUp(self):
         super(TestEodagCli, self).setUp()
         self.runner = CliRunner()
-        self.faker = Faker()
-
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -172,8 +169,9 @@ class TestEodagCli(unittest.TestCase):
 
     def test_eodag_search_without_collection_arg(self):
         """Calling eodag search without -p | --collection should print the help message and return error code"""  # noqa
-        start_date = self.faker.date()
-        end_date = self.faker.date()
+        # Valid fixed dates keep the CLI help-path test deterministic.
+        start_date = "2020-01-01"
+        end_date = "2020-01-02"
         exit_code, output, error = self.eodag_command(
             ["search", "-s", start_date, "-e", end_date]
         )

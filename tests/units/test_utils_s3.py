@@ -3,7 +3,7 @@ import os
 import re
 import zipfile
 from unittest import TestCase
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 import boto3
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -44,6 +44,194 @@ def make_mock_fileinfo(
     fi.file_start_offset = file_start_offset
     fi.data_start_offset = data_start_offset
     return fi
+
+
+class TestComputeFileRanges(TestCase):
+    def test_compute_file_ranges(self):
+        """Test _compute_file_ranges to ensure it calculates correct byte ranges for files to download."""
+
+        range_size = 10
+
+        test_cases = [
+            {
+                "desc": "Full file, no byte_range limits (start=None, end=None)",
+                "file_info": make_mock_fileinfo("a", 50),
+                "byte_range": (None, None),
+                "expected": [
+                    (i, min(i + range_size - 1, 49)) for i in range(0, 50, range_size)
+                ],
+            },
+            {
+                "desc": "Partial overlap at start: range starts inside the file",
+                "file_info": make_mock_fileinfo("a", 50, 5, 100),
+                "byte_range": (110, 149),
+                "expected": [(15, 24), (25, 34), (35, 44), (45, 54)],
+            },
+            {
+                "desc": "Partial overlap at end: range ends inside the file",
+                "file_info": make_mock_fileinfo("a", 50, 0, 100),
+                "byte_range": (90, 120),
+                "expected": [(0, 9), (10, 19), (20, 20)],
+            },
+            {
+                "desc": "Range fully inside file",
+                "file_info": make_mock_fileinfo("a", 50, 0, 0),
+                "byte_range": (10, 29),
+                "expected": [(10, 19), (20, 29)],
+            },
+            {
+                "desc": "Range fully outside before file - should return None",
+                "file_info": make_mock_fileinfo("a", 50, 0, 100),
+                "byte_range": (0, 50),
+                "expected": None,
+            },
+            {
+                "desc": "Range fully outside after file - should return None",
+                "file_info": make_mock_fileinfo("a", 50, 0, 100),
+                "byte_range": (151, 200),
+                "expected": None,
+            },
+            {
+                "desc": "Open ended start range (None as start)",
+                "file_info": make_mock_fileinfo("a", 50, 2, 100),
+                "byte_range": (None, 105),
+                "expected": [(2, 7)],
+            },
+            {
+                "desc": "Open ended end range (None as end)",
+                "file_info": make_mock_fileinfo("a", 50, 2, 100),
+                "byte_range": (102, None),
+                "expected": [(4, 13), (14, 23), (24, 33), (34, 43), (44, 51)],
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(msg=case["desc"]):
+                result = _compute_file_ranges(
+                    case["file_info"], case["byte_range"], range_size
+                )
+                self.assertEqual(result, case["expected"])
+
+
+class TestS3MockedIO(TestCase):
+    def setUp(self):
+        self.s3_client = Mock(spec=[])
+
+    def test_s3_seekable_file_read_and_seek_contract(self):
+        stream = S3SeekableFile("mybucket", "file1.txt", self.s3_client, size=6)
+
+        with patch(
+            "eodag.utils.s3.fetch_range",
+            side_effect=lambda bucket, key, start, end, client: bytes(
+                range(start, end + 1)
+            ),
+        ) as fetch:
+            self.assertEqual(stream.read(0), b"")
+            self.assertEqual(stream.readinto(bytearray()), 0)
+            fetch.assert_not_called()
+
+            self.assertEqual(stream.read(2), b"\x00\x01")
+            buffer = bytearray(2)
+            self.assertEqual(stream.seek(0), 0)
+            self.assertEqual(stream.readinto(buffer), 2)
+            self.assertEqual(buffer, b"\x00\x01")
+            self.assertEqual(stream.seek(-1, io.SEEK_END), 5)
+            self.assertEqual(stream.read(-2), b"\x05")
+
+            self.assertEqual(stream.seek(8), 8)
+            self.assertEqual(stream.read(), b"")
+            self.assertEqual(fetch.call_count, 3)
+
+        with self.assertRaises(ValueError):
+            stream.seek(0, 99)
+        with self.assertRaises(OSError):
+            stream.seek(-1)
+
+        stream.close()
+        with self.assertRaises(ValueError):
+            stream.read()
+
+    def test_chunks_from_s3_objects_respects_backpressure_download_chunks(self):
+        """Test that chunk submissions are capped by BACKPRESSURE_DOWNLOAD_CHUNKS."""
+
+        range_size = 10
+
+        # Use file metadata only: fetch_range is mocked, so S3 object content is irrelevant.
+        fi = make_mock_fileinfo("file1", 50)
+        fi.data_start_offset = 0
+
+        class ImmediateExecutor:
+            def submit(self, fn, *args, **kwargs):
+                fut = Future()
+                fut.set_result(fn(*args, **kwargs))
+                return fut
+
+        with patch("eodag.utils.s3.BACKPRESSURE_DOWNLOAD_CHUNKS", 2):
+            with patch(
+                "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
+            ) as mock_fetch:
+                executor = ImmediateExecutor()
+                result = _chunks_from_s3_objects(
+                    self.s3_client,
+                    [fi],
+                    byte_range=(None, None),
+                    range_size=range_size,
+                    executor=executor,
+                )
+
+                # First iteration triggers initial submissions, capped by backpressure.
+                _, gen = next(result)
+                self.assertEqual(mock_fetch.call_count, 2)
+
+                # Consuming the stream releases slots and allows remaining chunk submissions.
+                chunks = b"".join(gen)
+                self.assertEqual(chunks, b"X" * fi.size)
+
+            self.assertEqual(mock_fetch.call_count, 5)
+
+    def test_chunks_from_s3_objects_chunk_count_and_worker_usage(self):
+        """Test that correct number of chunks are requested and workers are used efficiently."""
+
+        # Only file metadata is needed because fetch_range is mocked below.
+        data_map = {
+            "file1": b"A" * 25,  # 3 chunks (10 + 10 + 5)
+            "file2": b"B" * 30,  # 3 chunks (10 + 10 + 10)
+        }
+        range_size = 10
+
+        file_infos = []
+        for key, body in data_map.items():
+            fi = make_mock_fileinfo(key, len(body))
+            fi.data_start_offset = 0
+            file_infos.append(fi)
+
+        with patch(
+            "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
+        ) as mock_fetch:
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                result = _chunks_from_s3_objects(
+                    self.s3_client,
+                    file_infos,
+                    byte_range=(None, None),
+                    range_size=range_size,
+                    executor=executor,
+                )
+
+                for _ in result:
+                    pass
+
+            # The final partial range is a separate fetch, just like full ranges.
+            expected_calls = [
+                call("mybucket", "file1", 0, 9, self.s3_client),
+                call("mybucket", "file1", 10, 19, self.s3_client),
+                call("mybucket", "file1", 20, 24, self.s3_client),
+                call("mybucket", "file2", 0, 9, self.s3_client),
+                call("mybucket", "file2", 10, 19, self.s3_client),
+                call("mybucket", "file2", 20, 29, self.s3_client),
+            ]
+
+            self.assertEqual(mock_fetch.call_count, 6)
+            mock_fetch.assert_has_calls(expected_calls, any_order=True)
 
 
 class TestUtilsS3(TestCase):
@@ -90,7 +278,7 @@ class TestUtilsS3(TestCase):
     def tearDownClass(cls):
         cls.mock_aws.stop()
 
-    def setUp(self):
+    def _setup_product_and_auth(self):
         self.prod = EOProduct("dummy", dict(geometry="POINT (0 0)", id="foo"))
         self.auth_plugin = AwsAuth(
             "dummy",
@@ -199,42 +387,9 @@ class TestUtilsS3(TestCase):
             self.assertEqual(zip_file.read("one.txt"), b"first")
             self.assertEqual(zip_file.read("two.txt"), b"second")
 
-    def test_s3_seekable_file_read_and_seek_contract(self):
-        stream = S3SeekableFile("mybucket", "file1.txt", self.s3_client, size=6)
-
-        with patch(
-            "eodag.utils.s3.fetch_range",
-            side_effect=lambda bucket, key, start, end, client: bytes(
-                range(start, end + 1)
-            ),
-        ) as fetch:
-            self.assertEqual(stream.read(0), b"")
-            self.assertEqual(stream.readinto(bytearray()), 0)
-            fetch.assert_not_called()
-
-            self.assertEqual(stream.read(2), b"\x00\x01")
-            buffer = bytearray(2)
-            self.assertEqual(stream.seek(0), 0)
-            self.assertEqual(stream.readinto(buffer), 2)
-            self.assertEqual(buffer, b"\x00\x01")
-            self.assertEqual(stream.seek(-1, io.SEEK_END), 5)
-            self.assertEqual(stream.read(-2), b"\x05")
-
-            self.assertEqual(stream.seek(8), 8)
-            self.assertEqual(stream.read(), b"")
-            self.assertEqual(fetch.call_count, 3)
-
-        with self.assertRaises(ValueError):
-            stream.seek(0, 99)
-        with self.assertRaises(OSError):
-            stream.seek(-1)
-
-        stream.close()
-        with self.assertRaises(ValueError):
-            stream.read()
-
     def test_utils_s3_list_files_in_s3_prefix(self):
         """list_files_in_s3_prefix must exclude directory markers and siblings."""
+        self._setup_product_and_auth()
         self.s3_client.put_object(Bucket="mybucket", Key="test-prefix", Body=b"")
         self.s3_client.put_object(Bucket="mybucket", Key="test-prefix/", Body=b"")
         self.s3_client.put_object(
@@ -252,6 +407,7 @@ class TestUtilsS3(TestCase):
 
     def test_utils_s3_update_assets_from_s3_zip(self):
         """update_assets_from_s3 must update the assets of a product from a zipped object stored in S3"""
+        self._setup_product_and_auth()
         update_assets_from_s3(
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/product.zip"
         )
@@ -288,6 +444,7 @@ class TestUtilsS3(TestCase):
 
     def test_utils_s3_update_assets_from_s3(self):
         """update_assets_from_s3 must update the assets of a product from a folder stored in S3"""
+        self._setup_product_and_auth()
         update_assets_from_s3(
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/unzipped"
         )
@@ -478,88 +635,6 @@ class TestUtilsS3(TestCase):
             self.assertEqual(idx, 0)
             self.assertEqual(chunks, data)
 
-    def test_chunks_from_s3_objects_chunk_count_and_worker_usage(self):
-        """Test that correct number of chunks are requested and workers are used efficiently."""
-
-        data_map = {
-            "file1": b"A" * 25,  # 3 chunks (10 + 10 + 5)
-            "file2": b"B" * 30,  # 3 chunks (10 + 10 + 10)
-        }
-        range_size = 10
-
-        file_infos = []
-        for key, body in data_map.items():
-            self.s3_client.put_object(Bucket="mybucket", Key=key, Body=body)
-            fi = make_mock_fileinfo(key, len(body))
-            fi.data_start_offset = 0
-            file_infos.append(fi)
-
-        with patch(
-            "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
-        ) as mock_fetch:
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                result = _chunks_from_s3_objects(
-                    self.s3_client,
-                    file_infos,
-                    byte_range=(None, None),
-                    range_size=range_size,
-                    executor=executor,
-                )
-
-                for _ in result:
-                    pass
-
-            # Each 10-byte chunk corresponds to one fetch_range call
-            expected_calls = [
-                call("mybucket", "file1", 0, 9, self.s3_client),
-                call("mybucket", "file1", 10, 19, self.s3_client),
-                call("mybucket", "file1", 20, 24, self.s3_client),
-                call("mybucket", "file2", 0, 9, self.s3_client),
-                call("mybucket", "file2", 10, 19, self.s3_client),
-                call("mybucket", "file2", 20, 29, self.s3_client),
-            ]
-
-            self.assertEqual(mock_fetch.call_count, 6)
-            mock_fetch.assert_has_calls(expected_calls, any_order=True)
-
-    def test_chunks_from_s3_objects_respects_backpressure_download_chunks(self):
-        """Test that chunk submissions are capped by BACKPRESSURE_DOWNLOAD_CHUNKS."""
-
-        range_size = 10
-
-        # Use file metadata only: fetch_range is mocked, so S3 object content is irrelevant.
-        fi = make_mock_fileinfo("file1", 50)
-        fi.data_start_offset = 0
-
-        class ImmediateExecutor:
-            def submit(self, fn, *args, **kwargs):
-                fut = Future()
-                fut.set_result(fn(*args, **kwargs))
-                return fut
-
-        with patch("eodag.utils.s3.BACKPRESSURE_DOWNLOAD_CHUNKS", 2):
-            with patch(
-                "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
-            ) as mock_fetch:
-                executor = ImmediateExecutor()
-                result = _chunks_from_s3_objects(
-                    self.s3_client,
-                    [fi],
-                    byte_range=(None, None),
-                    range_size=range_size,
-                    executor=executor,
-                )
-
-                # First iteration triggers initial submissions, capped by backpressure.
-                _, gen = next(result)
-                self.assertEqual(mock_fetch.call_count, 2)
-
-                # Consuming the stream releases slots and allows remaining chunk submissions.
-                chunks = b"".join(gen)
-                self.assertEqual(chunks, b"X" * fi.size)
-
-            self.assertEqual(mock_fetch.call_count, 5)
-
     def test_prepare_file_in_zip(self):
         """Test _prepare_file_in_zip to ensure it sets the correct attributes for retrieving a file inside a ZIP."""
 
@@ -578,71 +653,6 @@ class TestUtilsS3(TestCase):
         self.assertEqual(fi.zip_filepath, "foo.txt")
         self.assertGreater(fi.data_start_offset, 0)
         self.assertEqual(fi.size, len("hello"))
-
-    def test_compute_file_ranges(self):
-        """Test _compute_file_ranges to ensure it calculates correct byte ranges for files to download."""
-
-        range_size = 10
-
-        test_cases = [
-            {
-                "desc": "Full file, no byte_range limits (start=None, end=None)",
-                "file_info": make_mock_fileinfo("a", 50),
-                "byte_range": (None, None),
-                "expected": [
-                    (i, min(i + range_size - 1, 49)) for i in range(0, 50, range_size)
-                ],
-            },
-            {
-                "desc": "Partial overlap at start: range starts inside the file",
-                "file_info": make_mock_fileinfo("a", 50, 5, 100),
-                "byte_range": (110, 149),
-                "expected": [(15, 24), (25, 34), (35, 44), (45, 54)],
-            },
-            {
-                "desc": "Partial overlap at end: range ends inside the file",
-                "file_info": make_mock_fileinfo("a", 50, 0, 100),
-                "byte_range": (90, 120),
-                "expected": [(0, 9), (10, 19), (20, 20)],
-            },
-            {
-                "desc": "Range fully inside file",
-                "file_info": make_mock_fileinfo("a", 50, 0, 0),
-                "byte_range": (10, 29),
-                "expected": [(10, 19), (20, 29)],
-            },
-            {
-                "desc": "Range fully outside before file - should return None",
-                "file_info": make_mock_fileinfo("a", 50, 0, 100),
-                "byte_range": (0, 50),
-                "expected": None,
-            },
-            {
-                "desc": "Range fully outside after file - should return None",
-                "file_info": make_mock_fileinfo("a", 50, 0, 100),
-                "byte_range": (151, 200),
-                "expected": None,
-            },
-            {
-                "desc": "Open ended start range (None as start)",
-                "file_info": make_mock_fileinfo("a", 50, 2, 100),
-                "byte_range": (None, 105),
-                "expected": [(2, 7)],
-            },
-            {
-                "desc": "Open ended end range (None as end)",
-                "file_info": make_mock_fileinfo("a", 50, 2, 100),
-                "byte_range": (102, None),
-                "expected": [(4, 13), (14, 23), (24, 33), (34, 43), (44, 51)],
-            },
-        ]
-
-        for case in test_cases:
-            with self.subTest(msg=case["desc"]):
-                result = _compute_file_ranges(
-                    case["file_info"], case["byte_range"], range_size
-                )
-                self.assertEqual(result, case["expected"])
 
     def test_stream_download_from_s3(self):
         test_cases = [
