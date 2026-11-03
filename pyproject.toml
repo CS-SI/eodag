@@ -20,7 +20,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,7 +31,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "annotated-types >= 0.6.0",
     "boto3 >= 1.16.0",
@@ -102,7 +101,7 @@ tutorials = [
     "rasterio",
     "netcdf4",
     "cartopy",
-    "covjsonkit >= 0.0.18; python_version > '3.9'",
+    "covjsonkit >= 0.0.18",
 ]
 test = [
     "eodag[all-providers,csw]",
