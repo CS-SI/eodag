@@ -36,7 +36,7 @@ from pydantic import (
 from pydantic.fields import FieldInfo
 from stac_pydantic.item import ItemProperties
 from stac_pydantic.shared import Provider
-from typing_extensions import Self
+from typing_extensions import Self, TypeForm
 
 from eodag.types.stac_extensions import STAC_EXTENSIONS, BaseStacExtension
 from eodag.utils.dates import to_iso_utc_string
@@ -274,10 +274,13 @@ class CommonStacMetadata(ItemProperties):
             if value is None:
                 continue
             try:
-                annotated_type = (
-                    Annotated[tuple([field.annotation] + field.metadata)]
-                    if field.metadata
-                    else field.annotation
+                annotated_type = cast(
+                    TypeForm[Any],
+                    (
+                        Annotated[tuple([field.annotation] + field.metadata)]
+                        if field.metadata
+                        else field.annotation
+                    ),
                 )
                 TypeAdapter(annotated_type).validate_python(value)
                 valid[matched_key] = value

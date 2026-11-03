@@ -23,7 +23,16 @@ import tempfile
 import warnings
 from importlib.resources import files as res_files
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Generator,
+    Literal,
+    Optional,
+    Union,
+    cast,
+)
 
 import orjson
 import requests
@@ -859,7 +868,7 @@ class PluginConfig(yaml.YAMLObject):
         return item in self.__dict__
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Generator[Self, None, None]:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
         cls.validate(
             tuple(node_key.value for node_key, _ in node.value), check_type=False

@@ -25,6 +25,7 @@ from textwrap import shorten
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generator,
     Iterator,
     Literal,
     Mapping,
@@ -128,7 +129,7 @@ class ProviderConfig(yaml.YAMLObject):
         return key in self.__dict__
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Generator[Self, None, None]:
         """Build a :class:`~eodag.api.provider.ProviderConfig` from Yaml"""
         cls.validate(
             tuple(node_key.value for node_key, _ in node.value), check_name=False

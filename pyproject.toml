@@ -20,7 +20,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,7 +31,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "annotated-types >= 0.6.0",
     "boto3 >= 1.16.0",
@@ -43,8 +42,8 @@ dependencies = [
     "geojson >= 2.5.0",
     "importlib_metadata >= 5.0",
     "jsonpath-ng != 1.8.0, >= 1.6.0",
-    "lxml >= 4.6.1",
-    "orjson >= 3.4.0",
+    "lxml >= 4.6.5",
+    "orjson >= 3.4.7",
     "pydantic >= 2.13.0",
     "pydantic-settings>=2.11.0",
     "pydantic_core >= 2.46.0",
@@ -53,7 +52,7 @@ dependencies = [
     "pyshp >= 2.0.0",
     "pystac >= 1.9.0",
     "python-dateutil >= 2.7.0",
-    "PyYAML >= 5.4",
+    "PyYAML >= 6.0",
     "requests >= 2.32.3",
     "shapely >= 2.0.6",
     "stac-pydantic >= 3.5.0",
@@ -102,7 +101,7 @@ tutorials = [
     "rasterio",
     "netcdf4",
     "cartopy",
-    "covjsonkit >= 0.0.18; python_version > '3.9'",
+    "covjsonkit >= 0.0.18",
 ]
 test = [
     "eodag[all-providers,csw]",
