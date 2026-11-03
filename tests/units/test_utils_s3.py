@@ -3,7 +3,7 @@ import os
 import re
 import zipfile
 from unittest import TestCase
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 import boto3
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -113,6 +113,83 @@ class TestComputeFileRanges(TestCase):
                 self.assertEqual(result, case["expected"])
 
 
+class TestS3MockedIO(TestCase):
+    def setUp(self):
+        self.s3_client = Mock(spec=[])
+
+    def test_s3_seekable_file_read_and_seek_contract(self):
+        stream = S3SeekableFile("mybucket", "file1.txt", self.s3_client, size=6)
+
+        with patch(
+            "eodag.utils.s3.fetch_range",
+            side_effect=lambda bucket, key, start, end, client: bytes(
+                range(start, end + 1)
+            ),
+        ) as fetch:
+            self.assertEqual(stream.read(0), b"")
+            self.assertEqual(stream.readinto(bytearray()), 0)
+            fetch.assert_not_called()
+
+            self.assertEqual(stream.read(2), b"\x00\x01")
+            buffer = bytearray(2)
+            self.assertEqual(stream.seek(0), 0)
+            self.assertEqual(stream.readinto(buffer), 2)
+            self.assertEqual(buffer, b"\x00\x01")
+            self.assertEqual(stream.seek(-1, io.SEEK_END), 5)
+            self.assertEqual(stream.read(-2), b"\x05")
+
+            self.assertEqual(stream.seek(8), 8)
+            self.assertEqual(stream.read(), b"")
+            self.assertEqual(fetch.call_count, 3)
+
+        with self.assertRaises(ValueError):
+            stream.seek(0, 99)
+        with self.assertRaises(OSError):
+            stream.seek(-1)
+
+        stream.close()
+        with self.assertRaises(ValueError):
+            stream.read()
+
+    def test_chunks_from_s3_objects_respects_backpressure_download_chunks(self):
+        """Test that chunk submissions are capped by BACKPRESSURE_DOWNLOAD_CHUNKS."""
+
+        range_size = 10
+
+        # Use file metadata only: fetch_range is mocked, so S3 object content is irrelevant.
+        fi = make_mock_fileinfo("file1", 50)
+        fi.data_start_offset = 0
+
+        class ImmediateExecutor:
+            def submit(self, fn, *args, **kwargs):
+                fut = Future()
+                fut.set_result(fn(*args, **kwargs))
+                return fut
+
+        with patch("eodag.utils.s3.BACKPRESSURE_DOWNLOAD_CHUNKS", 2):
+            with patch(
+                "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
+            ) as mock_fetch:
+                executor = ImmediateExecutor()
+                result = _chunks_from_s3_objects(
+                    self.s3_client,
+                    [fi],
+                    byte_range=(None, None),
+                    range_size=range_size,
+                    executor=executor,
+                )
+
+                # First iteration triggers initial submissions, capped by backpressure.
+                _, gen = next(result)
+                self.assertEqual(mock_fetch.call_count, 2)
+
+                # Consuming the stream releases slots and allows remaining chunk submissions.
+                chunks = b"".join(gen)
+                self.assertEqual(chunks, b"X" * fi.size)
+
+            self.assertEqual(mock_fetch.call_count, 5)
+
+
 class TestUtilsS3(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -157,7 +234,7 @@ class TestUtilsS3(TestCase):
     def tearDownClass(cls):
         cls.mock_aws.stop()
 
-    def setUp(self):
+    def _setup_product_and_auth(self):
         self.prod = EOProduct("dummy", dict(geometry="POINT (0 0)", id="foo"))
         self.auth_plugin = AwsAuth(
             "dummy",
@@ -266,42 +343,9 @@ class TestUtilsS3(TestCase):
             self.assertEqual(zip_file.read("one.txt"), b"first")
             self.assertEqual(zip_file.read("two.txt"), b"second")
 
-    def test_s3_seekable_file_read_and_seek_contract(self):
-        stream = S3SeekableFile("mybucket", "file1.txt", self.s3_client, size=6)
-
-        with patch(
-            "eodag.utils.s3.fetch_range",
-            side_effect=lambda bucket, key, start, end, client: bytes(
-                range(start, end + 1)
-            ),
-        ) as fetch:
-            self.assertEqual(stream.read(0), b"")
-            self.assertEqual(stream.readinto(bytearray()), 0)
-            fetch.assert_not_called()
-
-            self.assertEqual(stream.read(2), b"\x00\x01")
-            buffer = bytearray(2)
-            self.assertEqual(stream.seek(0), 0)
-            self.assertEqual(stream.readinto(buffer), 2)
-            self.assertEqual(buffer, b"\x00\x01")
-            self.assertEqual(stream.seek(-1, io.SEEK_END), 5)
-            self.assertEqual(stream.read(-2), b"\x05")
-
-            self.assertEqual(stream.seek(8), 8)
-            self.assertEqual(stream.read(), b"")
-            self.assertEqual(fetch.call_count, 3)
-
-        with self.assertRaises(ValueError):
-            stream.seek(0, 99)
-        with self.assertRaises(OSError):
-            stream.seek(-1)
-
-        stream.close()
-        with self.assertRaises(ValueError):
-            stream.read()
-
     def test_utils_s3_list_files_in_s3_prefix(self):
         """list_files_in_s3_prefix must exclude directory markers and siblings."""
+        self._setup_product_and_auth()
         self.s3_client.put_object(Bucket="mybucket", Key="test-prefix", Body=b"")
         self.s3_client.put_object(Bucket="mybucket", Key="test-prefix/", Body=b"")
         self.s3_client.put_object(
@@ -319,6 +363,7 @@ class TestUtilsS3(TestCase):
 
     def test_utils_s3_update_assets_from_s3_zip(self):
         """update_assets_from_s3 must update the assets of a product from a zipped object stored in S3"""
+        self._setup_product_and_auth()
         update_assets_from_s3(
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/product.zip"
         )
@@ -355,6 +400,7 @@ class TestUtilsS3(TestCase):
 
     def test_utils_s3_update_assets_from_s3(self):
         """update_assets_from_s3 must update the assets of a product from a folder stored in S3"""
+        self._setup_product_and_auth()
         update_assets_from_s3(
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/unzipped"
         )
@@ -588,44 +634,6 @@ class TestUtilsS3(TestCase):
 
             self.assertEqual(mock_fetch.call_count, 6)
             mock_fetch.assert_has_calls(expected_calls, any_order=True)
-
-    def test_chunks_from_s3_objects_respects_backpressure_download_chunks(self):
-        """Test that chunk submissions are capped by BACKPRESSURE_DOWNLOAD_CHUNKS."""
-
-        range_size = 10
-
-        # Use file metadata only: fetch_range is mocked, so S3 object content is irrelevant.
-        fi = make_mock_fileinfo("file1", 50)
-        fi.data_start_offset = 0
-
-        class ImmediateExecutor:
-            def submit(self, fn, *args, **kwargs):
-                fut = Future()
-                fut.set_result(fn(*args, **kwargs))
-                return fut
-
-        with patch("eodag.utils.s3.BACKPRESSURE_DOWNLOAD_CHUNKS", 2):
-            with patch(
-                "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
-            ) as mock_fetch:
-                executor = ImmediateExecutor()
-                result = _chunks_from_s3_objects(
-                    self.s3_client,
-                    [fi],
-                    byte_range=(None, None),
-                    range_size=range_size,
-                    executor=executor,
-                )
-
-                # First iteration triggers initial submissions, capped by backpressure.
-                _, gen = next(result)
-                self.assertEqual(mock_fetch.call_count, 2)
-
-                # Consuming the stream releases slots and allows remaining chunk submissions.
-                chunks = b"".join(gen)
-                self.assertEqual(chunks, b"X" * fi.size)
-
-            self.assertEqual(mock_fetch.call_count, 5)
 
     def test_prepare_file_in_zip(self):
         """Test _prepare_file_in_zip to ensure it sets the correct attributes for retrieving a file inside a ZIP."""
