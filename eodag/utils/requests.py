@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -31,8 +31,8 @@ logger = logging.getLogger("eodag.utils.requests")
 
 def fetch_json(
     url: str,
-    req_session: Optional[requests.Session] = None,
-    auth: Optional[requests.auth.AuthBase] = None,
+    req_session: requests.Session | None = None,
+    auth: requests.auth.AuthBase | None = None,
     timeout: float = HTTP_REQ_TIMEOUT,
 ) -> Any:
     """

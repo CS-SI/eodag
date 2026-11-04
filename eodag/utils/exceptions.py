@@ -20,7 +20,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
-    from typing import Optional
 
     from typing_extensions import Doc, Self
 
@@ -87,10 +86,10 @@ class RequestError(EodagError):
     """An error indicating that a request has failed. Usually eodag functions
     and methods should catch and skip this"""
 
-    status_code: Annotated[Optional[int], Doc("HTTP status code")] = None
+    status_code: Annotated[int | None, Doc("HTTP status code")] = None
 
     @classmethod
-    def from_error(cls, error: Exception, msg: Optional[str] = None) -> Self:
+    def from_error(cls, error: Exception, msg: str | None = None) -> Self:
         """Generate a RequestError from an Exception"""
         status_code = getattr(error, "code", None)
         text = getattr(error, "msg", None)
@@ -117,7 +116,7 @@ class ValidationError(RequestError):
         self.parameters = parameters
 
     @classmethod
-    def from_error(cls, error: Exception, msg: Optional[str] = None) -> Self:
+    def from_error(cls, error: Exception, msg: str | None = None) -> Self:
         """Override parent from_error to handle ValidationError specificities."""
         setattr(error, "msg", msg)
         validation_error = super().from_error(error)
@@ -132,7 +131,7 @@ class TimeOutError(RequestError):
     """An error indicating that a timeout has occurred"""
 
     def __init__(
-        self, exception: Optional[Exception] = None, timeout: Optional[float] = None
+        self, exception: Exception | None = None, timeout: float | None = None
     ) -> None:
         url = getattr(getattr(exception, "request", None), "url", None)
         timeout_msg = f"({timeout}s)" if timeout else ""

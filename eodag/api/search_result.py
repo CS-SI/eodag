@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator
 
 import geojson
 from pystac import ItemCollection
@@ -68,12 +68,12 @@ class SearchResult(UserList[EOProduct]):
     def __init__(
         self,
         products: list[EOProduct],
-        number_matched: Optional[int] = None,
-        errors: Optional[list[tuple[str, Exception]]] = None,
-        search_params: Optional[dict[str, Any]] = None,
-        next_page_token: Optional[str] = None,
-        next_page_token_key: Optional[str] = None,
-        raise_errors: Optional[bool] = False,
+        number_matched: int | None = None,
+        errors: list[tuple[str, Exception]] | None = None,
+        search_params: dict[str, Any] | None = None,
+        next_page_token: str | None = None,
+        next_page_token_key: str | None = None,
+        raise_errors: bool | None = False,
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched
@@ -82,7 +82,7 @@ class SearchResult(UserList[EOProduct]):
         self.next_page_token = next_page_token
         self.next_page_token_key = next_page_token_key
         self.raise_errors = raise_errors
-        self._dag: Optional["EODataAccessGateway"] = None
+        self._dag: "EODataAccessGateway" | None = None
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -95,7 +95,7 @@ class SearchResult(UserList[EOProduct]):
         return SearchResult(crunched_results)
 
     def filter_date(
-        self, start: Optional[str] = None, end: Optional[str] = None
+        self, start: str | None = None, end: str | None = None
     ) -> SearchResult:
         """Filter products by date.
 
@@ -111,7 +111,7 @@ class SearchResult(UserList[EOProduct]):
         return self.crunch(FilterDate(dict(start=start, end=end)))
 
     def filter_latest_intersect(
-        self, geometry: Union[dict[str, Any], BaseGeometry, Any]
+        self, geometry: dict[str, Any] | BaseGeometry | Any
     ) -> SearchResult:
         """Filter latest products (the ones with a the highest start date) that intersect search extent.
 
@@ -188,7 +188,7 @@ class SearchResult(UserList[EOProduct]):
     def from_dict(
         cls,
         feature_collection: dict[str, Any],
-        dag: Optional[EODataAccessGateway] = None,
+        dag: EODataAccessGateway | None = None,
     ) -> SearchResult:
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
 
@@ -223,7 +223,7 @@ class SearchResult(UserList[EOProduct]):
     def from_file(
         cls,
         filepath: str,
-        dag: Optional[EODataAccessGateway] = None,
+        dag: EODataAccessGateway | None = None,
     ) -> SearchResult:
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from a geojson file
 
@@ -240,7 +240,7 @@ class SearchResult(UserList[EOProduct]):
     def from_pystac(
         cls,
         item_collection: ItemCollection,
-        dag: Optional[EODataAccessGateway] = None,
+        dag: EODataAccessGateway | None = None,
     ) -> SearchResult:
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from a pystac ItemCollection
 
@@ -474,8 +474,8 @@ class RawSearchResult(UserList[dict[str, Any]]):
     query_params: dict[str, Any]
     collection_def_params: dict[str, Any]
     search_params: dict[str, Any]
-    next_page_token: Optional[str] = None
-    next_page_token_key: Optional[str] = None
+    next_page_token: str | None = None
+    next_page_token_key: str | None = None
 
     def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

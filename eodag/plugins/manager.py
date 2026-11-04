@@ -21,10 +21,9 @@ import logging
 import pathlib
 import re
 from collections.abc import Iterator
+from importlib import metadata
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
-
-import importlib_metadata
+from typing import TYPE_CHECKING, Any, cast
 
 from eodag.api.provider import ProvidersDict
 from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, PluginConfig, load_config
@@ -89,9 +88,7 @@ class PluginManager:
             # have it discovered as long as they declare an entry point of the type
             # 'eodag.plugins.search' for example in its setup script. See the setup
             # script of eodag for an example of how to do this.
-            for entry_point in importlib_metadata.entry_points(
-                group=f"eodag.plugins.{topic}"
-            ):
+            for entry_point in metadata.entry_points(group=f"eodag.plugins.{topic}"):
                 try:
                     entry_point.load()
                 except ModuleNotFoundError:
@@ -122,7 +119,7 @@ class PluginManager:
 
     def _get_external_provider_config_paths(
         self,
-        entry_point: importlib_metadata.EntryPoint,
+        entry_point: metadata.EntryPoint,
     ) -> list[pathlib.Path]:
         """Return provider config paths exposed by an external plugin distribution."""
         config_paths: list[pathlib.Path] = []
@@ -162,7 +159,7 @@ class PluginManager:
 
         return config_paths
 
-    def rebuild(self, providers: Optional[ProvidersDict] = None) -> None:
+    def rebuild(self, providers: ProvidersDict | None = None) -> None:
         """(Re)Build plugin manager mapping and cache"""
         if providers is not None:
             self.providers = providers
@@ -211,8 +208,8 @@ class PluginManager:
         self.providers.check_supported(provider, include_groups=include_groups)
 
     def get_search_plugins(
-        self, collection: Optional[str] = None, provider: Optional[str] = None
-    ) -> Iterator[Union[Search, Api]]:
+        self, collection: str | None = None, provider: str | None = None
+    ) -> Iterator[Search | Api]:
         """Build and return all the search plugins supporting the given collection,
         ordered by highest priority, or the search plugin of the given provider
 
@@ -226,8 +223,8 @@ class PluginManager:
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
 
-        def get_plugin() -> Union[Search, Api]:
-            plugin: Union[Search, Api]
+        def get_plugin() -> Search | Api:
+            plugin: Search | Api
             if search := getattr(config, "search", None):
                 config.search.products = config.products
                 config.search.priority = config.priority
@@ -242,7 +239,7 @@ class PluginManager:
                 )
             return plugin
 
-        configs: Optional[list[ProviderConfig]]
+        configs: list[ProviderConfig] | None
         if collection:
             configs = self.collection_to_provider_config_map.get(collection)
             if not configs:
@@ -269,7 +266,7 @@ class PluginManager:
         for config in sorted(configs, key=attrgetter("priority"), reverse=True):
             yield get_plugin()
 
-    def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
+    def get_download_plugin(self, product: EOProduct) -> Download | Api:
         """Build and return the download plugin capable of downloading the given
         product.
 
@@ -297,8 +294,8 @@ class PluginManager:
         return plugin
 
     def get_auth_plugin(
-        self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
-    ) -> Optional[Authentication]:
+        self, associated_plugin: PluginTopic, product: EOProduct | None = None
+    ) -> Authentication | None:
         """Build and return the authentication plugin associated to the given
         search/download plugin
 
@@ -361,8 +358,8 @@ class PluginManager:
     def get_auth_plugins(
         self,
         provider: str,
-        matching_url: Optional[str] = None,
-        matching_conf: Optional[PluginConfig] = None,
+        matching_url: str | None = None,
+        matching_conf: PluginConfig | None = None,
     ) -> Iterator[Authentication]:
         """Build and return authentication plugins matching the given criteria.
 
@@ -375,12 +372,12 @@ class PluginManager:
         :param matching_conf: configuration to compare with plugin matching_conf
         :returns: Authentication plugins matching the given criteria
         """
-        auth_conf: Optional[PluginConfig] = None
+        auth_conf: PluginConfig | None = None
 
         def _is_auth_plugin_matching(
             auth_conf: PluginConfig,
-            matching_url: Optional[str],
-            matching_conf: Optional[PluginConfig],
+            matching_url: str | None,
+            matching_conf: PluginConfig | None,
         ) -> bool:
             plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
             if matching_conf and (
@@ -429,9 +426,9 @@ class PluginManager:
     def get_auth(
         self,
         provider: str,
-        matching_url: Optional[str] = None,
-        matching_conf: Optional[PluginConfig] = None,
-    ) -> Optional[Union[AuthBase, S3ServiceResource]]:
+        matching_url: str | None = None,
+        matching_conf: PluginConfig | None = None,
+    ) -> AuthBase | S3ServiceResource | None:
         """Authenticate and return the authenticated object for the first matching
         authentication plugin
 
@@ -498,7 +495,7 @@ class PluginManager:
         provider: str,
         plugin_conf: PluginConfig,
         topic_class: type[PluginTopic],
-    ) -> Union[Api, Search, Download, Authentication, Crunch]:
+    ) -> Api | Search | Download | Authentication | Crunch:
         """Build the plugin of the given topic with the given plugin configuration and
         registered as the given provider
 
@@ -526,7 +523,7 @@ class PluginManager:
         plugin_class = EODAGPluginMount.get_plugin_by_class_name(
             topic_class, plugin_conf.type
         )
-        plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
+        plugin: Api | Search | Download | Authentication | Crunch = plugin_class(
             provider, plugin_conf
         )
         self._built_plugins_cache[(provider, topic_class.__name__, auth_match_md5)] = (

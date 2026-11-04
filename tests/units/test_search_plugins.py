@@ -25,7 +25,7 @@ import unittest
 from copy import deepcopy as copy_deepcopy
 from importlib import import_module
 from pathlib import Path
-from types import SimpleNamespace
+from types import SimpleNamespace, UnionType
 from typing import Annotated, Literal, Union, get_args, get_origin
 from unittest import mock
 from unittest.mock import call
@@ -2874,7 +2874,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         annotated_type = queryables_dedl["geom"]
         args = get_args(annotated_type)
         base_type = args[0]
-        self.assertEqual(get_origin(base_type), Union)
+        self.assertIn(get_origin(base_type), (Union, UnionType))
         union_args = get_args(base_type)
         self.assertIn(str, union_args)
         self.assertTrue(any(get_origin(arg) is dict for arg in union_args))
@@ -2949,7 +2949,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         geom_args = get_args(queryables["geom"])
         geom_type, geom_fi = geom_args[0], geom_args[1]
         # type should be eodag's Union (provider has no constraints)
-        self.assertEqual(get_origin(geom_type), Union)
+        self.assertIn(get_origin(geom_type), (Union, UnionType))
         # alias from eodag should be preserved
         self.assertIsInstance(geom_fi.alias, AliasChoices)
         self.assertIn("geometry", geom_fi.alias.choices)

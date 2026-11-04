@@ -45,7 +45,7 @@ import json
 import sys
 import textwrap
 from importlib.metadata import metadata
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Mapping
 from urllib.parse import parse_qs
 
 import click
@@ -104,7 +104,7 @@ class MutuallyExclusiveOption(click.Option):
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
 
 
-def _deprecated_cli(message: str, version: Optional[str] = None) -> Callable[..., Any]:
+def _deprecated_cli(message: str, version: str | None = None) -> Callable[..., Any]:
     """Decorator to mark a CLI command as deprecated and print a bold yellow warning."""
     version_msg = f" -- Deprecated since v{version}" if version else ""
 

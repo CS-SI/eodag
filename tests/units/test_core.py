@@ -1813,7 +1813,7 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
 
-    @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
+    @mock.patch("eodag.plugins.manager.metadata.entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
         empty_conf_file = str(
@@ -3066,7 +3066,7 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
                 olds.append(old)
                 currents.append(current)
             EODataAccessGateway()
-            for old, current in zip(olds, currents):
+            for old, current in zip(olds, currents, strict=True):
                 self.assertTrue(os.path.exists(current))
                 if old != current:
                     try:

@@ -25,7 +25,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
-from typing import Annotated, Literal, Optional, Tuple
+from typing import Annotated, Literal, Tuple
 
 import click
 import responses
@@ -99,7 +99,7 @@ class TestEodagCli(unittest.TestCase):
 
     def eodag_command(
         self, command_list: list = [], env: dict = {}
-    ) -> Tuple[int, str, Optional[Exception]]:
+    ) -> Tuple[int, str, Exception | None]:
         """Eodag command line
 
         :param command_list: command line
@@ -983,9 +983,7 @@ class TestEodagCli(unittest.TestCase):
                 Literal["SENTINEL-1A", "SENTINEL-1B"],
                 Field(None, description="Satellite platform"),
             ],
-            eo_cloud_cover=Annotated[
-                Optional[float], Field(None, alias="eo:cloud_cover")
-            ],
+            eo_cloud_cover=Annotated[float | None, Field(None, alias="eo:cloud_cover")],
         )
         mock_list_queryables.return_value = queryables
 

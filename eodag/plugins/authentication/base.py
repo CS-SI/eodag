@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from eodag.api.product._assets import Asset
 from eodag.plugins.base import PluginTopic
@@ -56,7 +56,7 @@ class Authentication(PluginTopic):
         """
         return config
 
-    def authenticate(self) -> Union[AuthBase, S3ServiceResource]:
+    def authenticate(self) -> AuthBase | S3ServiceResource:
         """Authenticate"""
         raise NotImplementedError
 
@@ -89,7 +89,7 @@ class Authentication(PluginTopic):
 
     def authenticate_objects(
         self,
-        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: list[tuple[str, str | None]],
     ) -> dict[str, Any]:
         """
         Authenticates with s3 and retrieves the available objects

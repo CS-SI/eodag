@@ -20,7 +20,8 @@
 from __future__ import annotations
 
 from copy import deepcopy as copy_deepcopy
-from typing import Annotated, Any, Literal, Optional, Type, Union, get_args, get_origin
+from types import UnionType
+from typing import Annotated, Any, Literal, Type, Union, get_args, get_origin
 
 from annotated_types import Ge, Gt, Le, Lt
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, create_model
@@ -45,7 +46,7 @@ JSON_TYPES_MAPPING: dict[str, type] = {
 }
 
 
-def json_type_to_python(json_type: Union[str, list[str], None]) -> type:
+def json_type_to_python(json_type: str | list[str] | None) -> type:
     """Get python type from json type https://spec.openapis.org/oas/v3.1.0#data-types.
 
     >>> json_type_to_python("number")
@@ -62,7 +63,7 @@ def json_type_to_python(json_type: Union[str, list[str], None]) -> type:
         return type(None)
 
 
-def _get_min_or_max(type_info: Union[Lt, Le, Gt, Ge, Any]) -> tuple[str, Any]:
+def _get_min_or_max(type_info: Lt | Le | Gt | Ge | Any) -> tuple[str, Any]:
     """Check if the value from an Annotated object is a minimum or maximum.
 
     :param type_info: info from Annotated
@@ -145,19 +146,19 @@ def _typed_dict_to_json(python_type: type) -> dict[str, Any]:
 
 def python_type_to_json(
     python_type: type,
-) -> Optional[Union[str, dict[str, Any], list[dict[str, Any]]]]:
+) -> str | dict[str, Any] | list[dict[str, Any]] | None:
     """Get json type from python https://spec.openapis.org/oas/v3.1.0#data-types.
 
     >>> python_type_to_json(int)
     'integer'
-    >>> python_type_to_json(Union[float, str])
+    >>> python_type_to_json(float | str)
     [{'type': 'number'}, {'type': 'string'}]
 
     :param python_type: the python type
     :returns: the json type
     """
     origin = get_origin(python_type)
-    if origin is Union:
+    if origin in (Union, UnionType):
         json_type = list()
         for single_python_type in get_args(python_type):
             type_data = {}
@@ -215,10 +216,10 @@ def _strip_fieldinfo_default(
 
 def json_field_definition_to_python(
     json_field_definition: dict[str, Any],
-    default_value: Optional[Any] = None,
-    required: Optional[bool] = False,
-    validation_alias: Optional[Union[str, AliasChoices]] = None,
-    serialization_alias: Optional[str] = None,
+    default_value: Any | None = None,
+    required: bool | None = False,
+    validation_alias: str | AliasChoices | None = None,
+    serialization_alias: str | None = None,
 ) -> Annotated[Any, FieldInfo]:
     """Get python field definition from json object.
 
@@ -327,7 +328,7 @@ def python_field_definition_to_json(
     >>> from typing import Annotated
     >>> python_field_definition_to_json(
     ...     Annotated[
-    ...         Optional[str],
+    ...         str | None,
     ...         Field(None, description='Foo bar', json_schema_extra={'$ref': '/path/to/schema'})
     ...     ]
     ... )
@@ -497,8 +498,8 @@ class BaseModelCustomJsonSchema(BaseModel):
 def annotated_dict_to_model(
     model_name: str,
     annotated_fields: dict[str, Annotated[Any, FieldInfo]],
-    model_class: Optional[type[BaseModel]] = BaseModelCustomJsonSchema,
-    model_config: Optional[ConfigDict] = None,
+    model_class: type[BaseModel] | None = BaseModelCustomJsonSchema,
+    model_config: ConfigDict | None = None,
 ) -> BaseModel:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
 
@@ -554,13 +555,13 @@ class ProviderSortables(TypedDict):
     """
 
     sortables: list[str]
-    max_sort_params: Annotated[Optional[int], Gt(0)]
+    max_sort_params: Annotated[int | None, Gt(0)]
 
 
 class S3SessionKwargs(TypedDict, total=False):
     """A class representing available keyword arguments to pass to :class:`boto3.session.Session` for authentication."""
 
-    aws_access_key_id: Optional[str]
-    aws_secret_access_key: Optional[str]
-    aws_session_token: Optional[str]
-    profile_name: Optional[str]
+    aws_access_key_id: str | None
+    aws_secret_access_key: str | None
+    aws_session_token: str | None
+    profile_name: str | None

@@ -47,7 +47,7 @@ from importlib.metadata import metadata
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, cast
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
@@ -192,17 +192,15 @@ def _build_float_range_cls() -> type:
 
         name = "percentage"
 
-        def __init__(
-            self, min: Optional[float] = None, max: Optional[float] = None
-        ) -> None:
+        def __init__(self, min: float | None = None, max: float | None = None) -> None:
             self.min = min
             self.max = max
 
         def convert(
             self,
             value: Any,
-            param: Optional["click.core.Parameter"],
-            ctx: Optional["click.core.Context"],
+            param: "click.core.Parameter" | None,
+            ctx: "click.core.Context" | None,
         ) -> Any:
             """Convert value"""
             rv = click.types.FloatParamType.convert(self, value, param, ctx)
@@ -257,7 +255,7 @@ def __getattr__(name: str):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
+def _deprecated(reason: str = "", version: str | None = None) -> Callable[..., Any]:
     """Simple decorator to mark functions/methods/classes as deprecated.
 
     Warning: Does not work with staticmethods!
@@ -293,7 +291,7 @@ def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[...
 
 
 def _deprecated_class(
-    reason: str = "", version: Optional[str] = None
+    reason: str = "", version: str | None = None
 ) -> Callable[[type[Any]], type[Any]]:
     """Decorator to deprecate classes while preserving class identity.
 
@@ -568,7 +566,7 @@ class ProgressCallback(tqdm):
 
         super(ProgressCallback, self).__init__(*args, **kwargs)
 
-    def __call__(self, increment: int, total: Optional[int] = None) -> None:
+    def __call__(self, increment: int, total: int | None = None) -> None:
         """Update the progress bar.
 
         :param increment: Amount of data already processed
@@ -816,10 +814,10 @@ def update_nested_dict(
 
 
 def items_recursive_apply(
-    input_obj: Union[dict[Any, Any], list[Any]],
+    input_obj: dict[Any, Any] | list[Any],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> Union[dict[Any, Any], list[Any]]:
+) -> dict[Any, Any] | list[Any]:
     """Recursive apply method to items contained in input object (dict or list)
 
     >>> items_recursive_apply(
@@ -929,8 +927,8 @@ def list_items_recursive_apply(
 
 
 def items_recursive_sort(
-    input_obj: Union[list[Any], dict[Any, Any]],
-) -> Union[list[Any], dict[Any, Any]]:
+    input_obj: list[Any] | dict[Any, Any],
+) -> list[Any] | dict[Any, Any]:
     """Recursive sort dict items contained in input object (dict or list)
 
     >>> items_recursive_sort(
@@ -998,7 +996,7 @@ def list_items_recursive_sort(config_list: list[Any]) -> list[Any]:
     return result_list
 
 
-def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
+def string_to_jsonpath(*args: Any, force: bool = False) -> str | JSONPath:
     """Get :class:`jsonpath_ng.JSONPath` for ``$.foo.bar`` like string
 
     >>> from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
@@ -1043,7 +1041,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
                         indexed_path = indexed_path_and_indexes[0]
                         parsed_path = Child(parsed_path, Fields(indexed_path))
                         for idx in range(len(indexed_path_and_indexes) - 1):
-                            index: Union[int, str] = (
+                            index: int | str = (
                                 indexed_path_and_indexes[idx + 1][:-1]
                                 if idx < len(indexed_path_and_indexes) - 2
                                 else indexed_path_and_indexes[idx + 1]
@@ -1083,9 +1081,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
         return path_str
 
 
-def format_string(
-    key: Optional[str], str_to_format: Any, **format_variables: Any
-) -> Any:
+def format_string(key: str | None, str_to_format: Any, **format_variables: Any) -> Any:
     """Format ``"{foo}"``-like string
 
     >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})
@@ -1143,8 +1139,8 @@ def format_string(
 
 
 def parse_jsonpath(
-    key: str, jsonpath_obj: Union[str, jsonpath.Child], **values_dict: dict[str, Any]
-) -> Optional[str]:
+    key: str, jsonpath_obj: str | jsonpath.Child, **values_dict: dict[str, Any]
+) -> str | None:
     """Parse jsonpah in ``jsonpath_obj`` using ``values_dict``
 
     >>> import jsonpath_ng.ext as jsonpath
@@ -1166,7 +1162,7 @@ def parse_jsonpath(
         return jsonpath_obj
 
 
-def nested_pairs2dict(pairs: Union[list[Any], Any]) -> Union[Any, dict[Any, Any]]:
+def nested_pairs2dict(pairs: list[Any] | Any) -> Any | dict[Any, Any]:
     """Create a dict using nested pairs
 
     >>> nested_pairs2dict([["foo", [["bar", "baz"]]]])
@@ -1189,7 +1185,7 @@ def nested_pairs2dict(pairs: Union[list[Any], Any]) -> Union[Any, dict[Any, Any]
 
 def get_geometry_from_various(
     locations_config: list[dict[str, Any]] = [], **query_args: Any
-) -> Optional[BaseGeometry]:
+) -> BaseGeometry | None:
     """Creates a ``shapely.geometry`` using given query kwargs arguments
 
     :param locations_config: (optional) EODAG locations configuration
@@ -1282,7 +1278,7 @@ def get_geometry_from_various(
 
 
 def _ecmwf_point_to_lonlat(
-    point: list[Any], axes: Optional[Union[list[str], str]] = None
+    point: list[Any], axes: list[str] | str | None = None
 ) -> tuple[float, float]:
     if not isinstance(point, (list, tuple)) or len(point) < 2:
         raise TypeError("ECMWF feature point must be a list of at least 2 values")
@@ -1311,7 +1307,7 @@ def _ecmwf_point_to_lonlat(
     return float(lon), float(lat)
 
 
-def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeometry]:
+def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry | None:
     """
     Creates a ``shapely.geometry`` from an ECMWF Polytope feature.
 
@@ -1388,8 +1384,8 @@ def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeomet
 
 
 def get_geometry_from_ecmwf_area(
-    area: Union[str, list[float]],
-) -> Optional[BaseGeometry]:
+    area: str | list[float],
+) -> BaseGeometry | None:
     """
     Creates a ``shapely.geometry`` from bounding box in area format.
 
@@ -1409,7 +1405,7 @@ def get_geometry_from_ecmwf_area(
 
 def get_geometry_from_ecmwf_location(
     location: dict[str, float],
-) -> Optional[BaseGeometry]:
+) -> BaseGeometry | None:
     """
     Creates a ``shapely.geometry`` from a single location.
 
@@ -1435,7 +1431,7 @@ class MockResponse:
         self,
         json_data: Any = None,
         status_code: int = 200,
-        headers: Optional[dict[str, Any]] = None,
+        headers: dict[str, Any] | None = None,
     ) -> None:
         self.json_data = json_data
         self.status_code = status_code
@@ -1525,8 +1521,8 @@ def cached_parse(str_to_parse: str) -> JSONPath:
 
 
 def get_bucket_name_and_prefix(
-    url: str, bucket_path_level: Optional[int] = None
-) -> tuple[Optional[str], Optional[str]]:
+    url: str, bucket_path_level: int | None = None
+) -> tuple[str | None, str | None]:
     """Extract bucket name and prefix from URL
 
     :param url: (optional) URL to use as product.location
@@ -1557,7 +1553,7 @@ def get_bucket_name_and_prefix(
 
 
 def flatten_top_directories(
-    nested_dir_root: str, common_subdirs_path: Optional[str] = None
+    nested_dir_root: str, common_subdirs_path: str | None = None
 ) -> None:
     """Flatten directory structure, removing common empty sub-directories
 
@@ -1687,7 +1683,7 @@ def guess_file_type(file: str) -> str:
     return mime_type
 
 
-def guess_extension(type: str) -> Optional[str]:
+def guess_extension(type: str) -> str | None:
     """Guess extension from mime type, using eodag extended mimetypes definition
 
     >>> guess_extension('image/tiff')
@@ -1827,7 +1823,7 @@ def format_pydantic_error(e: PydanticValidationError) -> str:
 
 def get_collection_dates(
     collection_dict: dict[str, Any],
-) -> tuple[Optional[str], Optional[str]]:
+) -> tuple[str | None, str | None]:
     """Extract mission start and end dates from collection configuration.
 
     Extracts dates from the extent.temporal.interval structure.

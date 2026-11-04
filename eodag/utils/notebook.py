@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 def check_ipython() -> bool:
@@ -47,7 +47,7 @@ class NotebookWidgets:
     """Display / handle ipython widgets"""
 
     is_notebook: bool = False
-    html_box: Optional[Any] = None
+    html_box: Any | None = None
     html_box_shown: bool = False
     display: Any = None
 

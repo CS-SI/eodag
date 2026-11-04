@@ -18,7 +18,7 @@
 
 import logging
 from copy import deepcopy as copy_deepcopy
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import QueryStringSearch, StacSearch
@@ -165,7 +165,7 @@ class OARSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[str], Optional[int]]:
+    ) -> tuple[list[str], int | None]:
         """Handle OGC API - Records specificities, then delegate collect_search_urls to
         :class:`~eodag.plugins.search.qssearch.QueryStringSearch`."""
 

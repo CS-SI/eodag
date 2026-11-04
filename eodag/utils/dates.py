@@ -20,7 +20,7 @@
 import calendar
 import datetime as dt
 import re
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator
 
 import dateutil.parser
 from dateutil import tz
@@ -147,7 +147,7 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
     return start_valid_dt <= start_check_dt and end_valid_dt >= end_check_dt
 
 
-def get_datetime(arguments: dict[str, Any]) -> tuple[Optional[str], Optional[str]]:
+def get_datetime(arguments: dict[str, Any]) -> tuple[str | None, str | None]:
     """Get start and end dates from a dict containing `/` separated dates in `datetime` item
 
     :param arguments: dict containing a single date or `/` separated dates in `datetime` item
@@ -190,7 +190,7 @@ def get_datetime(arguments: dict[str, Any]) -> tuple[Optional[str], Optional[str
         return get_date(dtstart), get_date(dtend)
 
 
-def get_date(date: Optional[str]) -> Optional[str]:
+def get_date(date: str | None) -> str | None:
     """
     Check if the input date can be parsed as a date
 
@@ -247,8 +247,8 @@ def rfc3339_str_to_datetime(s: str) -> dt.datetime:
 
 
 def get_min_max(
-    value: Optional[Union[str, list[str]]] = None,
-) -> tuple[Optional[str], Optional[str]]:
+    value: str | list[str] | None = None,
+) -> tuple[str | None, str | None]:
     """Returns the min and max from a list of strings or the same string if a single string is given.
 
     :param value: a single string or a list of strings
@@ -268,7 +268,7 @@ def get_min_max(
     return value, value
 
 
-def append_time(input_date: dt.date, time: Optional[str] = None) -> dt.datetime:
+def append_time(input_date: dt.date, time: str | None = None) -> dt.datetime:
     """Appends a string-formatted time to a date.
 
     :param input_date: Date to combine with the time
@@ -300,7 +300,7 @@ def append_time(input_date: dt.date, time: Optional[str] = None) -> dt.datetime:
 
 
 def parse_date(
-    date: str, time: Optional[Union[str, list[str]]] = None
+    date: str, time: str | list[str] | None = None
 ) -> tuple[dt.datetime, dt.datetime]:
     """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals.
 
@@ -343,10 +343,10 @@ def parse_date(
 
 
 def parse_year_month_day(
-    year: Union[str, list[str]],
-    month: Optional[Union[str, list[str]]] = None,
-    day: Optional[Union[str, list[str]]] = None,
-    time: Optional[Union[str, list[str]]] = None,
+    year: str | list[str],
+    month: str | list[str] | None = None,
+    day: str | list[str] | None = None,
+    time: str | list[str] | None = None,
 ) -> tuple[dt.datetime, dt.datetime]:
     """Returns minimum and maximum datetimes from given lists of years, months, days, times.
 
@@ -414,10 +414,10 @@ def format_date_range(start: dt.datetime, end: dt.datetime) -> str:
 
 
 def validate_datetime_param(
-    value: Optional[Union[str, list[str]]],
+    value: str | list[str] | None,
     param_name: str,
     formatters: list[str],
-) -> Optional[list[str]]:
+) -> list[str] | None:
     """Validate and collect parameter values matching any of the given datetime formats.
 
     Ensures each value can be parsed by at least one of the ``formatters``
@@ -553,8 +553,8 @@ def parse_to_utc(raw: str) -> dt.datetime:
 
 
 def to_iso_utc_string(
-    raw: Optional[Union[dt.datetime, str]],
-) -> Optional[str]:
+    raw: dt.datetime | str | None,
+) -> str | None:
     """Convert a datetime or date string to an ISO 8601 UTC string with millisecond precision.
 
     :param raw: A datetime object or date string to convert
@@ -581,12 +581,12 @@ def to_iso_utc_string(
 
 
 def compute_date_range_from_params(
-    date: Optional[str] = None,
-    time: Optional[list[str]] = None,
-    year: Optional[list[str]] = None,
-    month: Optional[list[str]] = None,
-    day: Optional[list[str]] = None,
-) -> tuple[Optional[str], Optional[str]]:
+    date: str | None = None,
+    time: list[str] | None = None,
+    year: list[str] | None = None,
+    month: list[str] | None = None,
+    day: list[str] | None = None,
+) -> tuple[str | None, str | None]:
     """Compute start/end ISO UTC datetime strings from date parameters.
 
     Handles two modes:

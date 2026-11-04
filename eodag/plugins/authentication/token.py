@@ -20,7 +20,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
@@ -106,7 +106,7 @@ class TokenAuth(Authentication):
         self.refresh_token = ""
         self.token_expiration = dt.datetime.now()
         self.auth_lock = Lock()
-        self._unformatted_auth_uri: Optional[str] = None
+        self._unformatted_auth_uri: str | None = None
 
     def __getstate__(self):
         """Exclude attributes that can't be pickled from serialization."""
@@ -341,8 +341,8 @@ class RequestsTokenAuth(AuthBase):
         self,
         token: str,
         where: str,
-        qs_key: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
+        qs_key: str | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         self.token = token
         self.where = where

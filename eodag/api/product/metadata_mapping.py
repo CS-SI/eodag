@@ -23,7 +23,7 @@ import json
 import logging
 import re
 from string import Formatter
-from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, cast
 
 import geojson
 import orjson
@@ -82,7 +82,7 @@ DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 def _parse_converter_chain(
     expression: str,
-) -> tuple[str, list[tuple[str, Optional[str]]]]:
+) -> tuple[str, list[tuple[str, str | None]]]:
     """Split a field and its converters, preserving separators inside arguments."""
     if SEP not in expression:
         return expression, []
@@ -127,8 +127,8 @@ def _parse_converter_chain(
 
 
 def get_metadata_path(
-    map_value: Union[str, list[Optional[str]]],
-) -> tuple[Union[list[Optional[str]], str, None], str]:
+    map_value: str | list[str | None],
+) -> tuple[list[str | None] | str | None, str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
 
@@ -188,7 +188,7 @@ def get_metadata_path(
     return None, path
 
 
-def get_metadata_path_value(map_value: Union[str, list[Optional[str]]]) -> str:
+def get_metadata_path_value(map_value: str | list[str | None]) -> str:
     """Get raw metadata path without converter
 
     >>> get_metadata_path_value("$.properties.id")
@@ -285,7 +285,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
     class MetadataFormatter(Formatter):
         def __init__(self) -> None:
-            self.custom_converters: list[tuple[Callable, Optional[str]]] = []
+            self.custom_converters: list[tuple[Callable, str | None]] = []
 
         def parse(self, format_string: str):
             """
@@ -374,7 +374,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(
             timestamp: int,
-        ) -> Union[str, int]:
+        ) -> str | int:
             """Convert a timestamp in milliseconds (int) to its ISO8601 UTC format
 
             1619029639123 => "2021-04-21T18:27:19.123Z"
@@ -511,7 +511,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_geojson_polytope(
             value: BaseGeometry,
-        ) -> Union[dict[Any, Any], str]:
+        ) -> dict[Any, Any] | str:
             """Convert a shapely Point/LineString/Polygon to ECMWF polytope feature dicts"""
             # ECMWF Polytope uses non-geojson structure for features
             if isinstance(value, Polygon):
@@ -532,7 +532,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             )
 
         @staticmethod
-        def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
+        def convert_from_ewkt(ewkt_string: str) -> BaseGeometry | str:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
             ewkt_regex = re.compile(
@@ -569,7 +569,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return f"{proj};{wkt_geom}"
 
         @staticmethod
-        def convert_from_georss(georss: Any) -> Union[BaseGeometry, Any]:
+        def convert_from_georss(georss: Any) -> BaseGeometry | Any:
             """Convert GeoRSS to shapely geometry"""
 
             if "polygon" in georss.tag:
@@ -674,9 +674,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         @_deprecated(reason="Please chain 'replace_str' converters instead")
-        def convert_replace_str_tuple(
-            value: Union[str, dict[Any, Any]], args: str
-        ) -> str:
+        def convert_replace_str_tuple(value: str | dict[Any, Any], args: str) -> str:
             """
             Apply multiple replacements on a string (parts or complete).
 
@@ -775,8 +773,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_recursive_sub_str(
-            input_obj: Union[dict[Any, Any], list[Any]], args: str
-        ) -> Union[dict[Any, Any], list[Any]]:
+            input_obj: dict[Any, Any] | list[Any], args: str
+        ) -> dict[Any, Any] | list[Any]:
             old, new = ast.literal_eval(args)
             return items_recursive_apply(
                 input_obj,
@@ -830,7 +828,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         )
         def convert_dict_filter_and_sub(
             input_dict: dict[Any, Any], args: str
-        ) -> Union[dict[Any, Any], list[Any]]:
+        ) -> dict[Any, Any] | list[Any]:
             """Filter dict items using jsonpath and apply recursive_sub_str.
 
             Deprecated: chain ``dict_filter`` and ``recursive_sub_str`` instead.
@@ -997,7 +995,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_datetime_dict(
             date: str, format: str
-        ) -> dict[str, Union[list[str], str]]:
+        ) -> dict[str, list[str] | str]:
             """Convert a date (str) to a dictionary where values are in the format given in argument
 
             date == "2021-04-21T18:27:19.123Z" and format == "list" => {
@@ -1230,7 +1228,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 def properties_from_json(
     json: dict[str, Any],
     mapping: dict[str, Any],
-    discovery_config: Optional[dict[str, Any]] = None,
+    discovery_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Extract properties from a provider json result.
 
@@ -1397,7 +1395,7 @@ def properties_from_xml(
     xml_as_text: AnyStr,
     mapping: Any,
     empty_ns_prefix: str = "ns",
-    discovery_config: Optional[dict[str, Any]] = None,
+    discovery_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Extract properties from a provider xml result.
 
@@ -1946,9 +1944,9 @@ def _get_queryables(
 
 def get_queryable_from_provider(
     provider_queryable: str,
-    metadata_mapping: dict[str, Union[str, list[Optional[str]]]],
-    provider: Optional[str] = None,
-) -> Optional[str]:
+    metadata_mapping: dict[str, str | list[str | None]],
+    provider: str | None = None,
+) -> str | None:
     """Get EODAG configured queryable parameter from provider queryable parameter.
 
     :param provider_queryable: provider queryable parameter
@@ -1983,7 +1981,7 @@ def get_queryable_from_provider(
     ]
     StacQueryables = Queryables.from_stac_models()
 
-    eodag_queryable: Optional[str] = None
+    eodag_queryable: str | None = None
     if provider_queryable in mapping_values:
         ind = mapping_values.index(provider_queryable)
         eodag_queryable = StacQueryables.get_queryable_from_alias(
@@ -2045,8 +2043,8 @@ def get_queryable_from_provider(
 
 
 def get_provider_queryable_path(
-    queryable: str, metadata_mapping: dict[str, Union[str, list[str]]]
-) -> Optional[str]:
+    queryable: str, metadata_mapping: dict[str, str | list[str]]
+) -> str | None:
     """Get EODAG configured queryable path from its parameter
 
     :param queryable: eodag queryable parameter
@@ -2074,7 +2072,7 @@ def get_provider_queryable_path(
 def get_provider_queryable_key(
     eodag_key: str,
     provider_queryables: dict[str, Any],
-    metadata_mapping: dict[str, Union[list[Any], str]],
+    metadata_mapping: dict[str, list[Any] | str],
 ) -> str:
     """Finds the provider queryable corresponding to the given eodag key based on the metadata mapping
 
@@ -2110,7 +2108,7 @@ def get_provider_queryable_key(
         return eodag_key
 
 
-def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
+def normalize_bands(data: dict | Asset) -> dict | Asset:
     """Migrate ``eo:bands`` / ``raster:bands`` of ``data`` into a STAC 1.1
     ``bands`` array, in place. Returns ``data`` for convenience.
 
