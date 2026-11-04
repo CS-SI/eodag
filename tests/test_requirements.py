@@ -26,7 +26,6 @@ from typing import Any, Iterator
 
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
-from stdlib_list import stdlib_list
 
 try:
     import tomllib
@@ -141,12 +140,6 @@ class TestRequirements(unittest.TestCase):
         setup_requires = get_setup_requires(pyproject_path)
         setup_requires.update(get_optional_dependencies(pyproject_path, "all"))
         import_required_dict = metadata.packages_distributions()
-        try:
-            default_libs = stdlib_list()
-        except FileNotFoundError:
-            # python version might not be supported by `stdlib_list`
-            # Since python3.10, we can use `sys.stdlib_module_names` instead
-            default_libs = list(sys.stdlib_module_names)
 
         missing_imports = []
         for project_import in project_imports:
@@ -162,7 +155,8 @@ class TestRequirements(unittest.TestCase):
                 required.add(canonicalize_name(distribution))
             if (
                 not required.intersection(setup_requires)
-                and project_import not in default_libs + allowed_missing_imports
+                and project_import not in sys.stdlib_module_names
+                and project_import not in allowed_missing_imports
             ):
                 missing_imports.append(project_import)
 

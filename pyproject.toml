@@ -113,7 +113,6 @@ test = [
     "pytest-xdist",
     "pytest",
     "responses != 0.24.0",
-    "stdlib-list",
     "tomli; python_version < '3.11'",
 ]
 dev = [
