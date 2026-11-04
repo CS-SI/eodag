@@ -162,8 +162,6 @@ LANDSAT_C2L1:
     - processor
     - licensor
   - name: Microsoft
-    roles:
-    - host
   constellation: LANDSAT
   platform: L1,L2,L3,L4,L5,L6,L7,L8
   processing:level: L1
@@ -191,8 +189,6 @@ LANDSAT_C2L2:
     - processor
     - licensor
   - name: Microsoft
-    roles:
-    - host
   constellation: LANDSAT
   platform: L8,L9
   processing:level: L1
@@ -615,13 +611,10 @@ S1_SAR_GRD:
     roles: ["licensor"]
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles: ["host"]
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles: ["host"]
   - url: https://creodias.eu/
     name: CREODIAS
-    roles: ["host"]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -704,13 +697,10 @@ S1_SAR_SLC:
     roles: ["licensor"]
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles: ["host"]
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles: ["host"]
   - url: https://creodias.eu/
     name: CREODIAS
-    roles: ["host"]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -767,16 +757,10 @@ S2_MSI_L1C:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L1
@@ -830,16 +814,10 @@ S2_MSI_L2A:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -1015,7 +993,6 @@ S3_ERR:
     - producer
     - processor
     - licensor
-    - host
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -1090,7 +1067,6 @@ S3_EFRBC004:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-3
   platform: Sentinel-3A,Sentinel-3B
@@ -1160,7 +1136,6 @@ S3_ERRBC004:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-3
   platform: Sentinel-3A,Sentinel-3B
@@ -1239,16 +1214,10 @@ S3_OLCI_L2LRR:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1283,16 +1252,10 @@ S3_OLCI_L2LFR:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1524,16 +1487,10 @@ S3_SLSTR_L2LST:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1919,16 +1876,10 @@ S3_LAN:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -2035,7 +1986,6 @@ MFG_GSA_57:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MFG
   platform: MFG
@@ -2095,7 +2045,6 @@ MFG_GSA_63:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MFG
   platform: MFG
@@ -2159,7 +2108,6 @@ MFG_MFGAMV570IODC1:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: MFG
   platform: METEOSAT07
@@ -2219,7 +2167,6 @@ MFG_MFGAMV630IODC1:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: MFG
   platform: METEOSAT05
@@ -2291,7 +2238,6 @@ MFG_MTP15EASY0200_0DEG:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: MFG
   platform: METEOSAT7,METEOSAT2,METEOSAT4,METEOSAT5,METEOSAT6,METEOSAT3
@@ -2357,7 +2303,6 @@ MFG_MTP15EASY0200_57DEG:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: MFG
   platform: METEOSAT7
@@ -2411,7 +2356,6 @@ HIRS_FDR_1_MULTI:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: Metop,TIROS,NOAA
   platform: Metop,TIROS,NOAA
@@ -2458,7 +2402,6 @@ S6_RADIO_OCCULTATION:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: Sentinel-6
   platform: Sentinel-6
@@ -2500,7 +2443,6 @@ S6_MW_2_AMR_F08:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2543,7 +2485,6 @@ S6_MW_2_AMR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2597,7 +2538,6 @@ S6_P4_1A_HR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2651,7 +2591,6 @@ S6_P4_1B_HR_F08:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2697,7 +2636,6 @@ S6_P4_1B_HR_G01:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2750,7 +2688,6 @@ S6_P4_1B_LR_F08:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2796,7 +2733,6 @@ S6_P4_1B_LR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2857,7 +2793,6 @@ S6_P4_2_HR_F08:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2911,7 +2846,6 @@ S6_P4_2_HR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -2969,7 +2903,6 @@ S6_P4_2_LR_F08:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -3020,7 +2953,6 @@ S6_P4_2_LR_G01:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -3081,7 +3013,6 @@ S6_P4_3_LR:
     description: European Organisation for the Exploitation of Meteorological Satellites (EUMETSAT)
     roles:
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Sentinel-6
   platform: Sentinel-6A
@@ -3132,7 +3063,6 @@ MTG_LI_AF:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3247,7 +3177,6 @@ MTG_LI_LFL:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3364,7 +3293,6 @@ MTG_LI_LGR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3477,7 +3405,6 @@ MTG_LI_AFA:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3588,7 +3515,6 @@ MTG_LI_AFR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3703,7 +3629,6 @@ MTG_LI_LEF:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3820,7 +3745,6 @@ MTG_FCI_FDHSI:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3879,7 +3803,6 @@ MTG_FCI_HRFI:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3936,7 +3859,6 @@ MTG_FCI_ASR_BUFR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -3978,7 +3900,6 @@ MTG_FCI_ASR_NETCDF:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4020,7 +3941,6 @@ MTG_FCI_AMV_BUFR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4062,7 +3982,6 @@ MTG_FCI_AMV_NETCDF:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4105,7 +4024,6 @@ MTG_FCI_CLM:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4156,7 +4074,6 @@ MTG_FCI_GII:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4199,7 +4116,6 @@ MTG_FCI_OCA:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4242,7 +4158,6 @@ MTG_FCI_OLR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4291,7 +4206,6 @@ MSG_SEVIRI_RSS_AMV_CDR_V1:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -4342,7 +4256,6 @@ MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -4385,7 +4298,6 @@ MSG_SEVIRI_SARAH_CDR_V003:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG,MFG
@@ -4435,7 +4347,6 @@ MTG_FCI_ACTIVE_FIRE_L2_V1:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: MTG
@@ -4494,7 +4405,6 @@ MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MTG
   platform: GOES,Himawari,MFG,MSG
@@ -4545,7 +4455,6 @@ MULT_AVHGAC1C0100:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: NOAA,Metop,TIROS
   platform: NOAA-15,Metop-B,NOAA-18,Metop-A,NOAA-19,NOAA-16,NOAA-17,NOAA-14,NOAA-12,NOAA-11,Metop-C,NOAA-10,NOAA-09,NOAA-07,NOAA-06,TIROS-N,NOAA-08
@@ -4604,7 +4513,6 @@ MULT_MHSMWHS0100:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: NOAA,Metop
   platform: NOAA-18,Metop-A,NOAA-19,Metop-B
@@ -4888,16 +4796,10 @@ S5P_L1B_IR_ALL:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -4935,16 +4837,10 @@ S5P_L2_IR_ALL:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -5689,8 +5585,6 @@ CAMS_GAC_FORECAST:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5743,8 +5637,6 @@ CAMS_EU_AIR_QUALITY_FORECAST:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5790,8 +5682,6 @@ CAMS_GFE_GFAS:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5849,8 +5739,6 @@ CAMS_SOLAR_RADIATION:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5907,8 +5795,6 @@ CAMS_GREENHOUSE_INVERSION:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5956,8 +5842,6 @@ CAMS_EAC4_MONTHLY:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6010,8 +5894,6 @@ CAMS_EU_AIR_QUALITY_RE:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6057,8 +5939,6 @@ CAMS_EAC4:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6108,8 +5988,6 @@ CAMS_GRF_AUX:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6159,8 +6037,6 @@ CAMS_GRF:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6213,8 +6089,6 @@ CAMS_GREENHOUSE_EGG4_MONTHLY:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6267,8 +6141,6 @@ CAMS_GREENHOUSE_EGG4:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6316,8 +6188,6 @@ CAMS_GLOBAL_EMISSIONS:
     url: https://www.ecmwf.int/
   - url: https://atmosphere.copernicus.eu/
     name: Copernicus Atmosphere Monitoring Service (CAMS)
-    roles:
-    - host
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6400,8 +6270,6 @@ ERA5_SL:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6474,8 +6342,6 @@ ERA5_SL_MONTHLY:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6546,8 +6412,6 @@ ERA5_PL:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6622,8 +6486,6 @@ ERA5_PL_MONTHLY:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6695,8 +6557,6 @@ ERA5_LAND:
     url: https://www.ecmwf.int
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "hourly", "evolution"]
@@ -6759,8 +6619,6 @@ ERA5_LAND_MONTHLY:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "monthly", "evolution"]
@@ -6818,8 +6676,6 @@ UERRA_EUROPE_SL:
     url: https://www.ecmwf.int
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   platform: SURFEX
   processing:level:
   keywords: ["Climate", "ECMWF", "Reanalysis", "Regional", "Europe", "UERRA", "UERRA-HARMONIE", "SURFEX", "MESCAN-SURFEX", "CDS", "Atmospheric", "single", "levels"]
@@ -6881,8 +6737,6 @@ GLACIERS_DIST_RANDOLPH:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     url: https://climate.copernicus.eu/
-    roles:
-    - host
   platform: INSITU
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "distribution", "inventory"]
@@ -6940,8 +6794,6 @@ GRIDDED_GLACIERS_MASS_CHANGE:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   platform:
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "mass", "gridded"]
@@ -7001,8 +6853,6 @@ SATELLITE_CARBON_DIOXIDE:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "carbon-dioxide"]
@@ -7092,8 +6942,6 @@ SATELLITE_METHANE:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "methane"]
@@ -7154,8 +7002,6 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -7220,8 +7066,6 @@ SATELLITE_SEA_ICE_THICKNESS:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   constellation:
   platform:
@@ -7271,8 +7115,6 @@ SATELLITE_SEA_ICE_CONCENTRATION:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   constellation:
   platform:
@@ -7361,8 +7203,6 @@ SEASONAL_POSTPROCESSED_PL:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7428,8 +7268,6 @@ SATELLITE_SEA_LEVEL_GLOBAL:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7504,8 +7342,6 @@ SEASONAL_POSTPROCESSED_SL:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7580,8 +7416,6 @@ SEASONAL_ORIGINAL_SL:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7650,8 +7484,6 @@ SEASONAL_ORIGINAL_PL:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7719,8 +7551,6 @@ SEASONAL_MONTHLY_PL:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7796,8 +7626,6 @@ SEASONAL_MONTHLY_SL:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7858,8 +7686,6 @@ SIS_HYDRO_MET_PROJ:
     url: https://www.ecmwf.int/
   - name: Copernicus Climate Change Service (C3S)
     description: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
     url: https://climate.copernicus.eu/
   platform:
   processing:level:
@@ -7917,8 +7743,6 @@ CMIP6_CLIMATE_PROJECTIONS:
     url: https://www.ecmwf.int/
   - url: https://climate.copernicus.eu/
     name: Copernicus Climate Change Service (C3S)
-    roles:
-    - host
   platform: CMIP6
   processing:level:
   eodag:sensor_type:
@@ -7954,8 +7778,6 @@ FIRE_HISTORICAL:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8048,8 +7870,6 @@ GLOFAS_FORECAST:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8078,8 +7898,6 @@ GLOFAS_HISTORICAL:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8121,8 +7939,6 @@ GLOFAS_REFORECAST:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8163,8 +7979,6 @@ GLOFAS_SEASONAL:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8209,8 +8023,6 @@ GLOFAS_SEASONAL_REFORECAST:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8259,8 +8071,6 @@ EFAS_FORECAST:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8304,8 +8114,6 @@ EFAS_HISTORICAL:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8352,8 +8160,6 @@ EFAS_REFORECAST:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8399,8 +8205,6 @@ EFAS_SEASONAL:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8445,8 +8249,6 @@ EFAS_SEASONAL_REFORECAST:
     url: https://www.ecmwf.int/
   - url: https://emergency.copernicus.eu/
     name: Copernicus Emergency Management Service (CEMS)
-    roles:
-    - host
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8477,16 +8279,10 @@ COP_DEM_GLO30_DGED:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8525,16 +8321,10 @@ COP_DEM_GLO30_DTED:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8573,16 +8363,10 @@ COP_DEM_GLO90_DGED:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8621,16 +8405,10 @@ COP_DEM_GLO90_DTED:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   - url: https://dataspace.copernicus.eu/
     name: Copernicus Data Space Ecosystem (CDSE)
-    roles:
-    - host
   - url: https://creodias.eu/
     name: CREODIAS
-    roles:
-    - host
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8666,7 +8444,6 @@ CLMS_CORINE:
     roles:
     - producer
     - licensor
-    - host
   - url: https://www.etc.uma.es/etc-uls/
     name: European Topic Centre on Urban, Land and Soil Systems (ETC/ULS)
     roles:
@@ -8717,8 +8494,6 @@ CLMS_GLO_FCOVER_333M:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8755,8 +8530,6 @@ CLMS_GLO_NDVI_333M:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -8797,8 +8570,6 @@ CLMS_GLO_NDVI_1KM_LTS:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: SPOT
   platform:
   processing:level:
@@ -8838,8 +8609,6 @@ CLMS_GLO_DMP_333M:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8879,8 +8648,6 @@ CLMS_GLO_GDMP_333M:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8922,8 +8689,6 @@ CLMS_GLO_LAI_333M:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8963,8 +8728,6 @@ CLMS_GLO_FAPAR_333M:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -9062,8 +8825,6 @@ CLMS_HRVPP_ST:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -9107,8 +8868,6 @@ CLMS_HRVPP_ST_LAEA:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -9151,8 +8910,6 @@ CLMS_HRVPP_VPP:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -9195,8 +8952,6 @@ CLMS_HRVPP_VPP_LAEA:
     - licensor
   - url: https://www.wekeo.eu/
     name: WEkEO
-    roles:
-    - host
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -9246,8 +9001,6 @@ AERIS_IAGOS:
     description: 'IAGOS-DC, Observatoire Midi-Pyrénées, AERIS, CNRS; contact: iagos-dc@iagos.org'
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation:
   platform:
   processing:level: L2
@@ -9285,8 +9038,6 @@ GSW_CHANGE:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9322,8 +9073,6 @@ GSW_EXTENT:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9360,8 +9109,6 @@ GSW_OCCURRENCE:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9398,8 +9145,6 @@ GSW_RECURRENCE:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9436,8 +9181,6 @@ GSW_SEASONALITY:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9474,8 +9217,6 @@ GSW_TRANSITIONS:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9515,7 +9256,6 @@ EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9547,7 +9287,6 @@ EUSTAT_POP_AGE_SEX_NUTS2:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9579,7 +9318,6 @@ EUSTAT_POP_AGE_GROUP_SEX_NUTS3:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9612,7 +9350,6 @@ EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9655,7 +9392,6 @@ EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9684,7 +9420,6 @@ EUSTAT_AVAILABLE_BEDS_HOSPITALS_NUTS2:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9713,7 +9448,6 @@ EUSTAT_BATHING_SITES_WATER_QUALITY:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9742,7 +9476,6 @@ EUSTAT_POP_DENSITY_NUTS3:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9771,7 +9504,6 @@ EUSTAT_SOIL_SEALING_INDEX:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9800,7 +9532,6 @@ EUSTAT_SURFACE_TERRESTRIAL_PROTECTED_AREAS:
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
     roles:
-    - host
     - processor
   constellation: Eurostat
   platform: Eurostat
@@ -9852,8 +9583,6 @@ ISIMIP_CLIMATE_FORCING_ISIMIP3B:
     description: 'ISIMIP Repository; contact: info@isimip.org'
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: ISIMIP
   platform: ISIMIP
   processing:level:
@@ -9908,8 +9637,6 @@ ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
     description: 'ISIMIP Repository; contact: info@isimip.org'
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: ISIMIP
   platform: ISIMIP
   processing:level:
@@ -9984,8 +9711,6 @@ DT_EXTREMES:
     - licensor
   - url: https://data.destination-earth.eu/
     name: Destination Earth Data Lake (DEDL)
-    roles:
-    - host
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -13723,7 +13448,6 @@ METOP_AMSU_L1:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -13763,7 +13487,6 @@ METOP_OSI_104:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L2
@@ -13800,7 +13523,6 @@ METOP_OSI_150A:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L2
@@ -13841,7 +13563,6 @@ METOP_OSI_150B:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L2
@@ -13891,7 +13612,6 @@ METOP_ASCSZF1B:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -13935,7 +13655,6 @@ METOP_ASCSZR1B:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -13979,7 +13698,6 @@ METOP_ASCSZO1B:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14023,7 +13741,6 @@ METOP_ASCSZFR02:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14071,7 +13788,6 @@ METOP_ASCSZOR02:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14119,7 +13835,6 @@ METOP_ASCSZRR02:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14168,7 +13883,6 @@ METOP_SOMO12:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L2
@@ -14213,7 +13927,6 @@ METOP_SOMO25:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L2
@@ -14258,7 +13971,6 @@ METOP_AVHRRGACR02:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP,TIROS,NOAA
   platform: METOP,TIROS,NOAA
   processing:level: L2
@@ -14301,7 +14013,6 @@ METOP_AVHRRL1:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14344,7 +14055,6 @@ METOP_LSA_002:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L3
@@ -14380,7 +14090,6 @@ METOP_GLB_SST_NC:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L3
@@ -14420,7 +14129,6 @@ METOP_GOMEL1:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14459,7 +14167,6 @@ METOP_GOMEL1R03:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14502,7 +14209,6 @@ METOP_IASTHR011:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L2
@@ -14547,7 +14253,6 @@ METOP_IASSND02:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L2
@@ -14586,7 +14291,6 @@ METOP_IASIL1C_ALL:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14622,7 +14326,6 @@ METOP_MHSL1:
     - producer
     - processor
     - licensor
-    - host
   constellation: METOP
   platform: METOP
   processing:level: L1
@@ -14657,7 +14360,6 @@ METOP_HIRSL1:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: METOP
   platform: METOP
@@ -14719,7 +14421,6 @@ METOP_AVHRDUAL0100:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Metop
   platform: Metop-A,Metop-B
@@ -14785,7 +14486,6 @@ METOP_AVHRPWE0200:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Metop
   platform: Metop-A,Metop-B
@@ -14846,7 +14546,6 @@ METOP_GOMPMA020100:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Metop
   platform: Metop-A,Metop-B
@@ -14927,7 +14626,6 @@ METOP_IASPCS1C0100:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Metop
   platform: Metop-A,Metop-B
@@ -15033,7 +14731,6 @@ METOP_IASXXX1C0200:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Metop
   platform: Metop-A,Metop-B
@@ -15083,7 +14780,6 @@ METOP_MHSMWHS0200:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int/
   constellation: Metop
   platform: Metop-A,Metop-B
@@ -15307,7 +15003,6 @@ MSG_OCA_CDR:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15368,7 +15063,6 @@ MSG_CLM:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15414,7 +15108,6 @@ MSG_CLM_IODC:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15460,7 +15153,6 @@ MSG_GSAL2R02:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG,MFG
   platform: MSG,MFG
@@ -15518,7 +15210,6 @@ MSG_HRSEVIRI:
     - producer
     - processor
     - licensor
-    - host
     url: http://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15548,7 +15239,6 @@ MSG_HRSEVIRI_IODC:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15572,7 +15262,6 @@ MSG_RSS_CLM:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15620,7 +15309,6 @@ MSG_MSG15_RSS:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15643,7 +15331,6 @@ MSG_LSA_FRM:
     - producer
     - processor
     - licensor
-    - host
     url: http://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15688,7 +15375,6 @@ MSG_LSA_LST_CDR:
     - producer
     - processor
     - licensor
-    - host
     url: http://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15745,7 +15431,6 @@ MSG_LSA_LSTDE:
     - producer
     - processor
     - licensor
-    - host
     url: http://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15786,7 +15471,6 @@ MSG_AMVR02:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG,MFG
   platform: MSG,MFG
@@ -15837,7 +15521,6 @@ MSG_CTH:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15880,7 +15563,6 @@ MSG_CTH_IODC:
     - producer
     - processor
     - licensor
-    - host
     url: https://www.eumetsat.int
   constellation: MSG
   platform: MSG
@@ -15929,8 +15611,6 @@ MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -15966,8 +15646,6 @@ MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16006,8 +15684,6 @@ MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16042,8 +15718,6 @@ MO_GLOBAL_MULTIYEAR_BGC_001_033:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16076,8 +15750,6 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16113,8 +15785,6 @@ MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16146,8 +15816,6 @@ MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16176,8 +15844,6 @@ MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16205,8 +15871,6 @@ MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16237,8 +15901,6 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16295,8 +15957,6 @@ MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16331,8 +15991,6 @@ MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16374,8 +16032,6 @@ MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16410,8 +16066,6 @@ MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16442,8 +16096,6 @@ MO_MULTIOBS_GLO_PHY_UVW_3D_MYNRT_015_007:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16473,8 +16125,6 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16501,8 +16151,6 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16533,8 +16181,6 @@ MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16564,8 +16210,6 @@ MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16592,8 +16236,6 @@ MO_SEALEVEL_GLO_PHY_MDT_008_063:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16624,8 +16266,6 @@ MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16662,8 +16302,6 @@ MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16694,8 +16332,6 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16734,8 +16370,6 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16772,8 +16406,6 @@ MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16811,8 +16443,6 @@ MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16844,8 +16474,6 @@ MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16875,8 +16503,6 @@ MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16909,8 +16535,6 @@ MO_WIND_GLO_PHY_L3_NRT_012_002:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16943,8 +16567,6 @@ MO_WIND_GLO_PHY_L3_MY_012_005:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -16975,8 +16597,6 @@ MO_WIND_GLO_PHY_L4_NRT_012_004:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17008,8 +16628,6 @@ MO_WIND_GLO_PHY_L4_MY_012_006:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17040,8 +16658,6 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17074,8 +16690,6 @@ MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17107,8 +16721,6 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17142,8 +16754,6 @@ MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17177,8 +16787,6 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17208,8 +16816,6 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
     - producer
     - processor
   - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    roles:
-    - host
     url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
@@ -17231,7 +16837,7 @@ SPACENET_BUILDINGS_DETECTION_V1:
     over Rio de Janeiro, Brazil, along with 382,534 building footprint labels. Both 3-band and 8-band imagery were included to support algorithm
     development for automated building extraction.
   instruments: []
-  providers: [{"name":"SpaceNet LLC","roles":["processor","host","licensor","producer"],"url":"https://www.spacenet.ai"}]
+  providers: [{"name":"SpaceNet LLC","roles":["processor","licensor","producer"],"url":"https://www.spacenet.ai"}]
   constellation: SpaceNet
   platform: SN1
   processing:level:
@@ -17262,7 +16868,7 @@ SPACENET_BUILDINGS_DETECTION_V2:
   description: |
     The SpaceNet 2 dataset expands the building detection challenge to multiple cities worldwide, including Las Vegas, Paris, Shanghai, and Khartoum. It consists of high-resolution WorldView satellite imagery with annotations for more than 300,000 building footprints across 665 km². The dataset is designed to evaluate model generalization and robustness in detecting buildings across diverse urban landscapes.
   instruments: []
-  providers: [{"name":"SpaceNet LLC","roles":["processor","host","licensor","producer"],"url":"https://www.spacenet.ai"}]
+  providers: [{"name":"SpaceNet LLC","roles":["processor","licensor","producer"],"url":"https://www.spacenet.ai"}]
   constellation: SpaceNet
   platform: SN2
   processing:level:
@@ -17301,7 +16907,7 @@ SPACENET_ROADS_NETWORK_DETECTION:
   description: |
     The SpaceNet 3 dataset was created for the Road Detection and Routing Challenge. It contains more than 8,000 km of road centerlines with detailed attributes, including road type, surface type, and number of lanes. All annotations were digitized from 30 cm GSD WorldView-3 imagery across four cities: Las Vegas, Paris, Shanghai, and Khartoum. This dataset enables the development of algorithms not only for road extraction but also for generating usable routing networks from satellite imagery.
   instruments: []
-  providers: [{"name":"SpaceNet LLC","roles":["processor","host","licensor","producer"],"url":"https://www.spacenet.ai"}]
+  providers: [{"name":"SpaceNet LLC","roles":["processor","licensor","producer"],"url":"https://www.spacenet.ai"}]
   constellation: SpaceNet
   platform: SN3
   processing:level:
@@ -17332,7 +16938,7 @@ SPACENET_OFF_NADIR_BUILDING:
   description: |
     SpaceNet 4 introduced imagery collected at multiple viewing angles (off-nadir), making building footprint extraction significantly more challenging due to distortions, shadows, and perspective changes. The dataset focused on Atlanta, USA, with labeled building footprints provided across different look angles.
   instruments: []
-  providers: [{"name":"SpaceNet LLC","roles":["processor","host","licensor","producer"],"url":"https://www.spacenet.ai"}]
+  providers: [{"name":"SpaceNet LLC","roles":["processor","licensor","producer"],"url":"https://www.spacenet.ai"}]
   constellation: SpaceNet
   platform: SN4
   processing:level:
@@ -17363,7 +16969,7 @@ SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
   description: |
     SpaceNet 5 focuses on automated road network extraction and route travel time estimation from satellite imagery. The publicly available dataset includes high-resolution imagery and road labels for two cities: Moscow, Russia, and Mumbai, India. These annotations enable development of algorithms for extracting road networks and generating connected graphs suitable for routing applications.
   instruments: []
-  providers: [{"name":"SpaceNet LLC","roles":["processor","host","licensor","producer"],"url":"https://www.spacenet.ai"}]
+  providers: [{"name":"SpaceNet LLC","roles":["processor","licensor","producer"],"url":"https://www.spacenet.ai"}]
   constellation: SpaceNet
   platform: SN5
   processing:level:
@@ -17398,7 +17004,7 @@ SPACENET_ALL_WEATHER_MAPPING:
   description: |
     SpaceNet 6 (MSAW) introduced multi-sensor data for the first time, combining Synthetic Aperture Radar (SAR) imagery from Capella Space with optical WorldView-2 imagery. The dataset, centered on Atlanta, provides over 48,000 building footprint labels. Training data includes both SAR and optical images, while testing is SAR-only, encouraging robust building detection under all-weather conditions.
   instruments: ["Capella-SAR", "WorldView-2"]
-  providers: [{"name":"SpaceNet LLC","roles":["processor","host","licensor","producer"],"url":"https://www.spacenet.ai"}]
+  providers: [{"name":"SpaceNet LLC","roles":["processor","licensor","producer"],"url":"https://www.spacenet.ai"}]
   constellation: SpaceNet
   platform: SN6
   processing:level:
@@ -17464,8 +17070,6 @@ GHS_BUILT_S:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation: Sentinel-2, LANDSAT
   platform:
   processing:level:
@@ -17513,8 +17117,6 @@ GHS_BUILT_H:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation: Sentinel-2
   platform:
   processing:level:
@@ -17560,8 +17162,6 @@ GHS_BUILT_V:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation: Sentinel-2, LANDSAT, TanDEM-X
   platform:
   processing:level:
@@ -17611,8 +17211,6 @@ GHS_BUILT_C:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation: Sentinel-2
   platform:
   processing:level:
@@ -17656,8 +17254,6 @@ GHS_LAND:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation: Sentinel-2, Landsat
   platform:
   processing:level:
@@ -17704,8 +17300,6 @@ GHS_POP:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -17754,8 +17348,6 @@ GHS_SMOD:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation: Landsat, Sentinel-2
   platform:
   processing:level:
@@ -17802,8 +17394,6 @@ GHS_ESM:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation: Deimos, Pleiades, WorldView, SPOT
   platform: Deimos-02, Pleiades-1A, Pleiades-1B, WorldView-2, WorldView-3, GeoEye-01, Spot 6, Spot 7
   processing:level:
@@ -17855,8 +17445,6 @@ GHS_DUC:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -17906,8 +17494,6 @@ GHS_FUA:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -17953,8 +17539,6 @@ GHS_BUILT_LAUSTAT:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -18001,8 +17585,6 @@ GHS_ENACT_POP:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -18049,8 +17631,6 @@ GHS_UCDB_DOMAIN:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
@@ -18105,8 +17685,6 @@ GHS_UCDB_REGION:
     - licensor
   - url: https://human-settlement.emergency.copernicus.eu/
     name: GHSL - Global Human Settlement Layer
-    roles:
-    - host
   constellation:
   platform:
   processing:level:
