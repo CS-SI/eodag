@@ -3440,6 +3440,9 @@ class TestCoreSearch(TestCoreBase):
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["start_datetime"], base["start"])
         self.assertEqual(prepared_search["end_datetime"], base["end"])
+        # with an invalid date
+        with self.assertRaises(ValidationError):
+            self.dag._prepare_search(start="2020-01-01", end="2023-11-31")
         # with datetime
         base = {"datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z"}
         _, prepared_search = self.dag._prepare_search(**base)

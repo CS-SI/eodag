@@ -73,7 +73,7 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
-from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
+from eodag.utils.dates import get_date, get_datetime, rfc3339_str_to_datetime
 from eodag.utils.exceptions import (
     AuthenticationError,
     NoMatchingCollection,
@@ -1672,6 +1672,9 @@ class EODataAccessGateway:
             datetimes = get_datetime(kwargs)
             kwargs["start_datetime"] = datetimes[0]
             kwargs["end_datetime"] = datetimes[1]
+        for date_key in ("start_datetime", "end_datetime"):
+            # raises ValidationError if the date is invalid
+            get_date(kwargs.get(date_key))
         if "sort_by" in kwargs:
             new_sort_by = []
             for param_tuple in kwargs["sort_by"]:
