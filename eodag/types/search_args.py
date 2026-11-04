@@ -17,7 +17,7 @@
 # limitations under the License.
 import datetime as dt
 import re
-from typing import Annotated, Any, Union, cast
+from typing import Annotated, Any, cast
 
 from annotated_types import MinLen
 from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
@@ -30,8 +30,8 @@ from eodag.types.bbox import BBox
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE, _deprecated_class
 from eodag.utils.exceptions import ValidationError
 
-NumType = Union[float, int]
-GeomArgs = Union[list[NumType], tuple[NumType], dict[str, NumType], str, BaseGeometry]
+NumType = float | int
+GeomArgs = list[NumType] | tuple[NumType] | dict[str, NumType] | str | BaseGeometry
 
 PositiveInt = conint(gt=0)
 SortByList = Annotated[list[tuple[str, str]], MinLen(1)]

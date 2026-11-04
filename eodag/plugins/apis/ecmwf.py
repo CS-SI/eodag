@@ -81,7 +81,7 @@ class EcmwfApi(Api, ECMWFSearch):
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): EcmwfApi
         * :attr:`~eodag.config.PluginConfig.auth_endpoint` (``str``) (**mandatory**): url of
           the authentication endpoint of the ecmwf api
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Union[str, list]]``): how
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, str | list]``): how
           parameters should be mapped between the provider and eodag; If a string is given, this is
           the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
           is given, the first one is the mapping eodag parameter -> provider query parameters

@@ -17,13 +17,19 @@
 # limitations under the License.
 
 import unittest
-from typing import Literal
+from typing import Annotated, Literal, Union
 
+from annotated_types import Gt
 from pydantic import AliasChoices, ValidationError, create_model
 from pydantic_core import PydanticUndefined
 from typing_extensions import get_args, get_origin
 
-from eodag.types import json_field_definition_to_python, queryables, search_args
+from eodag.types import (
+    json_field_definition_to_python,
+    python_type_to_json,
+    queryables,
+    search_args,
+)
 from eodag.utils.exceptions import ValidationError as EodagValidationError
 from tests.context import BBox
 
@@ -286,6 +292,19 @@ class TestQueryables(unittest.TestCase):
 
 
 class TestFieldDefinition(unittest.TestCase):
+    def test_python_type_to_json_unions(self):
+        expected = [{"type": "number"}, {"type": "string"}]
+        self.assertEqual(python_type_to_json(float | str), expected)
+        self.assertEqual(python_type_to_json(Union[float, str]), expected)
+        self.assertEqual(
+            python_type_to_json(str | None),
+            [{"type": "string"}, {"type": "null"}],
+        )
+        self.assertEqual(
+            python_type_to_json(float | Annotated[int, Gt(0)]),
+            [{"type": "number"}, {"type": "integer", "min": 0}],
+        )
+
     def test_json_field_definition_oneof_constants(self):
         definition = json_field_definition_to_python(
             {

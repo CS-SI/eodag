@@ -225,9 +225,9 @@ def ecmwf_temporal_to_eodag(
     """Convert ECMWF temporal parameters to EODAG temporal parameters.
 
     ECMWF temporal parameters:
-        - **year** or **hyear**: Union[str, list[str]] — Year(s) as a string or list of strings.
-        - **month** or **hmonth**: Union[str, list[str]] — Month(s) as a string or list of strings.
-        - **day** or **hday**: Union[str, list[str]] — Day(s) as a string or list of strings.
+        - **year** or **hyear**: str | list[str] — Year(s) as a string or list of strings.
+        - **month** or **hmonth**: str | list[str] — Month(s) as a string or list of strings.
+        - **day** or **hday**: str | list[str] — Day(s) as a string or list of strings.
         - **time**: str — A string representing the time in the format `HHMM` (e.g., `0200`, `0800`, `1400`).
         - **date**: str — A string in one of the formats:
             - `YYYY-MM-DD`

@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 from copy import deepcopy as copy_deepcopy
+from types import UnionType
 from typing import Annotated, Any, Literal, Type, Union, get_args, get_origin
 
 from annotated_types import Ge, Gt, Le, Lt
@@ -150,14 +151,14 @@ def python_type_to_json(
 
     >>> python_type_to_json(int)
     'integer'
-    >>> python_type_to_json(Union[float, str])
+    >>> python_type_to_json(float | str)
     [{'type': 'number'}, {'type': 'string'}]
 
     :param python_type: the python type
     :returns: the json type
     """
     origin = get_origin(python_type)
-    if origin is Union:
+    if origin in (Union, UnionType):
         json_type = list()
         for single_python_type in get_args(python_type):
             type_data = {}

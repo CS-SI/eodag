@@ -252,7 +252,7 @@ class QueryStringSearch(Search):
             metadata is activated; default: ``False``; if false, the other parameters are not used;
           * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.metadata_pattern` (``str``): regex string a parameter in
             the result should match so that is used
-          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.search_param` (``Union [str, dict[str, Any]]``): format
+          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.search_param` (``str | dict[str, Any]``): format
             to add a query param given by the user and not in the metadata mapping to the requests, 'metadata' will be
             replaced by the search param; can be a string or a dict containing
             :attr:`~eodag.config.PluginConfig.free_text_search_operations`
