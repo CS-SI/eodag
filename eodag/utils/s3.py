@@ -178,7 +178,7 @@ def fetch_range(
     return response["Body"].read()
 
 
-@dataclass
+@dataclass(slots=True)
 class S3FileInfo:
     """
     Describe a S3 object with basic f_info and its download state.
