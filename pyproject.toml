@@ -251,7 +251,7 @@ ignore_missing_imports = true
 cache-keys = [{ git = true }]
 
 [tool.ruff]
-line-length = 120
+line-length = 88
 indent-width = 4
 target-version = "py310"
 force-exclude = true
@@ -260,6 +260,7 @@ extend-exclude = [
     "build",
     "dist",
     "docs/conf.py",
+    "docs/**/*.ipynb",
     "tests/context.py",
 ]
 
@@ -279,7 +280,6 @@ select = [
 ignore = [
     "E203",  # Whitespace before '{symbol}'
     "E266",  # Too many leading '#' for block comment
-    "E501",  # Line length is handled by the formatter
     "D100",  # Missing docstring in public module
     "D105",  # Missing docstring in magic method
     "D107",  # Missing docstring in __init__
@@ -289,10 +289,15 @@ ignore = [
 "**/test*.py" = ["D"]                 # Tests do not require docstrings
 "tests/utils.py" = ["I"]              # Preserve intentional import ordering
 "eodag/utils/__init__.py" = ["I"]     # Preserve intentional import ordering
+"utils/ext_collections_cmp.py" = ["T201"]     # Prints formatted comparison reports
+"utils/ext_product_types_cmp.py" = ["T201"]   # Prints formatted comparison reports
 
 [tool.ruff.lint.isort]
 known-first-party = ["eodag", "tests"]
 known-third-party = ["concurrent.futures"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 120
 
 [tool.ruff.lint.mccabe]
 max-complexity = 18
