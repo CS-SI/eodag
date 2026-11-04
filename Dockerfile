@@ -26,7 +26,8 @@ COPY pyproject.toml README.rst LICENSE MANIFEST.in ./
 
 # build-base is required to enable logging
 RUN apk add --no-cache build-base && \
-    pip install --no-cache-dir ".[all-providers]" && \
+    python -m pip install --no-cache-dir --upgrade "pip>=26.1.2" && \
+    python -m pip install --no-cache-dir ".[all-providers]" && \
     apk del build-base
 
 # Create a non-root user to run the application
