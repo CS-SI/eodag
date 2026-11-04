@@ -21,10 +21,9 @@ import logging
 import pathlib
 import re
 from collections.abc import Iterator
+from importlib import metadata
 from operator import attrgetter
 from typing import TYPE_CHECKING, Any, cast
-
-import importlib_metadata
 
 from eodag.api.provider import ProvidersDict
 from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, PluginConfig, load_config
@@ -89,9 +88,7 @@ class PluginManager:
             # have it discovered as long as they declare an entry point of the type
             # 'eodag.plugins.search' for example in its setup script. See the setup
             # script of eodag for an example of how to do this.
-            for entry_point in importlib_metadata.entry_points(
-                group=f"eodag.plugins.{topic}"
-            ):
+            for entry_point in metadata.entry_points(group=f"eodag.plugins.{topic}"):
                 try:
                     entry_point.load()
                 except ModuleNotFoundError:
@@ -122,7 +119,7 @@ class PluginManager:
 
     def _get_external_provider_config_paths(
         self,
-        entry_point: importlib_metadata.EntryPoint,
+        entry_point: metadata.EntryPoint,
     ) -> list[pathlib.Path]:
         """Return provider config paths exposed by an external plugin distribution."""
         config_paths: list[pathlib.Path] = []

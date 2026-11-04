@@ -21,9 +21,9 @@ import os
 import re
 import sys
 import unittest
+from importlib import metadata
 from typing import Any, Iterator
 
-import importlib_metadata
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from stdlib_list import stdlib_list
@@ -39,6 +39,8 @@ from tests.context import MisconfiguredError
 project_path = "./eodag"
 pyproject_path = "./pyproject.toml"
 allowed_missing_imports = ["eodag"]
+# Python 3.10 metadata cannot map zipstream to zipstream-ng because it has no top_level.txt.
+IMPORT_NAME_TO_DISTRIBUTION = {"zipstream": "zipstream-ng"}
 
 
 def get_imports(filepath: str) -> Iterator[Any]:
@@ -138,7 +140,7 @@ class TestRequirements(unittest.TestCase):
         project_imports = get_project_imports(project_path)
         setup_requires = get_setup_requires(pyproject_path)
         setup_requires.update(get_optional_dependencies(pyproject_path, "all"))
-        import_required_dict = importlib_metadata.packages_distributions()
+        import_required_dict = metadata.packages_distributions()
         try:
             default_libs = stdlib_list()
         except FileNotFoundError:
@@ -156,6 +158,8 @@ class TestRequirements(unittest.TestCase):
                     project_import, [project_import]
                 )
             }
+            if distribution := IMPORT_NAME_TO_DISTRIBUTION.get(project_import):
+                required.add(canonicalize_name(distribution))
             if (
                 not required.intersection(setup_requires)
                 and project_import not in default_libs + allowed_missing_imports
