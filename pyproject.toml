@@ -271,6 +271,50 @@ ignore_missing_imports = true
 [tool.uv]
 cache-keys = [{ git = true }]
 
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py310"
+extend-exclude = [
+    ".tox",
+    "docs/conf.py",
+    "tests/context.py",
+]
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+select = [
+    "B",       # flake8-bugbear
+    "E",       # pycodestyle errors
+    "W",       # pycodestyle warnings
+    "F",       # Pyflakes
+    "C90",     # mccabe complexity
+    "I",       # isort
+    "T20",     # flake8-print
+    "D1",      # pydocstyle docstring presence
+    "ERA001",  # flake8-eradicate commented-out code
+]
+ignore = [
+    "E203",  # Whitespace before '{symbol}'
+    "E266",  # Too many leading '#' for block comment
+    "E501",  # Line length is handled by the formatter
+    "D100",  # Missing docstring in public module
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test*.py" = ["D"]                 # Tests do not require docstrings
+"tests/utils.py" = ["I"]              # Preserve intentional import ordering
+"eodag/utils/__init__.py" = ["I"]     # Preserve intentional import ordering
+
+[tool.ruff.lint.isort]
+known-first-party = ["eodag", "tests"]
+known-third-party = ["concurrent.futures"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 18
+
 [tool.semantic_release.branches.main]
 match = "(master|develop)"
 
