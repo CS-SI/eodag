@@ -928,7 +928,11 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(
+                        ["collection", "start", "end", "geom"],
+                        AWSEOS_SEARCH_ARGS[1:],
+                        strict=True,
+                    )
                 ),
             )
 
@@ -956,7 +960,11 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             results = eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(
+                        ["collection", "start", "end", "geom"],
+                        AWSEOS_SEARCH_ARGS[1:],
+                        strict=True,
+                    )
                 ),
             )
             self.assertGreater(len(results), 0)
@@ -990,6 +998,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         USGS_RECENT_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1004,6 +1013,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         METEOBLUE_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1018,6 +1028,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         HYDROWBEB_NEXT_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1032,6 +1043,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         WEKEO_MAIN_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1046,6 +1058,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         WEKEO_ECMWF_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )

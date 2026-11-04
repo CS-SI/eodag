@@ -3066,7 +3066,7 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
                 olds.append(old)
                 currents.append(current)
             EODataAccessGateway()
-            for old, current in zip(olds, currents):
+            for old, current in zip(olds, currents, strict=True):
                 self.assertTrue(os.path.exists(current))
                 if old != current:
                     try:
