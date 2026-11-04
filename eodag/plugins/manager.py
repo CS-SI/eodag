@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Iterator, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Iterator, Optional, TypeVar
 
 import importlib_metadata
 
@@ -149,10 +149,8 @@ class PluginManager:
         return klass(options)
 
     def get_search_plugins(
-        self,
-        collection: Optional[str] = None,
-        provider: Optional[str] = None,
-    ) -> Iterator[Union[Search, Api]]:
+        self, collection: str | None = None, provider: str | None = None
+    ) -> Iterator[Search | Api]:
         """Build and return all the search plugins supporting the given collection,
         ordered by highest priority, or the search plugin of the given provider
 
@@ -214,7 +212,7 @@ class PluginManager:
                 p_name, PluginConfig.from_mapping(plugin_conf)
             )
 
-    def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
+    def get_download_plugin(self, product: EOProduct) -> Download | Api:
         """Build and return the download plugin for the given product."""
         from eodag.plugins.apis.base import Api
         from eodag.plugins.download.base import Download
@@ -324,8 +322,8 @@ class PluginManager:
     def get_auth_plugins(
         self,
         provider: str,
-        matching_url: Optional[str] = None,
-        matching_conf: Optional[PluginConfig] = None,
+        matching_url: str | None = None,
+        matching_conf: PluginConfig | None = None,
         product: Optional[EOProduct] = None,
     ) -> Iterator[Authentication]:
         """Build and return the authentication plugin for the given collection and

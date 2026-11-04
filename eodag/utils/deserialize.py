@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from eodag.utils import GENERIC_STAC_PROVIDER, STAC_SEARCH_PLUGINS
 from eodag.utils.exceptions import MisconfiguredError
@@ -33,7 +33,7 @@ logger = logging.getLogger("eodag.utils.deserialize")
 
 def unregistered_product_from_item(
     feature: dict[str, Any], provider: str, plugins_manager: "PluginManager"
-) -> Optional[EOProduct]:
+) -> EOProduct | None:
     """Create an EOProduct from a STAC item, map its metadata, but without registering its plugins.
 
     :param feature: The STAC item to convert into an EOProduct.
@@ -57,7 +57,7 @@ def unregistered_product_from_item(
 
 def _import_stac_item_from_eodag_server(
     feature: dict[str, Any], plugins_manager: PluginManager
-) -> Optional[EOProduct]:
+) -> EOProduct | None:
     """Import a STAC item from EODAG Server.
 
     :param feature: A STAC item as a dictionary
@@ -117,8 +117,8 @@ def _import_stac_item_from_eodag_server(
 def _import_stac_item_from_known_provider(
     feature: dict[str, Any],
     plugins_manager: PluginManager,
-    provider: Optional[str] = None,
-) -> Optional[EOProduct]:
+    provider: str | None = None,
+) -> EOProduct | None:
     """Import a STAC item from an already-configured STAC provider.
 
     :param feature: A STAC item as a dictionary
@@ -166,7 +166,7 @@ def _import_stac_item_from_known_provider(
 
 def _import_stac_item_from_unknown_provider(
     feature: dict[str, Any], plugins_manager: PluginManager
-) -> Optional[EOProduct]:
+) -> EOProduct | None:
     """Import a STAC item from an unknown STAC provider.
 
     :param feature: A STAC item as a dictionary

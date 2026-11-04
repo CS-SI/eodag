@@ -43,7 +43,7 @@ from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Union
+    from typing import Any
 
     from concurrent.futures import ThreadPoolExecutor
     from mypy_boto3_s3 import S3ServiceResource
@@ -81,7 +81,7 @@ class EcmwfApi(Api, ECMWFSearch):
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): EcmwfApi
         * :attr:`~eodag.config.PluginConfig.auth_endpoint` (``str``) (**mandatory**): url of
           the authentication endpoint of the ecmwf api
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Union[str, list]]``): how
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, str | list]``): how
           parameters should be mapped between the provider and eodag; If a string is given, this is
           the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
           is given, the first one is the mapping eodag parameter -> provider query parameters
@@ -138,7 +138,7 @@ class EcmwfApi(Api, ECMWFSearch):
 
         return ECMWFSearch.query(self, prep, **kwargs)
 
-    def authenticate(self) -> dict[str, Optional[str]]:
+    def authenticate(self) -> dict[str, str | None]:
         """Check credentials and returns information needed for auth
 
         :returns: {key, url, email} dictionary
@@ -169,13 +169,13 @@ class EcmwfApi(Api, ECMWFSearch):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         """Download data from ECMWF MARS"""
         product_format = product.properties.get("format", "grib")
         product_extension = ECMWF_MARS_KNOWN_FORMATS.get(product_format, product_format)
@@ -263,7 +263,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def discover_queryables(
         self,
         **kwargs: Any,
-    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
+    ) -> dict[str, Annotated[Any, FieldInfo]] | None:
         """Fetch queryables list from provider using metadata mapping
 
         :param kwargs: additional filters for queryables (`collection` and other search

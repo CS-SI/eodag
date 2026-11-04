@@ -20,7 +20,7 @@
 import datetime as dt
 import logging
 from collections.abc import Callable
-from typing import Annotated, Any, ClassVar, Optional, Type, TypeVar, Union, cast
+from typing import Annotated, Any, ClassVar, Type, TypeVar, cast
 
 from pydantic import (
     AliasChoices,
@@ -148,7 +148,7 @@ class CommonStacMetadata(ItemProperties):
     @classmethod
     def _create_from_stac_map(
         cls,
-    ) -> dict[str, Optional[Union[str, AliasChoices, AliasPath]]]:
+    ) -> dict[str, str | AliasChoices | AliasPath | None]:
         """Create mapping to convert fields from STAC to python-style"""
         return {
             v.serialization_alias or k: v.validation_alias
@@ -199,7 +199,7 @@ class CommonStacMetadata(ItemProperties):
         :param field_name: STAC field name
         :returns: EODAG field name
         """
-        field_dict: dict[str, Optional[Union[str, AliasChoices, AliasPath]]] = {
+        field_dict: dict[str, str | AliasChoices | AliasPath | None] = {
             stac_name: py_name
             for stac_name, py_name in cls._create_from_stac_map().items()
             if field_name == stac_name
@@ -222,7 +222,7 @@ class CommonStacMetadata(ItemProperties):
         :param field_name: python-style field name
         :returns: STAC field name
         """
-        field_dict: dict[str, Optional[Union[str, AliasChoices, AliasPath]]] = {
+        field_dict: dict[str, str | AliasChoices | AliasPath | None] = {
             stac_name: py_name
             for stac_name, py_name in cls._create_from_stac_map().items()
             if field_name == py_name
@@ -317,7 +317,7 @@ def create_stac_metadata_model(
     models = base_models + extension_models
 
     # check for duplicate field aliases (e.g., start_datetime and start in Queryables)
-    aliases: dict[str, Optional[str]] = dict()
+    aliases: dict[str, str | None] = dict()
     duplicates = set()
     for bm in base_models:
         for key, field in bm.model_fields.items():

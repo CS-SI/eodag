@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any
 from unittest import mock
 
 import geojson
@@ -91,7 +91,7 @@ class StaticStacSearch(StacSearch):
         ):
             self.config.discover_collections = {}
 
-    def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+    def discover_collections(self, **kwargs: Any) -> dict[str, Any] | None:
         """Fetch collections list from a static STAC Catalog provider using `discover_collections` conf
 
         :returns: configuration dict containing fetched collections information

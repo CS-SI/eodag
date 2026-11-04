@@ -110,7 +110,7 @@ class Collection(StacCollection):
 
     type: Literal["Collection"] = Field(default="Collection")
     stac_version: str = Field(default=STAC_VERSION, pattern=SEMVER_REGEX)
-    description: Optional[str] = Field(default=NOT_AVAILABLE, min_length=1)  # type: ignore
+    description: str | None = Field(default=NOT_AVAILABLE, min_length=1)  # type: ignore
     license: str = Field(default="other", min_length=1)
     extent: Extent = Field(
         default=Extent(
@@ -125,12 +125,12 @@ class Collection(StacCollection):
         ),
     )
     # overwrite field "keywords" with type "list" instead of "typing.List"
-    keywords: Optional[list[str]] = None
+    keywords: list[str] | None = None
     links: Links = Field(default=Links(root=[]))
 
     # fields which are not part of the StacCollection model
     # but which can be used at the root of a STAC collection instance
-    federation_backends: Optional[list[str]] = Field(
+    federation_backends: list[str] | None = Field(
         default=None, alias="federation:backends"
     )
 
@@ -140,18 +140,18 @@ class Collection(StacCollection):
     )
 
     # summaries
-    constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
-    instruments: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
-    platform: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
-    processing_level: Optional[list[str]] = Field(
+    constellation: list[str] | None = Field(default=None, exclude=True, repr=False)
+    instruments: list[str] | None = Field(default=None, exclude=True, repr=False)
+    platform: list[str] | None = Field(default=None, exclude=True, repr=False)
+    processing_level: list[str] | None = Field(
         default=None, alias="processing:level", exclude=True, repr=False
     )
-    eodag_sensor_type: Optional[list[str]] = Field(
+    eodag_sensor_type: list[str] | None = Field(
         default=None, alias="eodag:sensor_type", exclude=True, repr=False
     )
 
     # eodag-specific attribute
-    alias: Optional[str] = Field(
+    alias: str | None = Field(
         default=None,
         min_length=1,
         description="An alias given by a user to use his customized id intead of the internal id of EODAG",
@@ -159,13 +159,13 @@ class Collection(StacCollection):
     )
 
     # path to external collection metadata file (required by stac-fastapi-eodag)
-    eodag_stac_collection: Optional[str] = Field(
-        default=None, alias="stacCollection", repr=False
+    eodag_stac_collection: str | None = Field(
+        default=None, alias="stacCollection", exclude=True, repr=False
     )
 
     # Private property to store the eodag internal id value. Not part of the model schema.
     _id: str = PrivateAttr()
-    _dag: Optional[EODataAccessGateway] = PrivateAttr(default=None)
+    _dag: EODataAccessGateway | None = PrivateAttr(default=None)
 
     # only STAC fields
     __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys()) + [

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import collections.abc
 import re
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 
@@ -39,7 +39,7 @@ def str_as_href(link: str) -> str:
         return link
 
 
-def html_table(input: Any, depth: Optional[int] = None) -> str:
+def html_table(input: Any, depth: int | None = None) -> str:
     """Transform input object to HTML table.
 
     :param input: input object to represent
@@ -59,7 +59,7 @@ def html_table(input: Any, depth: Optional[int] = None) -> str:
 
 def dict_to_html_table(
     input_dict: collections.abc.Mapping,
-    depth: Optional[int] = None,
+    depth: int | None = None,
     brackets: bool = True,
 ) -> str:
     """Transform input dict to HTML table.
@@ -98,7 +98,7 @@ def dict_to_html_table(
 
 
 def list_to_html_table(
-    input_list: collections.abc.Sequence, depth: Optional[int] = None
+    input_list: collections.abc.Sequence, depth: int | None = None
 ) -> str:
     """Transform input list to HTML table.
 

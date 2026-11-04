@@ -22,7 +22,7 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -87,7 +87,7 @@ class UsgsApi(Api):
           file should be extracted; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to
           be ordered to download it; default: ``False``
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Union[str, list]]``): how
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, str | list]``): how
           parameters should be mapped between the provider and eodag; If a string is given, this is
           the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
           is given, the first one is the mapping eodag parameter -> provider query parameters
@@ -307,13 +307,13 @@ class UsgsApi(Api):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         """Download data from USGS catalogues"""
 
         if progress_callback is None:

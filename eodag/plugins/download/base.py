@@ -28,7 +28,7 @@ import zipfile
 from abc import abstractmethod
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -107,13 +107,13 @@ class Download(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
@@ -140,8 +140,8 @@ class Download(PluginTopic):
     def stream_download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        auth: AuthBase | S3ServiceResource | None = None,
+        byte_range: tuple[int | None, int | None] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -169,9 +169,9 @@ class Download(PluginTopic):
     def _prepare_download(
         self,
         product: EOProduct,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
@@ -322,7 +322,7 @@ class Download(PluginTopic):
     def _finalize(
         self,
         fs_path: str,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
         **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Finalize the download process.
@@ -464,10 +464,10 @@ class Download(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        downloaded_callback: DownloadedCallback | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -699,7 +699,7 @@ class Download(PluginTopic):
                             )
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
-                        wait_seconds: Union[float, int] = (
+                        wait_seconds: float | int = (
                             datetime_now - product.next_try + dt.timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
@@ -760,7 +760,7 @@ class Download(PluginTopic):
         return decorator
 
     def _config_executor(
-        self, executor: ThreadPoolExecutor, thread_name_prefix: Optional[str] = None
+        self, executor: ThreadPoolExecutor, thread_name_prefix: str | None = None
     ) -> None:
         """
         Configure a ThreadPoolExecutor instance.

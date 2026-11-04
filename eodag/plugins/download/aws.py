@@ -21,7 +21,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import boto3
 import requests
@@ -232,13 +232,13 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         """Download method for AWS S3 API.
 
         The product can be downloaded as it is, or as SAFE-formatted product.
@@ -342,7 +342,7 @@ class AwsDownload(Download):
         )
 
         # a single archive is stored as {output_dir}/{title}.{ext} and finalized like with HTTPDownload
-        single_archive_path: Optional[str] = None
+        single_archive_path: str | None = None
         if (
             not build_safe
             and len(unique_product_chunks) == 1
@@ -481,7 +481,7 @@ class AwsDownload(Download):
     def _download_file_in_zip(
         self,
         downloader_auth: AwsAuth,
-        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: list[tuple[str, str | None]],
         product_local_path: str,
         progress_callback: ProgressCallback,
         executor: ThreadPoolExecutor,
@@ -495,7 +495,7 @@ class AwsDownload(Download):
 
         downloaded = []
 
-        def process_zip_file(i: int, pack: tuple[str, Optional[str]]) -> Optional[int]:
+        def process_zip_file(i: int, pack: tuple[str, str | None]) -> int | None:
             bucket_name, prefix = pack
             if prefix is not None and ".zip!" in prefix:
                 splitted_path = prefix.split(".zip!")
@@ -557,7 +557,7 @@ class AwsDownload(Download):
         product: EOProduct,
         progress_callback: ProgressCallback,
         **kwargs: Unpack[DownloadConf],
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """Prepare the download.
 
         It means:
@@ -628,10 +628,10 @@ class AwsDownload(Download):
     def _get_bucket_names_and_prefixes(
         self,
         product: EOProduct,
-        asset_filter: Optional[str],
+        asset_filter: str | None,
         ignore_assets: bool,
         complementary_url_keys: list[str],
-    ) -> list[tuple[str, Optional[str]]]:
+    ) -> list[tuple[str, str | None]]:
         """Retrieve the bucket names and path prefixes for the assets.
 
         :param product: product for which the assets shall be downloaded
@@ -686,9 +686,9 @@ class AwsDownload(Download):
 
     def _get_unique_products(
         self,
-        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: list[tuple[str, str | None]],
         authenticated_objects: dict[str, BucketObjectsCollection],
-        asset_filter: Optional[str],
+        asset_filter: str | None,
         ignore_assets: bool,
         product: EOProduct,
         raise_error: bool = True,
@@ -741,8 +741,8 @@ class AwsDownload(Download):
     def stream_download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        auth: AuthBase | S3ServiceResource | None = None,
+        byte_range: tuple[int | None, int | None] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -907,8 +907,8 @@ class AwsDownload(Download):
         return os.path.commonpath(chunk_paths)
 
     def get_product_bucket_name_and_prefix(
-        self, product: EOProduct, url: Optional[str] = None
-    ) -> tuple[str, Optional[str]]:
+        self, product: EOProduct, url: str | None = None
+    ) -> tuple[str, str | None]:
         """Extract bucket name and prefix from product URL.
 
         :param product: The EO product to download
@@ -1021,7 +1021,7 @@ class AwsDownload(Download):
         self,
         product: EOProduct,
         chunk: Any,
-        dir_prefix: Optional[str] = None,
+        dir_prefix: str | None = None,
         build_safe: bool = False,
     ) -> str:
         """Get chunk SAFE destination path."""
@@ -1032,14 +1032,14 @@ class AwsDownload(Download):
             logger.debug(f"Downloading {chunk.key} to {product_path}")
             return product_path
 
-        title_date1: Optional[str] = None
-        title_part3: Optional[str] = None
+        title_date1: str | None = None
+        title_part3: str | None = None
         ds_dir: Any = 0
         s2_processing_level: str = ""
-        s1_title_suffix: Optional[str] = None
+        s1_title_suffix: str | None = None
         # S2 common
         if product.collection and "S2_MSI" in product.collection:
-            title_search: Optional[re.Match[str]] = re.search(
+            title_search: re.Match[str] | None = re.search(
                 r"^\w+_\w+_(\w+)_(\w+)_(\w+)_(\w+)_(\w+)$",
                 product.properties["title"],
             )

@@ -17,16 +17,14 @@
 # limitations under the License.
 from __future__ import annotations
 
-
-import datetime as dt
 import base64
-
+import datetime as dt
 import logging
 import re
 import string
 from random import SystemRandom
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlparse
 
 import jwt
@@ -566,9 +564,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 exc, "An error occurred while authenticating the user."
             ) from exc
 
-    def _constant_or_xpath_extracted(
-        self, value: str, form_element: Any
-    ) -> Optional[str]:
+    def _constant_or_xpath_extracted(self, value: str, form_element: Any) -> str | None:
         match = self.CONFIG_XPATH_REGEX.match(value)
         if not match:
             return value
@@ -599,8 +595,8 @@ class CodeAuthorizedAuth(AuthBase):
         self,
         token: str,
         where: str,
-        key: Optional[str] = None,
-        refresh_token: Optional[str] = None,
+        key: str | None = None,
+        refresh_token: str | None = None,
     ) -> None:
         self.token = token
         self.where = where

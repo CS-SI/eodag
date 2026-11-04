@@ -23,7 +23,7 @@ import logging
 import re
 from collections import OrderedDict
 from types import MethodType
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -221,13 +221,13 @@ def ecmwf_format(v: str, alias: bool = True) -> str:
 
 def ecmwf_temporal_to_eodag(
     params: dict[str, Any],
-) -> tuple[Optional[str], Optional[str]]:
+) -> tuple[str | None, str | None]:
     """Convert ECMWF temporal parameters to EODAG temporal parameters.
 
     ECMWF temporal parameters:
-        - **year** or **hyear**: Union[str, list[str]] — Year(s) as a string or list of strings.
-        - **month** or **hmonth**: Union[str, list[str]] — Month(s) as a string or list of strings.
-        - **day** or **hday**: Union[str, list[str]] — Day(s) as a string or list of strings.
+        - **year** or **hyear**: str | list[str] — Year(s) as a string or list of strings.
+        - **month** or **hmonth**: str | list[str] — Month(s) as a string or list of strings.
+        - **day** or **hday**: str | list[str] — Day(s) as a string or list of strings.
         - **time**: str — A string representing the time in the format `HHMM` (e.g., `0200`, `0800`, `1400`).
         - **date**: str — A string in one of the formats:
             - `YYYY-MM-DD`
@@ -537,7 +537,7 @@ class ECMWFSearch(PostJsonSearch):
         return indirects
 
     def _get_collection_queryables(
-        self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
+        self, collection: str | None, alias: str | None, filters: dict[str, Any]
     ) -> QueryablesDict:
         """Override to set additional_properties to false."""
         default_values: dict[str, Any] = deepcopy(
@@ -583,7 +583,7 @@ class ECMWFSearch(PostJsonSearch):
     def discover_queryables(
         self,
         **kwargs: Any,
-    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
+    ) -> dict[str, Annotated[Any, FieldInfo]] | None:
         """Fetch queryables list from provider using its constraints file.
 
         :param kwargs: additional filters for queryables (`collection` and other search
@@ -1212,7 +1212,7 @@ class ECMWFSearch(PostJsonSearch):
         return [product]
 
     def count_hits(
-        self, count_url: Optional[str] = None, result_type: Optional[str] = None
+        self, count_url: str | None = None, result_type: str | None = None
     ) -> int:
         """Count method that will always return 1.
 

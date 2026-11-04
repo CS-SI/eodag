@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
@@ -100,8 +100,8 @@ class AwsAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsAuth, self).__init__(provider, config)
-        self.s3_session: Optional[boto3.Session] = None
-        self.s3_resource: Optional[S3ServiceResource] = None
+        self.s3_session: boto3.Session | None = None
+        self.s3_resource: S3ServiceResource | None = None
         # set default for requester_pays if not given
         self.config.__dict__.setdefault("requester_pays", False)
 
@@ -216,7 +216,7 @@ class AwsAuth(Authentication):
 
     def authenticate_objects(
         self,
-        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: list[tuple[str, str | None]],
     ) -> dict[str, BucketObjectsCollection]:
         """
         Authenticates with s3 and retrieves the available objects

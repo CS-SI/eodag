@@ -24,7 +24,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
-from typing import Optional, Tuple
+from typing import Tuple
 
 import click
 import responses
@@ -97,7 +97,7 @@ class TestEodagCli(unittest.TestCase):
 
     def eodag_command(
         self, command_list: list = [], env: dict = {}
-    ) -> Tuple[int, str, Optional[Exception]]:
+    ) -> Tuple[int, str, Exception | None]:
         """Eodag command line
 
         :param command_list: command line

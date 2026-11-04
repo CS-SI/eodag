@@ -20,13 +20,13 @@ from __future__ import annotations
 import os
 import signal
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Iterator, Mapping
 
 if TYPE_CHECKING:
     from requests.structures import CaseInsensitiveDict
 
 
-def _new_case_insensitive_dict(headers: Optional[Mapping[str, str]] = None):
+def _new_case_insensitive_dict(headers: Mapping[str, str] | None = None):
     """Create headers mapping with a local import to avoid import-time overhead."""
     from requests.structures import CaseInsensitiveDict
 
@@ -57,7 +57,7 @@ class StreamResponseContent(Iterable[bytes]):
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
 
-    def __init__(self, content: Union[Iterable[bytes], bytes]):
+    def __init__(self, content: Iterable[bytes] | bytes):
         self.buffer: bytes = b""
         self.interrupted: bool = False
         StreamResponseContent.__instances.append(self)
@@ -102,24 +102,24 @@ class StreamResponse:
     """Represents a streaming response"""
 
     content: StreamResponseContent
-    _filename: Optional[str] = field(default=None, repr=False, init=False)
-    _size: Optional[int] = field(default=None, repr=False, init=False)
+    _filename: str | None = field(default=None, repr=False, init=False)
+    _size: int | None = field(default=None, repr=False, init=False)
     headers: CaseInsensitiveDict[str] = field(
         default_factory=_new_case_insensitive_dict
     )
-    media_type: Optional[str] = None
-    status_code: Optional[int] = None
-    arcname: Optional[str] = None
+    media_type: str | None = None
+    status_code: int | None = None
+    arcname: str | None = None
 
     def __init__(
         self,
-        content: Union[Iterable[bytes], bytes],
-        filename: Optional[str] = None,
-        size: Optional[int] = None,
-        headers: Optional[Mapping[str, str]] = None,
-        media_type: Optional[str] = None,
-        status_code: Optional[int] = None,
-        arcname: Optional[str] = None,
+        content: Iterable[bytes] | bytes,
+        filename: str | None = None,
+        size: int | None = None,
+        headers: Mapping[str, str] | None = None,
+        media_type: str | None = None,
+        status_code: int | None = None,
+        arcname: str | None = None,
     ):
         self.content = StreamResponseContent(content)
         self.headers = _new_case_insensitive_dict(headers)
@@ -132,7 +132,7 @@ class StreamResponse:
 
     # filename handling
     @property
-    def filename(self) -> Optional[str]:
+    def filename(self) -> str | None:
         """Get the filename for the streaming response.
 
         :returns: The filename, or None if not set
@@ -140,7 +140,7 @@ class StreamResponse:
         return self._filename
 
     @filename.setter
-    def filename(self, value: Optional[str]) -> None:
+    def filename(self, value: str | None) -> None:
         """Set the filename and update the Content-Disposition header accordingly.
 
         :param value: The filename to set, or None to clear it
@@ -148,15 +148,15 @@ class StreamResponse:
         self._filename = value
         if value:
             outputs_filename = os.path.basename(value)
-            self.headers[
-                "Content-Disposition"
-            ] = f'attachment; filename="{outputs_filename}"'
+            self.headers["Content-Disposition"] = (
+                f'attachment; filename="{outputs_filename}"'
+            )
         elif "Content-Disposition" in self.headers:
             del self.headers["Content-Disposition"]
 
     # size handling
     @property
-    def size(self) -> Optional[int]:
+    def size(self) -> int | None:
         """Get the content size for the streaming response.
 
         :returns: The content size in bytes, or None if not set
@@ -164,7 +164,7 @@ class StreamResponse:
         return self._size
 
     @size.setter
-    def size(self, value: Optional[int]) -> None:
+    def size(self, value: int | None) -> None:
         """Set the content size and update the Content-Length header accordingly.
 
         :param value: The content size in bytes, or None to clear it

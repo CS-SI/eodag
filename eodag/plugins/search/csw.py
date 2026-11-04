@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
@@ -170,7 +170,7 @@ class CSWSearch(Search):
         return formated_result
 
     def __init_catalog(
-        self, username: Optional[str] = None, password: Optional[str] = None
+        self, username: str | None = None, password: str | None = None
     ) -> None:
         """Initializes a catalogue by performing a GetCapabilities request on the url"""
         if not self.catalog:
@@ -242,7 +242,7 @@ class CSWSearch(Search):
         collection_def: dict[str, Any],
         collection: str,
         params: dict[str, Any],
-    ) -> Union[list[OgcExpression], list[list[OgcExpression]]]:
+    ) -> list[OgcExpression] | list[list[OgcExpression]]:
         """Translates eodag search to CSW constraints using owslib constraint classes"""
         constraints: list[OgcExpression] = []
         # How the match should be performed (fuzzy, prefix, postfix or exact).

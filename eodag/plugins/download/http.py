@@ -27,7 +27,7 @@ from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Literal, cast
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -145,9 +145,9 @@ class HTTPDownload(Download):
     def _order(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase] = None,
+        auth: AuthBase | None = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is orderable
@@ -179,7 +179,7 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         OrderKwargs = TypedDict(
-            "OrderKwargs", {"json": dict[str, Union[Any, list[str]]]}, total=False
+            "OrderKwargs", {"json": dict[str, Any | list[str]]}, total=False
         )
         order_kwargs: OrderKwargs = {}
         if order_method == "POST":
@@ -236,7 +236,7 @@ class HTTPDownload(Download):
 
     def order_response_process(
         self, response: Response, product: EOProduct
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Process order response
 
         :param response: The order response
@@ -287,7 +287,7 @@ class HTTPDownload(Download):
     def _order_status(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase] = None,
+        auth: AuthBase | None = None,
     ) -> None:
         """Send product order status request.
 
@@ -306,15 +306,15 @@ class HTTPDownload(Download):
         """
 
         status_config = getattr(self.config, "order_status", {})
-        success_code: Optional[int] = status_config.get("success", {}).get("http_code")
+        success_code: int | None = status_config.get("success", {}).get("http_code")
 
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
         def _request(
             url: str,
             method: str = "GET",
-            headers: Optional[dict[str, Any]] = None,
-            json: Optional[Any] = None,
+            headers: dict[str, Any] | None = None,
+            json: Any | None = None,
             timeout: int = HTTP_REQ_TIMEOUT,
         ) -> Response:
             """Send request and handle allow redirects"""
@@ -603,13 +603,13 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         """Download a product using HTTP protocol.
 
         The downloaded product is assumed to be a Zip file. If it is not,
@@ -752,7 +752,7 @@ class HTTPDownload(Download):
         asset_content_disposition = product._stream.headers.get("Content-Disposition")
         if asset_content_disposition:
             filename = cast(
-                Optional[str],
+                str | None,
                 parse_header(asset_content_disposition).get_param("filename", None),
             )
         if not filename:
@@ -774,8 +774,8 @@ class HTTPDownload(Download):
     def stream_download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        auth: AuthBase | S3ServiceResource | None = None,
+        byte_range: tuple[int | None, int | None] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -879,7 +879,7 @@ class HTTPDownload(Download):
             size=getattr(product, "size", None),
         )
 
-    def _check_auth_exception(self, e: Optional[RequestException]) -> None:
+    def _check_auth_exception(self, e: RequestException | None) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
@@ -899,7 +899,7 @@ class HTTPDownload(Download):
             )
 
     def _process_exception(
-        self, e: Optional[RequestException], product: EOProduct, ordered_message: str
+        self, e: RequestException | None, product: EOProduct, ordered_message: str
     ) -> None:
         self._check_auth_exception(e)
         if e is not None:
@@ -938,7 +938,7 @@ class HTTPDownload(Download):
     def _order_request(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase],
+        auth: AuthBase | None,
     ) -> None:
         if (
             "eodag:order_link" in product.properties
@@ -956,7 +956,7 @@ class HTTPDownload(Download):
     def order(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> None:
@@ -976,8 +976,8 @@ class HTTPDownload(Download):
     def _raw_stream_download(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        auth: AuthBase | None = None,
+        progress_callback: ProgressCallback | None = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         """
@@ -1090,8 +1090,8 @@ class HTTPDownload(Download):
         self,
         product: EOProduct,
         executor: ThreadPoolExecutor,
-        auth: Optional[AuthBase] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        auth: AuthBase | None = None,
+        progress_callback: ProgressCallback | None = None,
         assets_values: list[Asset] = [],
         **kwargs: Unpack[DownloadConf],
     ) -> list[StreamResponse]:
@@ -1185,7 +1185,7 @@ class HTTPDownload(Download):
                         )
                         if asset_content_disposition is not None:
                             asset.filename = cast(
-                                Optional[str],
+                                str | None,
                                 parse_header(asset_content_disposition).get_param(
                                     "filename", None
                                 ),
@@ -1246,9 +1246,9 @@ class HTTPDownload(Download):
         product: EOProduct,
         fs_dir_path: str,
         record_filename: str,
-        auth: Optional[AuthBase] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download product assets if they exist"""
@@ -1388,8 +1388,8 @@ class HTTPDownload(Download):
         self,
         assets_values: list[Asset],
         executor: ThreadPoolExecutor,
-        auth: Optional[AuthBase],
-        params: Optional[dict[str, str]],
+        auth: AuthBase | None,
+        params: dict[str, str] | None,
         zipped: bool = False,
     ) -> int:
 

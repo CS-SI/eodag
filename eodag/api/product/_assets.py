@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from eodag.utils.exceptions import NotAvailableError
 from eodag.utils.repr import dict_to_html_table
@@ -118,9 +118,7 @@ class AssetsDict(UserDict):
         tr_style = "style='background-color: transparent;'" if embeded else ""
         return (
             f"<table>{thead}"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
                 <details><summary style='color: grey;'>
                     <span style='color: black'>'{k}'</span>:&ensp;
                     {{
@@ -136,10 +134,7 @@ class AssetsDict(UserDict):
                     {dict_to_html_table(v, depth=2)}
                 </details>
                 </td></tr>
-                """
-                    for k, v in self.items()
-                ]
-            )
+                """ for k, v in self.items()])
             + "</table>"
         )
 
@@ -170,7 +165,7 @@ class Asset(UserDict):
 
     product: EOProduct
     size: int
-    filename: Optional[str]
+    filename: str | None
     rel_path: str
 
     def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:
