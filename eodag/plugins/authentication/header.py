@@ -100,7 +100,7 @@ class HTTPHeaderAuth(Authentication):
                 "The following credentials are missing for provider {}: {}".format(
                     self.provider, ", ".join(e.args)
                 )
-            )
+            ) from e
 
 
 class HeaderAuth(AuthBase):

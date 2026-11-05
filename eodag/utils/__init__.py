@@ -641,8 +641,8 @@ def rename_subfolder(dirpath: str, name: str) -> None:
     """
     try:
         subdir, *_ = (p for p in glob(os.path.join(dirpath, "*")) if os.path.isdir(p))
-    except ValueError:
-        raise RuntimeError(f"No subfolder was found in {dirpath}")
+    except ValueError as e:
+        raise RuntimeError(f"No subfolder was found in {dirpath}") from e
 
     os.rename(
         subdir,
@@ -1109,7 +1109,7 @@ def format_string(key: str | None, str_to_format: Any, **format_variables: Any) 
             if not re.search(r"{[\w-]*:[\w-]*}", str_to_format):
                 raise MisconfiguredError(
                     f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
-                )
+                ) from e
         # retry parsing colons
         try:
             str_without_colons = re.sub(
@@ -1129,7 +1129,7 @@ def format_string(key: str | None, str_to_format: Any, **format_variables: Any) 
         except (ValueError, TypeError) as e:
             raise MisconfiguredError(
                 f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
-            )
+            ) from e
 
     # try to convert string to python object
     try:
@@ -1184,7 +1184,7 @@ def nested_pairs2dict(pairs: list[Any] | Any) -> Any | dict[Any, Any]:
 
 
 def get_geometry_from_various(
-    locations_config: list[dict[str, Any]] = [], **query_args: Any
+    locations_config: list[dict[str, Any]] | None = None, **query_args: Any
 ) -> BaseGeometry | None:
     """Creates a ``shapely.geometry`` using given query kwargs arguments
 
@@ -1199,6 +1199,9 @@ def get_geometry_from_various(
     import shapely.wkt
     from shapely.geometry import Polygon, shape
     from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
+
+    if locations_config is None:
+        locations_config = []
 
     geom = None
 
@@ -1252,8 +1255,7 @@ def get_geometry_from_various(
     for location_name in locations:
         if location_name not in locations_dict:
             raise ValueError(
-                f"The location name {location_name} is wrong. "
-                f"It must be one of: {locations_dict.keys()}"
+                f"The location name {location_name} is wrong. It must be one of: {locations_dict.keys()}"
             )
     query_locations = {**query_args, **locations}
     for arg in query_locations.keys():
@@ -1270,8 +1272,7 @@ def get_geometry_from_various(
                         geom = new_geom.union(geom) if geom else new_geom
             if not found:
                 raise ValueError(
-                    f"No match found for the search location '{arg}' "
-                    f"with the pattern '{pattern}'."
+                    f"No match found for the search location '{arg}' with the pattern '{pattern}'."
                 )
 
     return geom
@@ -1307,7 +1308,7 @@ def _ecmwf_point_to_lonlat(
     return float(lon), float(lat)
 
 
-def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry | None:
+def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry | None:  # noqa: C901
     """
     Creates a ``shapely.geometry`` from an ECMWF Polytope feature.
 

@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from importlib import metadata
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from eodag.utils.exceptions import PluginNotFoundError
 
@@ -62,6 +62,7 @@ class PluginTopic(metaclass=EODAGPluginMount):
     """Base of all plugin topics in eodag"""
 
     entrypoint_group: str | None = None
+    _plugins_loaded: ClassVar[bool]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         self.config = config
@@ -81,7 +82,7 @@ class PluginTopic(metaclass=EODAGPluginMount):
             except (ModuleNotFoundError, ImportError):
                 continue
 
-        setattr(cls, "_plugins_loaded", True)
+        cls._plugins_loaded = True
 
     def __repr__(self) -> str:
         config = getattr(self, "config", None)

@@ -106,10 +106,13 @@ class CSWSearch(Search):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Perform a search on a OGC/CSW-like interface"""
+        if prep is None:
+            prep = PreparedSearch()
+
         collection = kwargs.get("collection")
         if collection is None:
             result = SearchResult([])

@@ -228,8 +228,7 @@ class EOProduct:
                 self.search_intersection = self.geometry.intersection(searched_geom)
             except ShapelyError:
                 logger.warning(
-                    "Unable to intersect the requested extent: %s with the product "
-                    "geometry: %s",
+                    "Unable to intersect the requested extent: %s with the product geometry: %s",
                     searched_geom,
                     product_geometry,
                 )
@@ -462,7 +461,7 @@ class EOProduct:
         except KeyError as e:
             raise MisconfiguredError(
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
-            )
+            ) from e
 
     def _register_downloader_from_manager(self, plugins_manager: PluginManager) -> None:
         """Register the downloader and authenticator for this EOProduct using the
@@ -552,8 +551,7 @@ class EOProduct:
         """
         if self.downloader is None:
             raise RuntimeError(
-                "EO product is unable to download itself due to lacking of a "
-                "download plugin"
+                "EO product is unable to download itself due to lacking of a download plugin"
             )
         auth = (
             self.downloader_auth.authenticate()
@@ -595,8 +593,7 @@ class EOProduct:
         )
         if self.remote_location != NOT_AVAILABLE:
             logger.info(
-                "Remote location of the product is still available through its "
-                "'remote_location' property: %s",
+                "Remote location of the product is still available through its 'remote_location' property: %s",
                 self.remote_location,
             )
 
@@ -628,8 +625,7 @@ class EOProduct:
         """
         if self.downloader is None:
             raise RuntimeError(
-                "EO product is unable to stream_download itself due to lacking of a "
-                "download plugin"
+                "EO product is unable to stream_download itself due to lacking of a download plugin"
             )
         auth = (
             self.downloader_auth.authenticate()
@@ -922,7 +918,6 @@ class EOProduct:
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
         for driver_conf in DRIVERS:
-
             # Select a driver if all criterias match
             match = True
             for criteria in driver_conf["criteria"]:
@@ -963,26 +958,36 @@ class EOProduct:
 
                 <tr style='background-color: transparent;'>
                     <td style='text-align: left; vertical-align: top;'>
-                        {dict_to_html_table({
-                         "provider": self.provider,
-                         "collection": self.collection,
-                         "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;start_datetime&quot;]": self.properties.get(
-                             'start_datetime'
-                         ),
-                         "properties[&quot;end_datetime&quot;]": self.properties.get(
-                             'end_datetime'
-                         ),
-                         }, brackets=False)}
-                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(
-                             self.properties)})</summary>{
-                                 dict_to_html_table(self.properties, depth=1)}</details>
-                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({len(
-                                     self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
+                        {
+            dict_to_html_table(
+                {
+                    "provider": self.provider,
+                    "collection": self.collection,
+                    "properties[&quot;id&quot;]": self.properties.get("id"),
+                    "properties[&quot;start_datetime&quot;]": self.properties.get(
+                        "start_datetime"
+                    ),
+                    "properties[&quot;end_datetime&quot;]": self.properties.get(
+                        "end_datetime"
+                    ),
+                },
+                brackets=False,
+            )
+        }
+                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({
+            len(self.properties)
+        })</summary>{dict_to_html_table(self.properties, depth=1)}</details>
+                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({
+            len(self.assets)
+        })</summary>{self.assets._repr_html_(embeded=True)}</details>
                         {links_details}
                     </td>
-                    <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
-                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
+                    <td {geom_style} title='geometry'>geometry<br />{
+            self.geometry._repr_svg_()
+        }</td>
+                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{
+            thumbnail_html
+        }</td>
                 </tr>
             </table>"""
 

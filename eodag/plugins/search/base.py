@@ -107,7 +107,7 @@ class Search(PluginTopic):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Implementation of how the products must be searched goes here.

@@ -82,7 +82,6 @@ class FilterDate(Crunch):
 
         filtered: list[EOProduct] = []
         for product in products:
-
             properties = product.properties
             product_start_str = properties.get("start_datetime")
             product_end_str = properties.get("end_datetime")

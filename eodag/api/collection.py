@@ -22,9 +22,15 @@ import re
 from collections import UserDict, UserList
 from typing import TYPE_CHECKING, Any, cast
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationInfo,
+    model_validator,
+)
 from pydantic import ValidationError as PydanticValidationError
-from pydantic import ValidationInfo, model_validator
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Extent, Provider, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
@@ -416,7 +422,9 @@ class CollectionsList(UserList[Collection]):
 
         return (
             f"{mock_thead}<table><tbody>"
-            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join(
+                [
+                    f"""<tr {tr_style}><td style='text-align: left;'>
                         <details>
                         <summary style='color: grey; font-family: monospace;'>
                         {i}&ensp;
@@ -425,6 +433,9 @@ class CollectionsList(UserList[Collection]):
                     {re.sub(r"(<thead>.*|.*</thead>)", "", col._repr_html_())}
                     </details>
                     </td></tr>
-                    """ for i, col in enumerate(self)])
+                    """
+                    for i, col in enumerate(self)
+                ]
+            )
             + "</tbody></table></details>"
         )

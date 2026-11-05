@@ -49,7 +49,7 @@ def get_imports(filepath: str) -> Iterator[Any]:
             root = ast.parse(file.read())
         except UnicodeDecodeError as e:
             raise MisconfiguredError(
-                f"UnicodeDecodeError in {filepath}: {e.object[max(e.start - 50, 0):min(e.end + 50, len(e.object))]!r}"
+                f"UnicodeDecodeError in {filepath}: {e.object[max(e.start - 50, 0) : min(e.end + 50, len(e.object))]!r}"
             ) from e
 
     for node in ast.iter_child_nodes(root):
@@ -68,7 +68,7 @@ def get_imports(filepath: str) -> Iterator[Any]:
 def get_project_imports(project_path: str) -> set[str]:
     """Get python imports from the project path"""
     imports: set[str] = set()
-    for dirpath, dirs, files in os.walk(project_path):
+    for dirpath, _, files in os.walk(project_path):
         for filename in files:
             if filename.endswith(".py"):
                 filepath = os.path.join(dirpath, filename)

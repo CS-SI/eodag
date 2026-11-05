@@ -103,9 +103,12 @@ class EcmwfApi(Api, ECMWFSearch):
         self.config.__dict__.setdefault("api_endpoint", "")
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
+        self, prep: PreparedSearch | None = None, **kwargs: Any
     ) -> RawSearchResult:
         """Should perform the actual search request."""
+        if prep is None:
+            prep = PreparedSearch(limit=None)
+
         raw_search_results = RawSearchResult([{}])
         raw_search_results.search_params = kwargs
         raw_search_results.query_params = (
@@ -118,7 +121,7 @@ class EcmwfApi(Api, ECMWFSearch):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Build ready-to-download SearchResult"""
@@ -136,6 +139,8 @@ class EcmwfApi(Api, ECMWFSearch):
         if "geometry" in kwargs:
             kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
+        if prep is None:
+            prep = PreparedSearch()
         return ECMWFSearch.query(self, prep, **kwargs)
 
     def authenticate(self) -> dict[str, str | None]:
@@ -162,7 +167,7 @@ class EcmwfApi(Api, ECMWFSearch):
             logger.debug("Credentials checked on ECMWF")
         except APIException as e:
             logger.error(e)
-            raise AuthenticationError("Please check your ECMWF credentials.")
+            raise AuthenticationError("Please check your ECMWF credentials.") from e
 
         return {"key": key, "url": url, "email": email}
 
@@ -239,7 +244,7 @@ class EcmwfApi(Api, ECMWFSearch):
                 ecmwf_server.execute(download_request, fs_path)
         except APIException as e:
             logger.error(e)
-            raise DownloadError(e)
+            raise DownloadError(e) from e
 
         with open(record_filename, "w") as fh:
             fh.write(product.properties["eodag:download_link"])
