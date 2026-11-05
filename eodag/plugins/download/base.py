@@ -183,12 +183,14 @@ class Download(PluginTopic):
         self,
         product: EOProduct,
         progress_callback: ProgressCallback | None = None,
+        allow_missing_url: bool = False,
         **kwargs: Unpack[DownloadConf],
     ) -> tuple[str | None, str | None]:
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
         :param progress_callback: (optional) A progress callback
+        :param allow_missing_url: (optional) Allow preparation when downloading assets without a product URL
         :returns: fs_path, record_filename
         """
         if product.location != product.remote_location:
@@ -202,14 +204,15 @@ class Download(PluginTopic):
                 return fs_path, None
 
         url = product.remote_location
-        if not url:
+        if not url and not allow_missing_url:
             logger.debug(
                 f"Unable to get download url for {product}, skipping download",
             )
             return None, None
-        logger.info(
-            f"Download url: {url}",
-        )
+        if url:
+            logger.info(
+                f"Download url: {url}",
+            )
 
         output_dir = (
             kwargs.pop("output_dir", None)
@@ -255,13 +258,14 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        old_record_filename = os.path.join(download_records_dir, url_hash)
         record_filename = os.path.join(
             download_records_dir, self.generate_record_hash(product)
         )
-        if os.path.isfile(old_record_filename):
-            os.rename(old_record_filename, record_filename)
+        if url:
+            url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
+            old_record_filename = os.path.join(download_records_dir, url_hash)
+            if os.path.isfile(old_record_filename):
+                os.rename(old_record_filename, record_filename)
 
         # path with or without extension
         path_obj = Path(fs_path)

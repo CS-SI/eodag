@@ -644,9 +644,16 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
+        should_download_assets = len(product.assets) > 0 and (
+            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
+        )
+        has_downloadable_assets = should_download_assets and any(
+            "href" in asset for asset in product.assets.values()
+        )
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
+            allow_missing_url=has_downloadable_assets,
             **kwargs,
         )
         if not fs_path or not record_filename:
@@ -655,9 +662,7 @@ class HTTPDownload(Download):
             return fs_path
 
         # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
-        ):
+        if should_download_assets:
             try:
                 fs_path = self._download_assets(
                     product,
