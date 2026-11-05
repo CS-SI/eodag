@@ -183,14 +183,14 @@ class Download(PluginTopic):
         self,
         product: EOProduct,
         progress_callback: ProgressCallback | None = None,
-        allow_missing_url: bool = False,
+        download_assets: bool = False,
         **kwargs: Unpack[DownloadConf],
     ) -> tuple[str | None, str | None]:
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
         :param progress_callback: (optional) A progress callback
-        :param allow_missing_url: (optional) Allow preparation when downloading assets without a product URL
+        :param download_assets: (optional) Allow preparation without a product URL when downloadable assets exist
         :returns: fs_path, record_filename
         """
         if product.location != product.remote_location:
@@ -204,7 +204,10 @@ class Download(PluginTopic):
                 return fs_path, None
 
         url = product.remote_location
-        if not url and not allow_missing_url:
+        has_downloadable_assets = download_assets and any(
+            "href" in asset for asset in product.assets.values()
+        )
+        if not url and not has_downloadable_assets:
             logger.debug(
                 f"Unable to get download url for {product}, skipping download",
             )

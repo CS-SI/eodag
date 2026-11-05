@@ -261,6 +261,31 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         self.assertIsNone(fs_path)
         self.assertIsNone(record_filename)
 
+    def test_plugins_download_base_prepare_download_assets_without_url(self):
+        """Download._prepare_download allows selected assets without a product URL."""
+        self.product.assets.update({"foo": {"href": "s3://bucket/key"}})
+        plugin = self.get_download_plugin(self.product)
+
+        with TemporaryDirectory() as output_dir:
+            fs_path, record_filename = plugin._prepare_download(
+                self.product, download_assets=True, output_dir=output_dir
+            )
+
+        self.assertIsNotNone(fs_path)
+        self.assertIsNotNone(record_filename)
+
+    def test_plugins_download_base_prepare_download_assets_without_href(self):
+        """Download._prepare_download still requires a URL if selected assets lack hrefs."""
+        self.product.assets.update({"foo": {"type": "application/octet-stream"}})
+        plugin = self.get_download_plugin(self.product)
+
+        fs_path, record_filename = plugin._prepare_download(
+            self.product, download_assets=True
+        )
+
+        self.assertIsNone(fs_path)
+        self.assertIsNone(record_filename)
+
     def test_plugins_download_base_prepare_download_collision_avoidance(self):
         """Download._prepare_download must use collision avoidance suffix."""
         self.product.properties["title"] = "needs sanitïze"
@@ -2256,6 +2281,23 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = (
             "http://somebucket.somehost.com/path/to/some/product"
         )
+
+    def test_plugins_download_aws_prepare_download_assets_without_product_url(self):
+        """AwsDownload preparation allows asset downloads when the product has no URL."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties.pop("eodag:download_link", None)
+        self.product.location = self.product.remote_location = ""
+        self.product.assets.update({"foo": {"href": "s3://bucket/key"}})
+
+        with TemporaryDirectory() as output_dir:
+            product_path, record_filename = plugin._download_preparation(
+                self.product,
+                progress_callback=ProgressCallback(disable=True),
+                download_assets=True,
+                output_dir=output_dir,
+            )
+            self.assertTrue(os.path.isdir(product_path))
+            self.assertIsNotNone(record_filename)
 
     def test_plugins_download_aws_get_bucket_prefix(self):
         """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location."""
