@@ -629,13 +629,10 @@ class HTTPDownload(Download):
             not getattr(self.config, "ignore_assets", False)
             or kwargs.get("asset") is not None
         )
-        has_downloadable_assets = should_download_assets and any(
-            "href" in asset for asset in product.assets.values()
-        )
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
-            allow_missing_url=has_downloadable_assets,
+            download_assets=should_download_assets,
             **kwargs,
         )
         if not fs_path or not record_filename:

@@ -267,23 +267,30 @@ class AwsDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
+        asset_filter = kwargs.get("asset")
+        ignore_assets = (
+            False if asset_filter else getattr(self.config, "ignore_assets", False)
+        )
+        should_download_assets = len(product.assets) > 0 and (
+            not ignore_assets or bool(asset_filter)
+        )
+
         # prepare download & create dirs (before updating metadata)
         product_local_path, record_filename = self._download_preparation(
-            product, progress_callback=progress_callback, **kwargs
+            product,
+            progress_callback=progress_callback,
+            download_assets=should_download_assets,
+            **kwargs,
         )
         if not record_filename or not product_local_path:
             return product_local_path
 
-        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
-
         # do not try to build SAFE if asset filter is used
-        asset_filter = kwargs.get("asset")
         if asset_filter:
             build_safe = False
-            ignore_assets = False
         else:
             build_safe = product_conf.get("build_safe", False)
-            ignore_assets = getattr(self.config, "ignore_assets", False)
 
         # product conf overrides provider conf for "flatten_top_dirs"
         flatten_top_dirs = product_conf.get(
@@ -556,6 +563,7 @@ class AwsDownload(Download):
         self,
         product: EOProduct,
         progress_callback: ProgressCallback,
+        download_assets: bool = False,
         **kwargs: Unpack[DownloadConf],
     ) -> tuple[str | None, str | None]:
         """Prepare the download.
@@ -571,7 +579,10 @@ class AwsDownload(Download):
         :return: local path and file name
         """
         product_local_path, record_filename = self._prepare_download(
-            product, progress_callback=progress_callback, **kwargs
+            product,
+            progress_callback=progress_callback,
+            download_assets=download_assets,
+            **kwargs,
         )
         if not product_local_path or not record_filename:
             if product_local_path:
