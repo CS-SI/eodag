@@ -156,10 +156,12 @@ class StaticStacSearch(StacSearch):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Perform a search on a static STAC Catalog"""
+        if prep is None:
+            prep = PreparedSearch()
 
         # only return 1 page if pagination is disabled
         if prep.page and prep.page > 1 and prep.limit is not None and prep.limit <= 0:

@@ -132,16 +132,14 @@ class EODataAccessGateway:
     ) -> None:
         if user_conf_file_path is not None:
             warnings.warn(
-                "'user_conf_file_path' parameter is deprecated. "
-                "Use EODAGSettings(cfg_file=...) instead.",
+                "'user_conf_file_path' parameter is deprecated. Use EODAGSettings(cfg_file=...) instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if locations_conf_path is not None:
             warnings.warn(
-                "'locations_conf_path' parameter is deprecated. "
-                "Use EODAGSettings(locations_cfg_file=...) instead.",
+                "'locations_conf_path' parameter is deprecated. Use EODAGSettings(locations_cfg_file=...) instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -156,8 +154,7 @@ class EODataAccessGateway:
 
         if settings is not None and settings_kwargs:
             raise ValueError(
-                "'settings' cannot be used together with "
-                "'user_conf_file_path' or 'locations_conf_path'."
+                "'settings' cannot be used together with 'user_conf_file_path' or 'locations_conf_path'."
             )
 
         self.settings = ensure_config_files(
@@ -311,11 +308,9 @@ class EODataAccessGateway:
         name: str,
         url: str | None = None,
         priority: int | None = None,
-        search: dict[str, Any] = {"type": "StacSearch"},
-        products: dict[str, Any] = {
-            GENERIC_COLLECTION: {"_collection": "{collection}"}
-        },
-        download: dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
+        search: dict[str, Any] | None = None,
+        products: dict[str, Any] | None = None,
+        download: dict[str, Any] | None = None,
         **kwargs: dict[str, Any],
     ):
         """Adds a new provider.
@@ -339,15 +334,15 @@ class EODataAccessGateway:
             name: {
                 "name": name,
                 "url": url,
-                "search": {"type": "StacSearch", **search},
+                "search": {"type": "StacSearch", **(search or {})},
                 "products": {
                     GENERIC_COLLECTION: {"_collection": "{collection}"},
-                    **products,
+                    **(products or {}),
                 },
                 "download": {
                     "type": "HTTPDownload",
                     "auth_error_code": 401,
-                    **download,
+                    **(download or {}),
                 },
                 **kwargs,
             }
@@ -378,7 +373,7 @@ class EODataAccessGateway:
         update_needed = False
 
         # loop over a copy to allow popping items
-        for name, provider in list(self._providers.items()):
+        for _, provider in list(self._providers.items()):
             conf = provider.config
 
             # remove providers using skipped plugins
@@ -411,8 +406,7 @@ class EODataAccessGateway:
                     self._providers.pruned_providers_config[provider.name] = conf
                     self._providers.pruned_providers_reasons[provider.name] = {
                         "reason": (
-                            "provider needing auth for search was pruned because "
-                            "no credentials could be found"
+                            "provider needing auth for search was pruned because no credentials could be found"
                         ),
                         "reason_type": "missing_credentials",
                     }
@@ -454,8 +448,7 @@ class EODataAccessGateway:
                     self._providers.pruned_providers_config[provider.name] = conf
                     self._providers.pruned_providers_reasons[provider.name] = {
                         "reason": (
-                            "provider needing auth for search was pruned because "
-                            "no credentials could be found"
+                            "provider needing auth for search was pruned because no credentials could be found"
                         ),
                         "reason_type": "missing_credentials",
                     }
@@ -472,8 +465,7 @@ class EODataAccessGateway:
                 self._providers.pruned_providers_config[provider.name] = conf
                 self._providers.pruned_providers_reasons[provider.name] = {
                     "reason": (
-                        "provider has been pruned because no api or search plugin "
-                        "could be found"
+                        "provider has been pruned because no api or search plugin could be found"
                     ),
                     "reason_type": "missing_search_plugin",
                 }
@@ -1461,8 +1453,7 @@ class EODataAccessGateway:
             search_results.number_matched = len(search_results)
         except RequestError:
             logger.warning(
-                "Found %s result(s) on provider '%s', but it may be incomplete "
-                "as it ended with an error",
+                "Found %s result(s) on provider '%s', but it may be incomplete as it ended with an error",
                 len(search_results),
                 search_results[0].provider,
             )
@@ -1586,7 +1577,7 @@ class EODataAccessGateway:
         collection_config = plugin.discover_collections(**kwargs)
         self.update_collections_list({provider: collection_config})
 
-    def _prepare_search(
+    def _prepare_search(  # noqa: C901
         self,
         start: str | None = None,
         end: str | None = None,
@@ -1854,8 +1845,9 @@ class EODataAccessGateway:
 
             if not isinstance(search_result, SearchResult):
                 raise PluginImplementationError(
-                    "The query function of a Search plugin must return a SearchResult "
-                    "results, got {} instead".format(type(search_result))
+                    "The query function of a Search plugin must return a SearchResult results, got {} instead".format(
+                        type(search_result)
+                    )
                 )
             # Filter and attach to each eoproduct in the result the plugin capable of
             # downloading it (this is done to enable the eo_product to download itself

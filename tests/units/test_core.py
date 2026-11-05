@@ -1935,8 +1935,7 @@ class TestCore(TestCoreBase):
         try:
             self.assertRaisesRegex(
                 MisconfiguredError,
-                "creodias: provider needing auth for search was pruned "
-                "because no credentials could be found",
+                "creodias: provider needing auth for search was pruned because no credentials could be found",
                 self.dag.set_preferred_provider,
                 "creodias",
             )
@@ -3711,9 +3710,9 @@ class TestCoreSearch(TestCoreBase):
         type(mock_get_search_plugins.return_value[0]).config = mock.PropertyMock(
             return_value=mock_config
         )
-        type(mock_get_search_plugins.return_value[0]).next_page_query_obj = (
-            mock.PropertyMock(return_value={})
-        )
+        type(
+            mock_get_search_plugins.return_value[0]
+        ).next_page_query_obj = mock.PropertyMock(return_value={})
         # mocked search result id
         type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
             return_value={"id": "foo"}
@@ -5262,8 +5261,8 @@ class TestCoreProviderGroup(TestCoreBase):
         cls.dag = EODataAccessGateway()
         providers_configs = cls.dag._providers.configs
 
-        setattr(providers_configs[cls.group[0]], "group", cls.group_name)
-        setattr(providers_configs[cls.group[1]], "group", cls.group_name)
+        providers_configs[cls.group[0]].group = cls.group_name
+        providers_configs[cls.group[1]].group = cls.group_name
 
     def test_available_providers_by_group(self) -> None:
         """
@@ -5464,8 +5463,7 @@ class TestCoreProviderGroup(TestCoreBase):
         try:
             with self.assertRaisesRegex(
                 MisconfiguredError,
-                f"{self.group[0]}: provider needing auth for search was pruned "
-                "because no credentials could be found",
+                f"{self.group[0]}: provider needing auth for search was pruned because no credentials could be found",
             ):
                 list(
                     self.dag._plugins_manager.get_search_plugins(provider=self.group[0])

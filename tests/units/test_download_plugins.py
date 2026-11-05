@@ -99,11 +99,14 @@ class BaseDownloadPluginTest(unittest.TestCase):
         cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        expanduser_mock_side_effect = (
-            lambda *x: x[0]
-            .replace("~user", cls.tmp_home_dir.name)
-            .replace("~", cls.tmp_home_dir.name)
-        )
+
+        def expanduser_mock_side_effect(*args):
+            return (
+                args[0]
+                .replace("~user", cls.tmp_home_dir.name)
+                .replace("~", cls.tmp_home_dir.name)
+            )
+
         cls.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
@@ -139,9 +142,9 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def get_auth_plugin(self, associated_plugin, product, not_none=True):
         plugin = self.plugins_manager.get_auth_plugin(associated_plugin, product)
         if not_none:
-            assert (
-                plugin is not None
-            ), f"Cannot get auth plugin for {associated_plugin} and {product}"
+            assert plugin is not None, (
+                f"Cannot get auth plugin for {associated_plugin} and {product}"
+            )
         return plugin
 
 
@@ -593,8 +596,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
-        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
-            b"some content"
+        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = (
+            lambda *x, **y: io.BytesIO(b"some content")
         )
 
         mock_stream_download.return_value = [b"a"]
@@ -657,8 +660,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
-        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
-            b"some content"
+        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = (
+            lambda *x, **y: io.BytesIO(b"some content")
         )
         # download asset if ssl_verify = False
         plugin.config.ssl_verify = False
@@ -3062,7 +3065,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         # with filter for assets
         self.product.properties["title"] = "newTitle"
-        setattr(self.product, "location", "file://path/to/file")
+        self.product.location = "file://path/to/file"
         plugin.download(self.product, output_dir=self.output_dir, asset="file1")
         # 2 additional calls
         self.assertEqual(5, mock_get_chunk_dest_path.call_count)

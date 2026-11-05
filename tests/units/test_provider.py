@@ -424,8 +424,7 @@ class TestProvidersDict(unittest.TestCase):
         }
         with self.assertRaisesRegex(
             MisconfiguredError,
-            "provider1: provider needing auth for search was pruned "
-            "because no credentials could be found",
+            "provider1: provider needing auth for search was pruned because no credentials could be found",
         ):
             providers.check_supported("provider1")
 

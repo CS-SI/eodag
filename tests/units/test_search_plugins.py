@@ -358,8 +358,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         self.assertEqual(
             [
-                f"{expected_endpoint}?startDate=2020-08-08&completionDate=2020-08-16"
-                "&sortParam=startDate&sortOrder=asc"
+                f"{expected_endpoint}?startDate=2020-08-08&completionDate=2020-08-16&sortParam=startDate&sortOrder=asc"
             ],
             urls,
         )
@@ -944,7 +943,10 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # change configuration for this test to rename the collection id
         search_plugin.config.discover_collections[
             "single_collection_parsable_metadata"
-        ]["id"] = (None, cached_parse("$.metadata.understandable_id"))
+        ]["id"] = (
+            None,
+            cached_parse("$.metadata.understandable_id"),
+        )
 
         # case where the name to replace the current id exists in the metadata
         mock__request.return_value = mock.Mock()
@@ -1217,9 +1219,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         """QueryStringSearch.__init__ must reject an empty metadata_mapping inherited from another product."""
         provider = "earth_search"
         plugin_cfg = copy_deepcopy(self.get_search_plugin(provider=provider).config)
-        plugin_cfg.products["S1_SAR_GRD"][
-            "metadata_mapping_from_product"
-        ] = "S2_MSI_L1C"
+        plugin_cfg.products["S1_SAR_GRD"]["metadata_mapping_from_product"] = (
+            "S2_MSI_L1C"
+        )
         plugin_cfg.products["S2_MSI_L1C"]["metadata_mapping"] = {}
 
         with self.assertRaises(MisconfiguredError):
@@ -1283,8 +1285,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertEqual(
             urls,
             [
-                "https://copernicus.nci.org.au/sara.server/1.0/api/collections/"
-                "S2_MSI_L1C/search.json"
+                "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2_MSI_L1C/search.json"
             ],
         )
 
@@ -3388,7 +3389,7 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
         # custom query for meteoblue
         custom_query = {"queries": {"foo": "bar"}}
         collection_config = {"platform": "NEMSGLOBAL", "alias": "THE.ALIAS"}
-        setattr(self.search_plugin.config, "collection_config", collection_config)
+        self.search_plugin.config.collection_config = collection_config
         products = self.search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.auth_plugin, auth=self.auth),
             **custom_query,
@@ -4320,7 +4321,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # "variable" is *required* by form and *some* constraints with the given "date" defines values
         # for "variable": "variable" must be used as input keyword
-        # case 1: the input value "a" is available
+        # 1. A value listed in the matching constraint is accepted.
         input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
         available_values = self.search_plugin.available_values_from_constraints(
             constraints, input_keywords, form
@@ -4329,7 +4330,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIn("variable", available_values)
         self.assertListEqual(["a", "b"], available_values["variable"])
         self.assertIn("date", available_values)
-        # case 2: the input value "c" is not available
+        # 2. A value absent from the matching constraint is rejected.
         input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
         with self.assertRaises(ValidationError) as ex:
             self.search_plugin.available_values_from_constraints(
@@ -4340,8 +4341,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ex.exception.message,
         )
 
-        # "variable" is *required* by form and *no* constraint with the given "date" defines values
-        # for "variable": "variable" cannot be used as input keyword with this value of "date".
+        # 3. No date-matching constraint defines variable values, so a supplied value is rejected.
         input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "a"}
         with self.assertRaises(ValidationError) as ex:
             self.search_plugin.available_values_from_constraints(
@@ -4352,8 +4352,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ex.exception.message,
         )
 
-        # "variable" is *required* by form and *no* constraint with the given "date" defines values
-        # for "variable": "variable" is not used as input keyword and no available value for "variable" is returned
+        # 4. With no variable value supplied, no available values are returned.
         input_keywords = {"date": "2024-01-01/2024-01-01"}
         available_values = self.search_plugin.available_values_from_constraints(
             constraints, input_keywords, form
@@ -4376,8 +4375,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             {"name": "variable", "required": False},
         ]
 
-        # "variable" is *not* required by form and after applying the filter there is *no* constraint that defines
-        # any values for "variable": any value for "variable" can be used as input keyword.
+        # 1. No date-matching constraint defines variable values, so optional input is accepted.
         input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "c"}
         available_values = self.search_plugin.available_values_from_constraints(
             constraints, input_keywords, form
@@ -4387,9 +4385,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertListEqual([], available_values["variable"])
         self.assertIn("date", available_values)
 
-        # "variable" is *not* required by form and after applying the filter there are *some* constraints that
-        # define  values for "variable": "variable" must match the available values.
-        # case 1: the value "a" is available
+        # 2. When matching constraints define values, a listed value is accepted.
         input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
         available_values = self.search_plugin.available_values_from_constraints(
             constraints, input_keywords, form
@@ -4398,7 +4394,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIn("variable", available_values)
         self.assertListEqual(["a", "b"], available_values["variable"])
         self.assertIn("date", available_values)
-        # case 2: the value "c" is not available
+        # 3. A value absent from the matching constraint is rejected.
         input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
         with self.assertRaises(ValidationError) as ex:
             self.search_plugin.available_values_from_constraints(
@@ -4429,7 +4425,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 "temporal": {"interval": [["2001-01-01T00:00:00Z", None]]},
             }
         }
-        setattr(self.search_plugin.config, "collection_config", collection_config)
+        self.search_plugin.config.collection_config = collection_config
 
         provider_queryables_from_constraints_file = set()
         for constraint in constraints:
@@ -5322,9 +5318,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.dataset2_data = deepcopy(self.dataset1_data)
         self.dataset2_data["id"] = "dataset-number-two"
         self.dataset2_data["properties"]["title"] = "dataset-number-two"
-        self.dataset2_data["assets"]["native"][
-            "href"
-        ] = "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-two"
+        self.dataset2_data["assets"]["native"]["href"] = (
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-two"
+        )
 
         self.list_objects_response1 = {
             "Contents": [
@@ -5539,7 +5535,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
             s3_stub.return_value = self.s3
             stubber = Stubber(self.s3)
-            for i in [
+            for _ in [
                 0,
                 1,
             ]:  # add responses twice because 2 search requests will be executed
@@ -5779,8 +5775,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
         dataset_item = deepcopy(self.dataset1_data)
         dataset_item["assets"]["native"]["href"] = (
-            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
-            "item_20200102_20200103_direct_20210101.nc"
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/item_20200102_20200103_direct_20210101.nc"
         )
         s3_client = mock.Mock()
         s3_client.head_object.return_value = {

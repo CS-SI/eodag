@@ -85,8 +85,9 @@ class MutuallyExclusiveOption(click.Option):
         if self.mutually_exclusive:
             ex_str = ", ".join(self.mutually_exclusive)
             kwargs["help"] = help + (
-                " NOTE: This argument is mutually exclusive with "
-                " arguments: [" + ex_str + "]."
+                " NOTE: This argument is mutually exclusive with  arguments: ["
+                + ex_str
+                + "]."
             )
         super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
 
@@ -174,8 +175,7 @@ def version() -> None:
     default=(None,) * 4,
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["geom"],
-    help="Search for a product on a bounding box, providing its minlon, minlat, "
-    "maxlon and maxlat (in this order).",
+    help="Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this order).",
 )
 @click.option(
     "-g",
@@ -226,8 +226,7 @@ def version() -> None:
     "--cruncher",
     type=click.Choice(CRUNCHERS),
     multiple=True,
-    help="A cruncher to be applied to search results. Repeat option many times to "
-    "apply many crunchers",
+    help="A cruncher to be applied to search results. Repeat option many times to apply many crunchers",
 )
 @click.option(
     "--cruncher-args",
@@ -311,7 +310,8 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         ]
     ):
         with click.Context(search_crunch) as ctx:
-            print("Give me some work to do. See below for how to do that:", end="\n\n")
+            click.echo("Give me some work to do. See below for how to do that:")
+            click.echo()
             click.echo(search_crunch.get_help(ctx))
         sys.exit(-1)
 
@@ -693,7 +693,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
             "Flag 'quicklooks' specified, downloading only quicklooks of products"
         )
 
-        for idx, product in enumerate(search_results):
+        for product in search_results:
             downloaded_file = product.get_quicklook(output_dir=output_dir)
             if not downloaded_file:
                 click.echo(

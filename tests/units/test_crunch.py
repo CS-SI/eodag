@@ -39,7 +39,6 @@ from eodag.utils.exceptions import ValidationError
 
 
 class TestPluginCrunch(unittest.TestCase):
-
     __product_id: int = 0
 
     def __fake_search_result(

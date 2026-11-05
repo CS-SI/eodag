@@ -229,7 +229,7 @@ class AwsDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsDownload, self).__init__(provider, config)
 
-    def download(
+    def download(  # noqa: C901
         self,
         product: EOProduct,
         auth: AuthBase | S3ServiceResource | None = None,
@@ -1017,9 +1017,9 @@ class AwsDownload(Download):
             rename_subfolder(datastrip_folder, scene_id)
         except Exception as e:
             logger.exception("Could not finalize SAFE product from downloaded data")
-            raise DownloadError(e)
+            raise DownloadError(e) from e
 
-    def get_chunk_dest_path(
+    def get_chunk_dest_path(  # noqa: C901
         self,
         product: EOProduct,
         chunk: Any,

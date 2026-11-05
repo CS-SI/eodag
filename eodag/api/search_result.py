@@ -23,9 +23,8 @@ from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator
 
 import geojson
 from pystac import ItemCollection
-from shapely.geometry import GeometryCollection
+from shapely.geometry import GeometryCollection, shape
 from shapely.geometry import mapping as shapely_mapping
-from shapely.geometry import shape
 from typing_extensions import Doc
 
 from eodag.api.product import EOProduct
@@ -358,7 +357,9 @@ class SearchResult(UserList[EOProduct]):
                  {type(self).__name__}&ensp;({len(self)}{total_count})
                 </td></tr></thead>
             """
-            + "".join([f"""<tr><td style='text-align: left;'>
+            + "".join(
+                [
+                    f"""<tr><td style='text-align: left;'>
                 <details><summary style='color: grey; font-family: monospace;'>
                     {i}&ensp;
                     {type(p).__name__}(id=<span style='color: black'>{p.properties["id"]}</span>, provider={p.provider})
@@ -366,7 +367,10 @@ class SearchResult(UserList[EOProduct]):
                 {p._repr_html_()}
                 </details>
                 </td></tr>
-                """ for i, p in enumerate(self)])
+                """
+                    for i, p in enumerate(self)
+                ]
+            )
             + "</table>"
         )
 
@@ -414,7 +418,7 @@ class SearchResult(UserList[EOProduct]):
             # If number_matched was provided, ensure it is passed to the next search
             if current.number_matched:
                 search_kwargs["number_matched"] = current.number_matched
-            for i, search_plugin in enumerate(search_plugins):
+            for search_plugin in search_plugins:
                 # validate no needed for next pages
                 search_kwargs["validate"] = False
                 return current._dag._do_search(

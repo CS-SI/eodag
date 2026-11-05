@@ -98,7 +98,7 @@ class TestEodagCli(unittest.TestCase):
         logger.level = 0
 
     def eodag_command(
-        self, command_list: list = [], env: dict = {}
+        self, command_list: list | None = None, env: dict | None = None
     ) -> Tuple[int, str, Exception | None]:
         """Eodag command line
 
@@ -108,8 +108,8 @@ class TestEodagCli(unittest.TestCase):
         """
 
         # Force str parameters
-        str_command_list = list(map(lambda x: "{}".format(x), command_list))
-        result = self.runner.invoke(eodag_cli, str_command_list, env=env)
+        str_command_list = list(map(lambda x: "{}".format(x), command_list or []))
+        result = self.runner.invoke(eodag_cli, str_command_list, env=env or {})
 
         exit_code = 1
         output = ""
@@ -211,8 +211,7 @@ class TestEodagCli(unittest.TestCase):
                     ["search", "--conf", conf_file, "-p", "whatever", "-c", max_cloud],
                 )
                 expect_output = (
-                    "Error: Invalid value for '-c' / '--cloudCover': {} is not in the"
-                    " valid range of 0 to 100."
+                    "Error: Invalid value for '-c' / '--cloudCover': {} is not in the valid range of 0 to 100."
                 ).format(max_cloud)
                 self.assertTrue(
                     expect_output in output or expect_output.replace("'", '"')

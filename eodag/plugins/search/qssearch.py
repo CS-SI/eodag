@@ -437,9 +437,9 @@ class QueryStringSearch(Search):
                     collection_metadata_mapping[metadata] = mapping
 
             if collection_metadata_mapping:
-                self.config.products[collection][
-                    "metadata_mapping"
-                ] = collection_metadata_mapping
+                self.config.products[collection]["metadata_mapping"] = (
+                    collection_metadata_mapping
+                )
 
     def clear(self) -> None:
         """Clear search context"""
@@ -499,7 +499,7 @@ class QueryStringSearch(Search):
 
         return conf_update_dict
 
-    def discover_collections_per_page(self, **kwargs: Any) -> dict[str, Any] | None:
+    def discover_collections_per_page(self, **kwargs: Any) -> dict[str, Any] | None:  # noqa: C901
         """Fetch collections list from provider using `discover_collections` conf
         using paginated ``kwargs["fetch_url"]``
 
@@ -780,8 +780,9 @@ class QueryStringSearch(Search):
             PreparedSearch(
                 url=single_collection_url,
                 info_message=f"Fetching data for collection: {collection}",
-                exception_message="Skipping error while fetching collections for "
-                "{} {} instance:".format(self.provider, self.__class__.__name__),
+                exception_message="Skipping error while fetching collections for {} {} instance:".format(
+                    self.provider, self.__class__.__name__
+                ),
             ),
         )
         product_data = resp.json()
@@ -792,13 +793,16 @@ class QueryStringSearch(Search):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Perform a search on an OpenSearch-like interface
 
         :param prep: Object collecting needed information for search.
         """
+        if prep is None:
+            prep = PreparedSearch()
+
         count = prep.count
         raise_errors = getattr(prep, "raise_errors", False)
         number_matched = kwargs.pop("number_matched", None)
@@ -902,10 +906,13 @@ class QueryStringSearch(Search):
 
     def collect_search_urls(
         self,
-        prep: PreparedSearch = PreparedSearch(page=None, limit=None),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> tuple[list[str], int | None]:
         """Build paginated urls"""
+        if prep is None:
+            prep = PreparedSearch(page=None, limit=None)
+
         token = getattr(prep, "next_page_token", None)
         limit = prep.limit
         count = prep.count
@@ -992,8 +999,8 @@ class QueryStringSearch(Search):
 
         return list(dict.fromkeys(urls)), total_results
 
-    def do_search(
-        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
+    def do_search(  # noqa: C901
+        self, prep: PreparedSearch | None = None, **kwargs: Any
     ) -> RawSearchResult:
         """Perform the actual search request.
 
@@ -1002,6 +1009,9 @@ class QueryStringSearch(Search):
 
         :param prep: Object collecting needed information for search.
         """
+        if prep is None:
+            prep = PreparedSearch(limit=None)
+
         limit = prep.limit
         total_items_nb = 0
         if getattr(prep, "need_count", False):
@@ -1019,8 +1029,8 @@ class QueryStringSearch(Search):
                 search_url
             )
             single_search_prep.exception_message = (
-                f"Skipping error while searching for {self.provider}"
-                f" {self.__class__.__name__} instance"
+                f"Skipping error while searching for {self.provider} "
+                f"{self.__class__.__name__} instance"
             )
             response = self._request(single_search_prep)
             next_page_url_key_path = self.config.pagination.get(
@@ -1051,8 +1061,7 @@ class QueryStringSearch(Search):
 
                 if next_page_url_key_path or next_page_query_obj_key_path:
                     raise NotImplementedError(
-                        "Setting the next page url from an XML response has not "
-                        "been implemented yet"
+                        "Setting the next page url from an XML response has not been implemented yet"
                     )
                 if getattr(prep, "need_count", False):
                     # extract total_items_nb from search results
@@ -1354,8 +1363,9 @@ class QueryStringSearch(Search):
             PreparedSearch(
                 url=url,
                 info_message="Sending count request: {}".format(url),
-                exception_message="Skipping error while counting results for {} {} "
-                "instance:".format(self.provider, self.__class__.__name__),
+                exception_message="Skipping error while counting results for {} {} instance:".format(
+                    self.provider, self.__class__.__name__
+                ),
             )
         )
         if result_type == "xml":
@@ -1519,9 +1529,9 @@ class QueryStringSearch(Search):
                 response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
-        except socket.timeout:
+        except socket.timeout as e:
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
-            raise TimeOutError(err, timeout=timeout)
+            raise TimeOutError(err, timeout=timeout) from e
         except HTTPError as e:  # raised by urlopen
             try:
                 QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
@@ -1598,9 +1608,11 @@ class ODataV4Search(QueryStringSearch):
             )
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(), **kwargs: Any
+        self, prep: PreparedSearch | None = None, **kwargs: Any
     ) -> RawSearchResult:
         """A two step search can be performed if the metadata are not given into the search result"""
+        if prep is None:
+            prep = PreparedSearch()
 
         if getattr(self.config, "per_product_metadata_query", False):
             final_result = []
@@ -1718,10 +1730,13 @@ class PostJsonSearch(QueryStringSearch):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Perform a search on an OpenSearch-like interface"""
+        if prep is None:
+            prep = PreparedSearch()
+
         collection = kwargs.get("collection", "")
         next_page_query_obj = kwargs.pop("next_page_query_obj", None)
         count = prep.count
@@ -1894,10 +1909,7 @@ class PostJsonSearch(QueryStringSearch):
                 decoded_link = unquote(product.properties["eodag:download_link"])
                 if decoded_link[0] == "{":  # not a url but a dict
                     if product.collection is None:
-                        msg = (
-                            f"Cannot build download query parameters for "
-                            f"{product}: collection is undefined"
-                        )
+                        msg = f"Cannot build download query parameters for {product}: collection is undefined"
                         raise MisconfiguredError(msg)
                     collection = product.collection
                     default_values = deepcopy(self.config.products.get(collection, {}))
@@ -1916,10 +1928,13 @@ class PostJsonSearch(QueryStringSearch):
 
     def collect_search_urls(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> tuple[list[str], int | None]:
         """Adds pagination to query parameters, and auth to url"""
+        if prep is None:
+            prep = PreparedSearch()
+
         token = getattr(prep, "next_page_token", None)
         limit = prep.limit
         count = prep.count
@@ -1948,7 +1963,7 @@ class PostJsonSearch(QueryStringSearch):
                 provider = prep.auth_plugin.provider if prep.auth_plugin else ""
                 raise MisconfiguredError(
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
-                )
+                ) from e
             # numeric page token
             if (next_page_token_key in ["page", "skip"]) and limit is not None:
                 if token is None and next_page_token_key == "skip":
@@ -2106,11 +2121,11 @@ class PostJsonSearch(QueryStringSearch):
                     f"Please check your credentials for {self.provider}.",
                     f"HTTP Error {response.status_code} returned.",
                     response.text.strip(),
-                )
+                ) from err
             if response.status_code and response.status_code == 429:
                 raise QuotaExceededError(
                     f"Too many requests on provider {self.provider}, please check your quota!"
-                )
+                ) from err
             if exception_message:
                 logger.exception(exception_message)
             else:
@@ -2195,7 +2210,7 @@ class StacSearch(PostJsonSearch):
             urlencode(query_params, doseq=True, quote_via=quote_via),
         )
 
-    def discover_queryables(
+    def discover_queryables(  # noqa: C901
         self, **kwargs: Any
     ) -> dict[str, Annotated[Any, FieldInfo]] | None:
         """Fetch queryables list from provider using `discover_queryables` conf
@@ -2254,8 +2269,9 @@ class StacSearch(PostJsonSearch):
                     url=fetch_url,
                     auth=auth,
                     info_message="Fetching queryables: {}".format(fetch_url),
-                    exception_message="Skipping error while fetching queryables for "
-                    "{} {} instance:".format(self.provider, self.__class__.__name__),
+                    exception_message="Skipping error while fetching queryables for {} {} instance:".format(
+                        self.provider, self.__class__.__name__
+                    ),
                 ),
             )
         except (KeyError, AttributeError) as e:
@@ -2285,7 +2301,7 @@ class StacSearch(PostJsonSearch):
                     "Incomplete %s discover_queryables configuration: %s",
                     self.provider,
                     e,
-                )
+                ) from e
             except IndexError:
                 logger.info(
                     "No queryable found for %s on %s", collection, self.provider

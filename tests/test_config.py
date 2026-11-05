@@ -72,13 +72,15 @@ class TestProviderConfig(unittest.TestCase):
         unslugified_provider_name = "some $provider-name. Really ugly"
         slugified_provider_name = "some_provider_name_really_ugly"
 
-        stream = StringIO("""!provider
+        stream = StringIO(
+            """!provider
             name: {}
             api: !plugin
                 type: MyPluginClass
             products:
                 EODAG_COLLECTION: provider_collection
-            """.format(unslugified_provider_name))
+            """.format(unslugified_provider_name)
+        )
         provider_config = load_provider_config_from_string(stream.getvalue())
         self.assertEqual(provider_config.name, slugified_provider_name)
 
@@ -375,7 +377,8 @@ class TestConfigFunctions(unittest.TestCase):
         """Default configuration must be overridden from a yaml conf str"""
 
         providers = ProvidersDict.from_configs(config.load_provider_configs())
-        providers.update_from_configs(yaml.safe_load("""
+        providers.update_from_configs(
+            yaml.safe_load("""
                 my_new_provider:
                     priority: 4
                     search:
@@ -394,7 +397,8 @@ class TestConfigFunctions(unittest.TestCase):
                         credentials:
                             aws_access_key_id: access-key-id
                             aws_secret_access_key: secret-access-key
-                """))
+                """)
+        )
 
         my_new_provider_conf = providers["my_new_provider"].config
         self.assertEqual(my_new_provider_conf.priority, 4)

@@ -87,7 +87,6 @@ class StreamResponseContent(Iterable[bytes]):
             self.interrupted = True
 
     def read(self, size=-1) -> bytes:
-
         # Fill the buffer with enough bytes to fulfil the request.
         while not self.interrupted and (size < 0 or len(self.buffer) < size):
             try:

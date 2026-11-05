@@ -167,7 +167,6 @@ class EODagTestBase(unittest.TestCase):
             shapely_mapping["coordinates"][i] = list(coords)
             coords = shapely_mapping["coordinates"][i]
             for j, pair in enumerate(coords):
-
                 # Coordinates rounded to 6 decimals by geojson lib
                 # So rounding coordinates in order to be able to compare
                 # coordinates after a `geojson.loads`

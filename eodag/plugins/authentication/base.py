@@ -65,10 +65,10 @@ class Authentication(PluginTopic):
         # No credentials dict in the config
         try:
             credentials = self.config.credentials
-        except AttributeError:
+        except AttributeError as e:
             raise MisconfiguredError(
                 f"Missing credentials configuration for provider {self.provider}"
-            )
+            ) from e
         # Empty credentials dict
         if not credentials:
             raise MisconfiguredError(

@@ -115,7 +115,6 @@ class Sentinel2Driver(DatasetDriver):
             and hasattr(product, "collection")
             and isinstance(product.collection, str)
         ):
-
             collection = product.collection.lower()
             if collection.startswith("s2_msi_"):
                 return True
@@ -125,7 +124,6 @@ class Sentinel2Driver(DatasetDriver):
             and hasattr(product, "properties")
             and isinstance(product.properties, dict)
         ):
-
             constellation = product.properties.get("constellation", None)
             if isinstance(constellation, str):
                 constellation = re.sub(r"([^a-z0-9]+)", "", constellation.lower())

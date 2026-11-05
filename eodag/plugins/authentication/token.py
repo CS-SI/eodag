@@ -159,7 +159,7 @@ class TokenAuth(Authentication):
         except KeyError as e:
             raise MisconfiguredError(
                 f"Missing credentials inputs for provider {self.provider}: {e}"
-            )
+            ) from e
 
     def authenticate(self) -> AuthBase:
         """Authenticate"""
