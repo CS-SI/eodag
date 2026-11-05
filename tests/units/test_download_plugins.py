@@ -757,6 +757,24 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_download_assets.assert_called_once()
         mock_stream_download.assert_not_called()
 
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._download_assets", autospec=True
+    )
+    def test_plugins_download_http_assets_without_product_url(
+        self, mock_download_assets
+    ):
+        """HTTPDownload.download() must download assets when the product has no URL."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
+        mock_download_assets.return_value = os.path.join(
+            self.output_dir, "dummy_product"
+        )
+
+        result = plugin.download(self.product, output_dir=self.output_dir)
+
+        mock_download_assets.assert_called_once()
+        self.assertEqual(result, mock_download_assets.return_value)
+
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     def test_plugins_download_http_assets_filename_from_href(
