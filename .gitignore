@@ -120,6 +120,8 @@ eodag-config
 .project
 .pydevproject
 .settings/
+# Vim
+.*.sw*
 
 # Helm chart dependencies
 charts/**/*.tgz
