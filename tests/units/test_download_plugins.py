@@ -55,6 +55,7 @@ from tests.context import (
     PluginManager,
     ProvidersDict,
     S3FileInfo,
+    SearchResult,
     StreamResponse,
     load_provider_configs,
     path_to_uri,
@@ -147,6 +148,24 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
     """Test cases for the base download plugin."""
+
+    def test_plugins_download_all_asset_not_available(self):
+        """Fail before downloading if any product has no matching asset."""
+        self.product.assets.update({"foo": {"href": "http://foo/x"}})
+        unmatched_product = EOProduct(
+            "wekeo_main",
+            dict(geometry="POINT (0 0)", title="unmatched_product", id="unmatched"),
+        )
+        unmatched_product.assets.update({"bar": {"href": "http://bar/y"}})
+        plugin = self.get_download_plugin(self.product)
+
+        with mock.patch.object(self.product, "download") as mock_download:
+            with self.assertRaises(NotAvailableError):
+                plugin.download_all(
+                    SearchResult([self.product, unmatched_product], 2), asset="foo"
+                )
+
+        mock_download.assert_not_called()
 
     def test_plugins_download_base_prepare_download_existing(self):
         """Download._prepare_download must detect if product destination already exists."""
