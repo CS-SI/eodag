@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
@@ -115,9 +115,38 @@ class AssetsDict(UserDict):
         """
         return {k: v.as_dict() for k, v in self.data.items()}
 
-    def get_values(self, asset_filter: str = "", regex=True) -> list[Asset]:
+    def get_values(
+        self,
+        asset_filter: str = "",
+        regex=True,
+        roles: Optional[list[str]] = None,
+    ) -> list[Asset]:
         """
         retrieves the assets matching the given filter
+
+        :param asset_filter: regex filter with which the assets should be matched
+        :param regex: Uses regex to match the asset key or simply compare strings
+        :param roles: if given, only the assets having at least one of these roles are kept
+                      (combined with ``asset_filter``: an asset must match both)
+        :return: list of assets
+        """
+        assets_values = self._get_values_by_key(asset_filter, regex)
+        if roles is None:
+            return assets_values
+
+        wanted_roles = set(roles)
+        roles_values = [
+            a for a in assets_values if wanted_roles & set(a.get("roles") or [])
+        ]
+        if not roles_values:
+            raise NotAvailableError(
+                f"No asset matching roles {list(roles)} was found in {self.product}"
+            )
+        return roles_values
+
+    def _get_values_by_key(self, asset_filter: str = "", regex=True) -> list[Asset]:
+        """
+        retrieves the assets whose key matches the given filter
 
         :param asset_filter: regex filter with which the assets should be matched
         :param regex: Uses regex to match the asset key or simply compare strings
@@ -136,7 +165,7 @@ class AssetsDict(UserDict):
             assets_values = [a for a in filtered_assets.values() if a and "href" in a]
             if not assets_values and regex:
                 # retry without regex
-                return self.get_values(asset_filter, regex=False)
+                return self._get_values_by_key(asset_filter, regex=False)
             elif not assets_values:
                 raise NotAvailableError(
                     rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {self.product}"
