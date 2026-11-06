@@ -391,7 +391,6 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(len(files_in_records_dir), 1, "Expect one file")
 
         if len(files_in_records_dir) > 0:
-
             # Cache contains last url downloaded, check it match
             records_file = files_in_records_dir[0]
             actual_download_url = ""
@@ -445,7 +444,6 @@ class TestEOProduct(EODagTestBase):
         product_dir_path = None
 
         try:
-
             # Download, and check that the mocked request was properly called.
             product_dir_path = product.download()
             responses.assert_call_count(product.properties["eodag:download_link"], 1)

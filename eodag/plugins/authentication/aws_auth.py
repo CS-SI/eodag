@@ -66,10 +66,10 @@ def create_s3_session(**kwargs) -> boto3.Session:
     """
     try:
         s3_session = boto3.Session(**kwargs)
-    except ProfileNotFound:
+    except ProfileNotFound as e:
         raise AuthenticationError(
             f"AWS profile {kwargs['profile_name']} not found, please check your credentials configuration"
-        )
+        ) from e
     return s3_session
 
 
@@ -229,7 +229,6 @@ class AwsAuth(Authentication):
         authenticated_objects: dict[str, BucketObjectsCollection] = {}
         auth_error_messages: set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
-
             bucket_name, prefix = pack
             if not prefix:
                 continue
@@ -325,5 +324,5 @@ class AwsAuth(Authentication):
                 ExpiresIn=expires_in,
             )
             return presigned_url
-        except ClientError:
-            raise EodagError(f"Couldn't get a presigned URL for '{asset}'.")
+        except ClientError as e:
+            raise EodagError(f"Couldn't get a presigned URL for '{asset}'.") from e

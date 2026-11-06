@@ -106,8 +106,7 @@ class EODAGSettings(BaseSettings):
     cfg_dir: Path = Field(
         default_factory=default_config_dir,
         description=(
-            "Base EODAG configuration directory. "
-            "Created automatically if it does not exist."
+            "Base EODAG configuration directory. Created automatically if it does not exist."
         ),
     )
 
@@ -125,8 +124,7 @@ class EODAGSettings(BaseSettings):
     collections_cfg_file: Path = Field(
         default=DEFAULT_COLLECTIONS_FILE,
         description=(
-            "Path to the collections configuration file. "
-            "Defaults to the bundled EODAG collections definition."
+            "Path to the collections configuration file. Defaults to the bundled EODAG collections definition."
         ),
     )
 
@@ -169,8 +167,7 @@ class EODAGSettings(BaseSettings):
     ] = Field(
         default_factory=list,
         description=(
-            "List of provider names to whitelist. "
-            "Can be set as a comma-separated string."
+            "List of provider names to whitelist. Can be set as a comma-separated string."
         ),
     )
 
@@ -200,15 +197,13 @@ class EODAGSettings(BaseSettings):
         """Warn about deprecated settings."""
         if "providers_cfg_file" in self.model_fields_set:
             warnings.warn(
-                "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. "
-                "Use EODAG_PROVIDERS_CFG_DIR instead.",
+                "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. Use EODAG_PROVIDERS_CFG_DIR instead.",
                 DeprecationWarning,
                 stacklevel=5,
             )
         if "EODAG_EXT_COLLECTIONS_CFG_FILE" in os.environ:
             warnings.warn(
-                "EODAG_EXT_COLLECTIONS_CFG_FILE is deprecated. "
-                "Use EODAG_EXT_COLLECTIONS_CFG_URI instead.",
+                "EODAG_EXT_COLLECTIONS_CFG_FILE is deprecated. Use EODAG_EXT_COLLECTIONS_CFG_URI instead.",
                 DeprecationWarning,
                 stacklevel=5,
             )
@@ -227,8 +222,7 @@ def ensure_user_config_exists(config_file: Path) -> None:
 
     if not USER_CONFIG_TEMPLATE_FILE.is_file():
         raise FileNotFoundError(
-            f"Missing bundled resource {USER_CONFIG_TEMPLATE_FILE} "
-            "to create user configuration file"
+            f"Missing bundled resource {USER_CONFIG_TEMPLATE_FILE} to create user configuration file"
         )
 
     config_file.parent.mkdir(
@@ -257,8 +251,7 @@ def ensure_cfg_dir_exists(config_dir: Path) -> Path:
         fallback_dir = Path(tempfile.gettempdir()) / ".config" / "eodag"
 
         logger.warning(
-            "Cannot create configuration directory %s. "
-            "Falling back to temporary directory %s.",
+            "Cannot create configuration directory %s. Falling back to temporary directory %s.",
             requested_dir,
             fallback_dir,
         )
@@ -327,7 +320,7 @@ class SimpleYamlProxyConfig:
         try:
             self.source: dict[str, Any] = cached_yaml_load(conf_file_path)
         except yaml.parser.ParserError:
-            print("Unable to load user configuration file")
+            logger.error("Unable to load user configuration file")
             raise
 
     def __getitem__(self, item: Any) -> Any:
@@ -686,6 +679,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.base.Download`
     #: Whether the content of the downloaded file should be extracted or not
     extract: bool
+    #: :class:`~eodag.plugins.download.base.Download` Whether to delete downloaded archives
+    delete_archive: bool
     #: :class:`~eodag.plugins.download.base.Download` Which extension should be used for the downloaded file
     output_extension: str
     #: :class:`~eodag.plugins.download.base.Download` Whether the directory structure should be flattened or not

@@ -56,10 +56,10 @@ class OARSearch(QueryStringSearch):
         else:
             try:
                 api_root_endpoint = config.api_endpoint.rstrip("/").rsplit("/", 3)[0]
-            except IndexError:
+            except IndexError as e:
                 raise MisconfiguredError(
                     f"Invalid 'api_endpoint' configuration for provider '{provider}'"
-                )
+                ) from e
 
         # Plugin default configuration
         config.__dict__.setdefault("result_type", "json")
@@ -163,11 +163,13 @@ class OARSearch(QueryStringSearch):
 
     def collect_search_urls(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> tuple[list[str], int | None]:
         """Handle OGC API - Records specificities, then delegate collect_search_urls to
         :class:`~eodag.plugins.search.qssearch.QueryStringSearch`."""
+        if prep is None:
+            prep = PreparedSearch()
 
         if "id" in kwargs and "collection" in kwargs:
             url = (

@@ -158,23 +158,41 @@ class AssetsDict(UserDict):
         tr_style = "style='background-color: transparent;'" if embeded else ""
         return (
             f"<table>{thead}"
-            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join(
+                [
+                    f"""<tr {tr_style}><td style='text-align: left;'>
                 <details><summary style='color: grey;'>
                     <span style='color: black'>'{k}'</span>:&ensp;
                     {{
-                        {"'roles': '<span style='color: black'>" + str(v['roles']) + "</span>',&ensp;"
-                         if v.get("roles") else ""}
-                        {"'type': '" + str(v['type']) + "',&ensp;"
-                         if v.get("type") else ""}
-                        {"'title': '<span style='color: black'>" + str(v['title']) + "</span>',&ensp;"
-                         if v.get("title") else ""}
+                        {
+                        "'roles': '<span style='color: black'>"
+                        + str(v["roles"])
+                        + "</span>',&ensp;"
+                        if v.get("roles")
+                        else ""
+                    }
+                        {
+                        "'type': '" + str(v["type"]) + "',&ensp;"
+                        if v.get("type")
+                        else ""
+                    }
+                        {
+                        "'title': '<span style='color: black'>"
+                        + str(v["title"])
+                        + "</span>',&ensp;"
+                        if v.get("title")
+                        else ""
+                    }
                         ...
                     }}
                 </summary>
                     {dict_to_html_table(v, depth=2)}
                 </details>
                 </td></tr>
-                """ for k, v in self.items()])
+                """
+                    for k, v in self.items()
+                ]
+            )
             + "</table>"
         )
 

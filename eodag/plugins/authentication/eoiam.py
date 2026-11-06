@@ -108,10 +108,7 @@ class EOIAMAuth(Authentication):
             redirect_url = resp.url
             service_names = parse_qs(redirect_url).get("sp", [""])
             service_name = service_names[0] if service_names else ""
-            msg = (
-                f"Consent required for service {service_name}, "
-                f"please fill the following form and try again {req_url}"
-            )
+            msg = f"Consent required for service {service_name}, please fill the following form and try again {req_url}"
             raise AuthenticationError(msg)
 
         if "login.do" in resp.url:

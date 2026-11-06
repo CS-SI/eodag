@@ -183,8 +183,7 @@ class ProviderConfig(yaml.YAMLObject):
         non_api_keys = [k for k in PLUGINS_TOPICS_KEYS if k != "api"]
         if "api" in config_keys and any(k in config_keys for k in non_api_keys):
             raise ValidationError(
-                "A provider implementing an Api plugin must not implement any other "
-                "type of plugin"
+                "A provider implementing an Api plugin must not implement any other type of plugin"
             )
 
     def update(self, config: Self | dict[str, Any]) -> None:
@@ -485,9 +484,9 @@ class Provider:
             if provider_auth_config and not credentials_in_auth(provider_auth_config):
                 for conf_with_creds in auth_confs_with_creds:
                     if conf_with_creds.matches_target_auth(provider_auth_config):
-                        getattr(self.config, key).credentials = (
-                            conf_with_creds.credentials
-                        )
+                        getattr(
+                            self.config, key
+                        ).credentials = conf_with_creds.credentials
                         return
 
     def delete_collection(self, name: str) -> None:
@@ -499,9 +498,9 @@ class Provider:
         """
         try:
             del self.collections_config[name]
-        except KeyError:
+        except KeyError as e:
             msg = f"Collection '{name}' not found in provider '{self.name}'."
-            raise UnsupportedCollection(msg)
+            raise UnsupportedCollection(msg) from e
 
     def sync_collections(
         self,
@@ -709,22 +708,38 @@ class ProvidersDict(UserDict[str, Provider]):
         tr_style = "style='background-color: transparent;'" if embeded else ""
         return (
             f"<table>{thead}"
-            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join(
+                [
+                    f"""<tr {tr_style}><td style='text-align: left;'>
                 <details><summary style='color: grey;'>
-                    <span style='color: black; font-family: monospace;'>{k}:{'&nbsp;' * (longest_name - len(k))}</span>
+                    <span style='color: black; font-family: monospace;'>{k}:{
+                        "&nbsp;" * (longest_name - len(k))
+                    }</span>
                     Provider(
-                        {"'priority': '<span style='color: black'>" + str(v.priority) + "</span>',&ensp;"
-                         if v.priority is not None else ""}
-                        {"'title': '<span style='color: black'>"
-                         + shorten(v.title, width=70, placeholder="[...]") + "</span>',&ensp;"
-                         if v.title else ""}
+                        {
+                        "'priority': '<span style='color: black'>"
+                        + str(v.priority)
+                        + "</span>',&ensp;"
+                        if v.priority is not None
+                        else ""
+                    }
+                        {
+                        "'title': '<span style='color: black'>"
+                        + shorten(v.title, width=70, placeholder="[...]")
+                        + "</span>',&ensp;"
+                        if v.title
+                        else ""
+                    }
                         {"'url': '" + str_as_href(v.url) + "'" if v.url else ""}
                     )
                 </summary>
                     {v._repr_html_(embedded=True)}
                 </details>
                 </td></tr>
-                """ for k, v in self.items()])
+                """
+                    for k, v in self.items()
+                ]
+            )
             + "</table>"
         )
 
@@ -821,7 +836,6 @@ class ProvidersDict(UserDict[str, Provider]):
         3
         """
         if not q:
-            # yield from self.data.values()
             return self
 
         free_text_query = compile_free_text_query(q)

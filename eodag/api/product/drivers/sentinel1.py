@@ -124,7 +124,6 @@ class Sentinel1Driver(DatasetDriver):
             and hasattr(product, "properties")
             and isinstance(product.properties, dict)
         ):
-
             constellation = product.properties.get("constellation", None)
             if isinstance(constellation, str):
                 constellation = re.sub(r"([^a-z0-9]+)", "", constellation.lower())

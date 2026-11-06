@@ -303,7 +303,7 @@ class HTTPDownload(Download):
 
         return json_response
 
-    def _order_status(
+    def _order_status(  # noqa: C901
         self,
         product: EOProduct,
         auth: AuthBase | None = None,
@@ -533,16 +533,13 @@ class HTTPDownload(Download):
 
         on_success_mm_querypath = (
             # append product.properties as input for on success response parsing
-            mtd_cfg_as_conversion_and_querypath(on_success_mm)
-            if on_success_mm
-            else {}
+            mtd_cfg_as_conversion_and_querypath(on_success_mm) if on_success_mm else {}
         )
         try:
             if result_type == "xml":
                 if not result_entry:
                     raise MisconfiguredError(
-                        '"result_entry" is required with "result_type" "xml"'
-                        'in "order_status.on_success"'
+                        '"result_entry" is required with "result_type" "xml"in "order_status.on_success"'
                     )
                 root_node = etree.fromstring(response.content)
                 namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
@@ -675,7 +672,7 @@ class HTTPDownload(Download):
                 return fs_path
             except NotAvailableError as e:
                 if kwargs.get("asset") is not None:
-                    raise NotAvailableError(e).with_traceback(e.__traceback__)
+                    raise NotAvailableError(e).with_traceback(e.__traceback__) from e
                 else:
                     pass
 
@@ -877,7 +874,7 @@ class HTTPDownload(Download):
                     )
             except NotAvailableError as e:
                 if kwargs.get("asset") is not None:
-                    raise NotAvailableError(e).with_traceback(e.__traceback__)
+                    raise NotAvailableError(e).with_traceback(e.__traceback__) from e
                 else:
                     pass
 
@@ -889,7 +886,9 @@ class HTTPDownload(Download):
         except StopIteration:
             # product is empty file
             logger.error("product %s is empty", product.properties["id"])
-            raise NotAvailableError(f"product {product.properties['id']} is empty")
+            raise NotAvailableError(
+                f"product {product.properties['id']} is empty"
+            ) from None
 
         return StreamResponse(
             content=chain(iter([first_chunk]), chunk_iterator),
@@ -1064,7 +1063,7 @@ class HTTPDownload(Download):
             )
         except requests.exceptions.MissingSchema:
             # location is not a valid url -> product is not available yet
-            raise NotAvailableError("Product is not available yet")
+            raise NotAvailableError("Product is not available yet") from None
         try:
             product._stream.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -1081,11 +1080,7 @@ class HTTPDownload(Download):
                 product._stream, "status_code", None
             ) is not None and product._stream.status_code == getattr(
                 self.config, "order_status", {}
-            ).get(
-                "ordered", {}
-            ).get(
-                "http_code"
-            ):
+            ).get("ordered", {}).get("http_code"):
                 product.properties["order:status"] = "ORDERED"
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
@@ -1117,10 +1112,13 @@ class HTTPDownload(Download):
         executor: ThreadPoolExecutor,
         auth: AuthBase | None = None,
         progress_callback: ProgressCallback | None = None,
-        assets_values: list[Asset] = [],
+        assets_values: list[Asset] | None = None,
         **kwargs: Unpack[DownloadConf],
     ) -> list[StreamResponse]:
         """Stream download assets as a zip file."""
+
+        if assets_values is None:
+            assets_values = []
 
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")
@@ -1261,7 +1259,7 @@ class HTTPDownload(Download):
 
         return assets_stream_list
 
-    def _download_assets(
+    def _download_assets(  # noqa: C901
         self,
         product: EOProduct,
         fs_dir_path: str,
@@ -1421,7 +1419,6 @@ class HTTPDownload(Download):
         params: dict[str, str] | None,
         zipped: bool = False,
     ) -> int:
-
         # Try to get sizes from metadata first
         sizes_from_metadata = [
             int(asset["file:size"])

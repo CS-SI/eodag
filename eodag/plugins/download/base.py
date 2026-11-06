@@ -113,7 +113,7 @@ class Download(PluginTopic):
         if not getattr(config, "output_dir", None):
             config.output_dir = tempfile.gettempdir()
         if not getattr(config, "delete_archive", None):
-            setattr(config, "delete_archive", True)
+            config.delete_archive = True
         return config
 
     @abstractmethod
@@ -648,8 +648,7 @@ class Download(PluginTopic):
                         import traceback as tb
 
                         logger.error(
-                            f"A problem occurred during download of product: {product}. "
-                            "Skipping it"
+                            f"A problem occurred during download of product: {product}. Skipping it"
                         )
                         logger.debug(f"\n{tb.format_exc()}")
 

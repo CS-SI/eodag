@@ -138,10 +138,13 @@ class UsgsApi(Api):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Search for data on USGS catalogues"""
+        if prep is None:
+            prep = PreparedSearch()
+
         token = (
             int(prep.next_page_token)
             if prep.next_page_token is not None
@@ -286,7 +289,7 @@ class UsgsApi(Api):
         )
         return formated_result
 
-    def download(
+    def download(  # noqa: C901
         self,
         product: EOProduct,
         auth: AuthBase | S3ServiceResource | None = None,
@@ -357,7 +360,7 @@ class UsgsApi(Api):
         except KeyError as e:
             raise NotAvailableError(
                 f"{e} not found in {product.properties['id']} download_request"
-            )
+            ) from e
 
         if len(req_urls) > 1:
             logger.warning(
@@ -397,7 +400,7 @@ class UsgsApi(Api):
                             )
                         else:
                             error_message = str(e)
-                        raise NotAvailableError(error_message)
+                        raise NotAvailableError(error_message) from e
                     else:
                         stream_size = (
                             int(stream.headers.get("Content-Length", 0)) or None
@@ -413,7 +416,7 @@ class UsgsApi(Api):
                     error_message = f"{e.response.content.decode('utf-8')} - {e}"
                 else:
                     error_message = str(e)
-                raise NotAvailableError(error_message)
+                raise NotAvailableError(error_message) from e
 
         download_request(product, fs_path, progress_callback, **kwargs)
 

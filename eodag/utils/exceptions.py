@@ -17,10 +17,9 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 if TYPE_CHECKING:
-
     from typing_extensions import Doc, Self
 
 
@@ -111,14 +110,14 @@ class RequestError(EodagError):
 class ValidationError(RequestError):
     """Error validating data"""
 
-    def __init__(self, message: str, parameters: set[str] = set()) -> None:
+    def __init__(self, message: str, parameters: set[str] | None = None) -> None:
         self.message = message
-        self.parameters = parameters
+        self.parameters = set() if parameters is None else parameters
 
     @classmethod
     def from_error(cls, error: Exception, msg: str | None = None) -> Self:
         """Override parent from_error to handle ValidationError specificities."""
-        setattr(error, "msg", msg)
+        cast(Any, error).msg = msg
         validation_error = super().from_error(error)
         return validation_error
 

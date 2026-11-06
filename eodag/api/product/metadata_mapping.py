@@ -213,7 +213,7 @@ def get_search_param(map_value: list[str]) -> str:
     return map_value[0]
 
 
-def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
+def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noqa: C901
     """Format a string of form ``{<field_name>#<conversion_function>}``
 
     Converters can be chained with ``#`` and are applied from left to right.
@@ -1225,7 +1225,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
-def properties_from_json(
+def properties_from_json(  # noqa: C901
     json: dict[str, Any],
     mapping: dict[str, Any],
     discovery_config: dict[str, Any] | None = None,
@@ -1391,7 +1391,7 @@ def properties_from_json(
     return properties
 
 
-def properties_from_xml(
+def properties_from_xml(  # noqa: C901
     xml_as_text: AnyStr,
     mapping: Any,
     empty_ns_prefix: str = "ns",
@@ -1543,7 +1543,7 @@ def properties_from_xml(
 
 def mtd_cfg_as_conversion_and_querypath(
     src_dict: dict[str, Any],
-    dest_dict: dict[str, Any] = {},
+    dest_dict: dict[str, Any] | None = None,
     result_type: str = "json",
 ) -> dict[str, Any]:
     """Metadata configuration dictionary to querypath with conversion dictionary
@@ -1569,6 +1569,9 @@ def mtd_cfg_as_conversion_and_querypath(
     >>> result["id"]
     (None, '//id/text()')
     """
+    if dest_dict is None:
+        dest_dict = {}
+
     # check if the configuration has already been converted
     some_configured_value = (
         next(iter(dest_dict.values())) if dest_dict else next(iter(src_dict.values()))
@@ -1924,7 +1927,9 @@ def _get_queryables(
                 ):
                     search_param_cfg_parsed = dict_items_recursive_apply(
                         search_param_cfg,
-                        lambda k, v: v.format(metadata=eodag_search_key),
+                        lambda k, v, metadata_key=eodag_search_key: v.format(
+                            metadata=metadata_key
+                        ),
                     )
                     for k, v in search_param_cfg_parsed.items():
                         if getattr(config, k, None):
@@ -2023,7 +2028,9 @@ def get_queryable_from_provider(
         candidates: list[str] = (
             [str(a[0]) for a in queryable_alias.convert_to_aliases()]
             if isinstance(queryable_alias, AliasChoices)
-            else [queryable_alias] if queryable_alias is not None else []
+            else [queryable_alias]
+            if queryable_alias is not None
+            else []
         )
         candidates.append(k)
         # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
@@ -2108,7 +2115,7 @@ def get_provider_queryable_key(
         return eodag_key
 
 
-def normalize_bands(data: dict | Asset) -> dict | Asset:
+def normalize_bands(data: dict | Asset) -> dict | Asset:  # noqa: C901
     """Migrate ``eo:bands`` / ``raster:bands`` of ``data`` into a STAC 1.1
     ``bands`` array, in place. Returns ``data`` for convenience.
 
@@ -2138,7 +2145,6 @@ def normalize_bands(data: dict | Asset) -> dict | Asset:
     # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
     # Migrate band STAC 1.0 to 1.1
     if isinstance(data, dict) or isinstance(data, Asset):
-
         # Gather eo:band et raster:bands
         bands: dict[str, Any] = {"eo:bands": [], "raster:bands": []}
         hasData = False

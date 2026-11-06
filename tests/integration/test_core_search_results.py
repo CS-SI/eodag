@@ -70,8 +70,7 @@ class TestCoreSearchResults(EODagTestCase):
         self.expanduser_mock.start()
         # Mocked OIDC discovery response as expected by pyjwt.
         self.oidc_endpoints_mock = mock.patch(
-            "eodag.plugins.authentication.openid_connect."
-            "OIDCRefreshTokenBase._get_oidc_endpoints",
+            "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase._get_oidc_endpoints",
             autospec=True,
             return_value={
                 "jwks_uri": "https://example.com/jwks",
@@ -276,7 +275,6 @@ class TestCoreSearchResults(EODagTestCase):
             with tempfile.NamedTemporaryFile(
                 mode="w", dir=tmpdir_path, delete=False
             ) as f:
-
                 # bad formatted property
                 self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
 
@@ -299,7 +297,6 @@ class TestCoreSearchResults(EODagTestCase):
             with tempfile.NamedTemporaryFile(
                 mode="w", dir=tmpdir_path, delete=False
             ) as f:
-
                 # bad formatted property
                 self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
 
@@ -325,7 +322,6 @@ class TestCoreSearchResults(EODagTestCase):
             with tempfile.NamedTemporaryFile(
                 mode="w", dir=tmpdir_path, delete=False
             ) as f:
-
                 # none property
                 self.search_result[0].properties["label:properties"] = None
 

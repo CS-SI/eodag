@@ -689,7 +689,6 @@ def update_assets_from_s3(
         return None
 
     try:
-
         logger.debug("Listing assets in %s", prefix)
 
         s3_client = auth.get_s3_client()
@@ -715,7 +714,6 @@ def update_assets_from_s3(
             # List files in prefix
             bucket_objects = auth.get_bucket_objects(bucket)
             for item_s3 in list_files_in_s3_prefix(prefix, bucket_objects):
-
                 url = "s3://{bucket}/{key}".format(bucket=bucket, key=item_s3.key)
                 key, roles = product.driver.guess_asset_key_and_roles(url, product)
                 if key is not None:
@@ -827,8 +825,10 @@ def file_position_from_s3_zip(
     with open_s3_zipped_object(s3_bucket, object_key, s3_client) as zipf:
         try:
             target_info = zipf.getinfo(target_filepath)
-        except KeyError:
-            raise FileNotFoundError(f"File {target_filepath} not found in ZIP archive")
+        except KeyError as e:
+            raise FileNotFoundError(
+                f"File {target_filepath} not found in ZIP archive"
+            ) from e
 
         if target_info.compress_type != ZIP_STORED:
             raise NotImplementedError(

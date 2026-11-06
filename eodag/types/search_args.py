@@ -109,14 +109,14 @@ class SearchArgs(BaseModel):
         if sort_by_arg is None:
             return None
 
-        assert isinstance(
-            sort_by_arg, list
-        ), f"Sort argument must be a list of tuple(s), got a '{type(sort_by_arg)}' instead"
+        assert isinstance(sort_by_arg, list), (
+            f"Sort argument must be a list of tuple(s), got a '{type(sort_by_arg)}' instead"
+        )
         sort_order_pattern = r"^(ASC|DES)[a-zA-Z]*$"
         for i, sort_by_tuple in enumerate(sort_by_arg):
-            assert isinstance(
-                sort_by_tuple, tuple
-            ), f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_tuple)}' instead"
+            assert isinstance(sort_by_tuple, tuple), (
+                f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_tuple)}' instead"
+            )
             # get sorting elements by removing leading and trailing whitespace(s) if exist
             sort_param = sort_by_tuple[0].strip()
             sort_order = sort_by_tuple[1].strip().upper()

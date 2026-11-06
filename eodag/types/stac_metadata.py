@@ -296,8 +296,8 @@ class CommonStacMetadata(ItemProperties):
 
 
 def create_stac_metadata_model(
-    extensions: list[BaseStacExtension] = STAC_EXTENSIONS,
-    base_models: list[type[BaseModel]] = [CommonStacMetadata],
+    extensions: list[BaseStacExtension] | None = None,
+    base_models: list[type[BaseModel]] | None = None,
     class_name: str = "StacMetadata",
 ) -> type[BaseModel]:
     """Create a pydantic model to validate item properties.
@@ -307,6 +307,9 @@ def create_stac_metadata_model(
     :param class_name: name of the created model
     :returns: pydantic model class
     """
+    extensions = STAC_EXTENSIONS if extensions is None else extensions
+    base_models = [CommonStacMetadata] if base_models is None else base_models
+
     extension_models: list[type[BaseModel]] = []
 
     # Check extensions for additional parameters to include

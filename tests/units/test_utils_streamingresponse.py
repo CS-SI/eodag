@@ -9,7 +9,6 @@ from eodag.utils import StreamResponse, StreamResponseContent
 
 
 class StreamResponseTest(unittest.TestCase):
-
     TMP_DIR = os.path.join(tempfile.gettempdir(), "test_streamresponse")
 
     @classmethod
@@ -56,7 +55,6 @@ class StreamResponseTest(unittest.TestCase):
         self.assertIsInstance(stream.headers, CaseInsensitiveDict)
 
     def test_streamresponse_download_generator(self):
-
         content = b""
         with open(__file__, "rb") as fd:
             content = fd.read()
@@ -84,7 +82,6 @@ class StreamResponseTest(unittest.TestCase):
         os.remove(filepath)
 
     def test_streamresponse_download_byteio(self):
-
         content = b""
         with open(__file__, "rb") as fd:
             content = fd.read()
@@ -117,7 +114,6 @@ class StreamResponseTest(unittest.TestCase):
         os.remove(filepath)
 
     def test_streamresponse_download_byteio_interrupted(self):
-
         content = b""
         with open(__file__, "rb") as fd:
             content = fd.read()
