@@ -529,11 +529,13 @@ class Download(PluginTopic):
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
         """
-        if kwargs.get("asset") is not None:
+        if self._has_asset_filter(kwargs):
             # A product whose asset filter matches nothing is retried until
             # ``timeout`` is reached, so check the filter first and fail fast.
             for product in products:
-                product.assets.get_values(kwargs["asset"])
+                product.assets.get_values(
+                    kwargs.get("asset") or "", roles=kwargs.get("roles")
+                )
 
         # Products are going to be removed one by one from this sequence once
         # downloaded.
@@ -583,7 +585,7 @@ class Download(PluginTopic):
                 or len(product.assets) > 0
                 and (
                     not getattr(self.config, "ignore_assets", False)
-                    or kwargs.get("asset") is not None
+                    or self._has_asset_filter(kwargs)
                 )
             )
         )
@@ -794,6 +796,15 @@ class Download(PluginTopic):
             return download_and_retry
 
         return decorator
+
+    @staticmethod
+    def _has_asset_filter(kwargs: DownloadConf) -> bool:
+        """Tell whether the download is restricted to some assets (``asset`` and/or ``roles``).
+
+        :param kwargs: download keyword arguments
+        :returns: ``True`` if assets have to be filtered, ``False`` if all of them are downloaded
+        """
+        return kwargs.get("asset") is not None or kwargs.get("roles") is not None
 
     def _config_executor(
         self, executor: ThreadPoolExecutor, thread_name_prefix: str | None = None

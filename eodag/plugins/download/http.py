@@ -644,8 +644,9 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
+        has_asset_filter = self._has_asset_filter(kwargs)
         should_download_assets = len(product.assets) > 0 and (
-            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
+            not self._should_ignore_assets(product) or has_asset_filter
         )
         fs_path, record_filename = self._prepare_download(
             product,
@@ -670,11 +671,11 @@ class HTTPDownload(Download):
                     executor,
                     **kwargs,
                 )
-                if kwargs.get("asset") is None:
+                if not has_asset_filter:
                     product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError as e:
-                if kwargs.get("asset") is not None:
+                if has_asset_filter:
                     raise NotAvailableError(e).with_traceback(e.__traceback__)
                 else:
                     pass
@@ -1288,7 +1289,9 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = product.assets.get_values(kwargs.get("asset") or "")
+        assets_values = product.assets.get_values(
+            kwargs.get("asset") or "", roles=kwargs.get("roles")
+        )
 
         assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
@@ -1389,7 +1392,7 @@ class HTTPDownload(Download):
         if flatten_top_dirs:
             flatten_top_directories(fs_dir_path)
 
-        if kwargs.get("asset") is None:
+        if not self._has_asset_filter(kwargs):
             # save hash/record file
             with open(record_filename, "w") as fh:
                 fh.write(product.remote_location)

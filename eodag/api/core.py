@@ -2015,6 +2015,8 @@ class EODataAccessGateway:
                        * ``dl_url_params`` - additional parameters to pass over to the download url as an url parameter
                        * ``delete_archive`` - whether to delete the downloaded archives
                        * ``asset`` - regex filter to identify assets to download
+                       * ``roles`` - only download the assets having at least one of these roles
+                         (combined with ``asset``: an asset must match both)
         :returns: A collection of the absolute paths to the downloaded products
         """
         paths = []
@@ -2166,6 +2168,8 @@ class EODataAccessGateway:
                        * ``dl_url_params`` - additional parameters to pass over to the download url as an url parameter
                        * ``delete_archive`` - whether to delete the downloaded archives
                        * ``asset`` - regex filter to identify assets to download
+                       * ``roles`` - only download the assets having at least one of these roles
+                         (combined with ``asset``: an asset must match both)
         :returns: The absolute path to the downloaded product in the local filesystem
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`

@@ -30,6 +30,8 @@ class DownloadConf(TypedDict, total=False):
     :cvar dl_url_params: additional parameters to pass over to the download url as an url parameter
     :cvar delete_archive: whether to delete the downloaded archives
     :cvar asset: regex filter to identify assets to download
+    :cvar roles: only download the assets having at least one of these roles
+                 (combined with ``asset``: an asset must match both)
     """
 
     output_dir: str
@@ -38,3 +40,4 @@ class DownloadConf(TypedDict, total=False):
     dl_url_params: dict[str, str]
     delete_archive: bool
     asset: str | None
+    roles: list[str] | None
