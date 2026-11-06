@@ -113,7 +113,7 @@ Download
 
 .. code-block:: console
 
-        eodag download --conf my_conf.yml --search-results my_search.geojson --asset ".*B04.*"
+        eodag download --search-results my_search.geojson --asset ".*B04.*"
 
 If the pattern does not match any asset of a product, ``download`` stops with an error instead of downloading the full
 product.
