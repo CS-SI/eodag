@@ -3270,10 +3270,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         for call in mock_get_chunk_dest_path.call_args_list:
             self.assertFalse(call.kwargs["build_safe"])
         # a partial download is not recorded
-        records_dir = os.path.join(self.output_dir, ".downloaded")
-        self.assertEqual(
-            os.listdir(records_dir) if os.path.isdir(records_dir) else [], []
-        )
+        self.assertEqual(os.listdir(os.path.join(self.output_dir, ".downloaded")), [])
 
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth._get_authenticated_objects",

@@ -652,16 +652,28 @@ class AwsDownload(Download):
         :param product: product for which the assets shall be downloaded
         :param asset_filter: text for which the assets should be filtered
         :param ignore_assets: if product instead of individual assets should be used
-        :param complementary_url_keys: properties keys of additional urls to add
         :param roles: roles for which the assets should be filtered
         :return: tuples of bucket names and prefixes
         """
         # if assets are defined, use them instead of scanning product.location
         if len(product.assets) > 0 and not ignore_assets:
-            if asset_filter or roles is not None:
+            if roles is not None:
                 assets_values = product.assets.get_values(
                     asset_filter or "", roles=roles
                 )
+            elif asset_filter:
+                filter_regex = re.compile(asset_filter)
+                assets_keys = getattr(product, "assets", {}).keys()
+                assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+                filtered_assets = {
+                    a_key: getattr(product, "assets", {})[a_key]
+                    for a_key in assets_keys
+                }
+                assets_values = [a for a in filtered_assets.values() if "href" in a]
+                if not assets_values:
+                    raise NotAvailableError(
+                        rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
+                    )
             else:
                 assets_values = list(product.assets.values())
 

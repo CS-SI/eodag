@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -119,7 +119,7 @@ class AssetsDict(UserDict):
         self,
         asset_filter: str = "",
         regex=True,
-        roles: Optional[list[str]] = None,
+        roles: list[str] | None = None,
     ) -> list[Asset]:
         """
         retrieves the assets matching the given filter

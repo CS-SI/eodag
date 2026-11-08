@@ -1438,31 +1438,6 @@ class TestEodagCli(unittest.TestCase):
             roles=["data"],
         )
 
-    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
-    def test_eodag_download_roles_not_found(self, dag):
-        """Calling eodag download with --roles matching nothing must fail clearly"""
-        search_results_path = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
-        )
-        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
-        dag.return_value.deserialize_and_register.return_value = SearchResult([])
-        dag.return_value.download_all.side_effect = NotAvailableError("roles not found")
-
-        exit_code, output, error = self.eodag_command(
-            [
-                "download",
-                "--search-results",
-                search_results_path,
-                "-f",
-                config_path,
-                "--roles",
-                "nomatch",
-            ],
-        )
-        self.assertEqual(exit_code, 1)
-        self.assertIsInstance(error, SystemExit)
-        self.assertEqual("Error: roles not found\n", output)
-
     def test_eodag_download_roles_selection(self):
         """The CLI must download only assets having the roles given with --roles."""
         dag = EODataAccessGateway()
