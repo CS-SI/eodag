@@ -161,7 +161,6 @@ LANDSAT_C2L1:
     - producer
     - processor
     - licensor
-  - name: Microsoft
   constellation: LANDSAT
   platform: L1,L2,L3,L4,L5,L6,L7,L8
   processing:level: L1
@@ -188,7 +187,6 @@ LANDSAT_C2L2:
     - producer
     - processor
     - licensor
-  - name: Microsoft
   constellation: LANDSAT
   platform: L8,L9
   processing:level: L1
@@ -609,12 +607,6 @@ S1_SAR_GRD:
   - url: https://european-union.europa.eu/
     name: European Union (EU)
     roles: ["licensor"]
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -695,12 +687,6 @@ S1_SAR_SLC:
   - url: https://european-union.europa.eu/
     name: European Union (EU)
     roles: ["licensor"]
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -755,12 +741,6 @@ S2_MSI_L1C:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L1
@@ -812,12 +792,6 @@ S2_MSI_L2A:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -1212,12 +1186,6 @@ S3_OLCI_L2LRR:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1250,12 +1218,6 @@ S3_OLCI_L2LFR:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1485,12 +1447,6 @@ S3_SLSTR_L2LST:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1874,12 +1830,6 @@ S3_LAN:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -4794,12 +4744,6 @@ S5P_L1B_IR_ALL:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -4835,12 +4779,6 @@ S5P_L2_IR_ALL:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -5575,16 +5513,7 @@ CAMS_GAC_FORECAST:
     Users looking for a more consistent long-term data set should consider using the CAMS Global Reanalysis instead, which is available through the ADS and spans the period from 2003 onwards.
     Finally, because some meteorological fields in the forecast do not fall within the general CAMS data licence, they are only available with a delay of 5 days.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5627,16 +5556,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
     Both the analysis and the forecast are available at hourly time steps at seven height levels.
     Note that only nitrogen monoxide, nitrogen dioxide, sulphur dioxide, ozone, PM2.5, PM10 and dust are regularly validated against in situ observations, and therefore forecasts of all other variables are unvalidated and should be considered experimental.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5672,16 +5592,7 @@ CAMS_GFE_GFAS:
     This version of GFAS (v1.2) provides daily averaged data based on a combination of FRP observations from two Moderate Resolution Imaging Spectroradiometer (MODIS) instruments, one on the NASA EOS-Terra satellite and the other on the NASA EOS-Aqua satellite from 1 January 2003 to present. GFAS also provides daily estimates of smoke plume injection heights derived from FRP observations and meteorological information from the operational weather forecasts from ECMWF.
     GFAS data have been used to provide surface boundary conditions for the CAMS global atmospheric composition and European regional air quality forecasts, and the wider atmospheric chemistry modelling community.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5729,16 +5640,7 @@ CAMS_SOLAR_RADIATION:
     Additionally, an ASCII "expert mode" format can be selected which contains in addition to the irradiation, all the input data used in their calculation (aerosol optical properties, water vapour concentration, etc).
     This additional information is only meaningful in the time frame at which the calculation is performed and so is only available at 1-minute time steps in universal time (UT).
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5785,16 +5687,7 @@ CAMS_GREENHOUSE_INVERSION:
     The data sets for the three species are updated once or twice per year adding the most recent year to the data record, while re-processing the original data record for consistency.
     This is reflected by the different version numbers. In addition, fluxes for methane are available based on surface air samples only or based on a combination of surface air samples and satellite observations (reflected by an 's' in the version number).
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5832,16 +5725,7 @@ CAMS_EAC4_MONTHLY:
     Although the analysis procedure considers chunks of data in a window of 12 hours in one go, EAC4 provides estimates every 3 hours, worldwide.
     This is made possible by the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5884,16 +5768,7 @@ CAMS_EU_AIR_QUALITY_RE:
     Once the fully quality-controlled observations are available from the data provider, typically with an additional delay of about 1 year, a final validated annual reanalysis is provided.
     Both reanalyses are available at hourly time steps at height levels.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5929,16 +5804,7 @@ CAMS_EAC4:
     For this reason, EAC4 is only available from 2003 onwards.
     Although the analysis procedure considers chunks of data in a window of 12 hours in one go, EAC4 provides estimates every 3 hours, worldwide. This is made possible by the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -5978,16 +5844,7 @@ CAMS_GRF_AUX:
     However, the CAMS reanalysis, which is used to provide the aerosol concentrations, does not make this distinction.
     The anthropogenic fraction was therefore derived by a method which uses aerosol size as a proxy for aerosol origin.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6027,16 +5884,7 @@ CAMS_GRF:
     CAMS also produces distributions of aerosol optical depths, distinguishing natural from anthropogenic aerosols, which are a separate dataset. See "Related Data".
 
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6079,16 +5927,7 @@ CAMS_GREENHOUSE_EGG4_MONTHLY:
     For this reason, EAC4 is only available from 2003 onwards.
     The analysis procedure assimilates data in a window of 12 hours using the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6131,16 +5970,7 @@ CAMS_GREENHOUSE_EGG4:
     For this reason, EAC4 is only available from 2003 onwards.
     The analysis procedure assimilates data in a window of 12 hours using the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6178,16 +6008,7 @@ CAMS_GLOBAL_EMISSIONS:
     Because most inventory-based data sets are only available with a delay of several years, the CAMS emission inventories also extend these existing data sets forward in time by using the trends from the most recent available years, producing timely input data for real-time forecast models.
     Most of the data sets are updated once or twice per year adding the most recent year to the data record, while re-processing the original data record for consistency, when needed. This is reflected by the different version numbers.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://atmosphere.copernicus.eu/
-    name: Copernicus Atmosphere Monitoring Service (CAMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -6260,16 +6081,7 @@ ERA5_SL:
     sets: hourly and monthly products, both on pressure levels (upper air fields) and single levels
     (atmospheric,ocean-wave and land surface quantities).
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6332,16 +6144,7 @@ ERA5_SL_MONTHLY:
     ocean waves). There are four main sub sets: hourly and monthly products, both on pressure levels (upper
     air fields) and single levels (atmospheric, ocean-wave and land surface quantities).
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6402,16 +6205,7 @@ ERA5_PL:
     water content, Specific snow water content, Temperature, U-component of wind, V-component of wind, Vertical
     velocity, Vorticity (relative)
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6476,16 +6270,7 @@ ERA5_PL_MONTHLY:
     degree respectively for ocean waves). There are four main sub sets: hourly and monthly products, both on
     pressure levels (upper air fields) and single levels (atmospheric, ocean-wave and land surface quantities).
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -6547,16 +6332,7 @@ ERA5_LAND:
     soil water layer 1, Volumetric soil water layer 2, Volumetric soil water layer 3, Volumetric soil water layer 4
   constellation: ERA5
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int"}]
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "hourly", "evolution"]
@@ -6609,16 +6385,7 @@ ERA5_LAND_MONTHLY:
     water layer 2, Volumetric soil water layer 3, Volumetric soil water layer 4
   constellation: ERA5
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "monthly", "evolution"]
@@ -6666,16 +6433,7 @@ UERRA_EUROPE_SL:
     cloud cover, Total column integrated water vapour, Total precipitation
   constellation: SURFEX
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - producer
-    - processor
-    - licensor
-    url: https://www.ecmwf.int
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["producer","processor","licensor"],"url":"https://www.ecmwf.int"}]
   platform: SURFEX
   processing:level:
   keywords: ["Climate", "ECMWF", "Reanalysis", "Regional", "Europe", "UERRA", "UERRA-HARMONIE", "SURFEX", "MESCAN-SURFEX", "CDS", "Atmospheric", "single", "levels"]
@@ -6727,16 +6485,7 @@ GLACIERS_DIST_RANDOLPH:
     aerial photographs and satellite images mostly acquired in the period 2000-2010.
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform: INSITU
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "distribution", "inventory"]
@@ -6784,16 +6533,7 @@ GRIDDED_GLACIERS_MASS_CHANGE:
     in the dataset/application are: Uncertainty
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "mass", "gridded"]
@@ -6843,16 +6583,7 @@ SATELLITE_CARBON_DIOXIDE:
     fraction of atmospheric carbon dioxide (XCO2), Mid-tropospheric columns of atmospheric carbon dioxide (CO2)
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "carbon-dioxide"]
@@ -6932,16 +6663,7 @@ SATELLITE_METHANE:
     columns of atmospheric methane (CH4)
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "methane"]
@@ -6992,16 +6714,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
     type Variables in the dataset/application are: Status flag, Uncertainty
     constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation:
   platform:
   processing:level:
@@ -7056,17 +6769,7 @@ SATELLITE_SEA_ICE_THICKNESS:
     periods, regions, and radar altimeter missions is under development in the extension of the ESA CCI Sea Ice project (ESA CCI+).
     This dataset is produced on behalf of the Copernicus Climate Change Service (C3S).
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation:
   platform:
   processing:level:
@@ -7105,17 +6808,7 @@ SATELLITE_SEA_ICE_CONCENTRATION:
 
     Further details about each product can be found below as well as in the Documentation section.
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation:
   platform:
   processing:level:
@@ -7193,17 +6886,7 @@ SEASONAL_POSTPROCESSED_PL:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "anomalies", "pressure", "levels"]
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   eodag:sensor_type: ATMOSPHERIC
@@ -7258,17 +6941,7 @@ SATELLITE_SEA_LEVEL_GLOBAL:
     anomalies zonal component, Sea level anomaly
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["Climate", "ECMWF", "CDS", "C3S", "sea", "level", "global"]
@@ -7332,17 +7005,7 @@ SEASONAL_POSTPROCESSED_SL:
     rate of accumulation
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "anomalies", "single", "levels"]
@@ -7406,17 +7069,7 @@ SEASONAL_ORIGINAL_SL:
     solar radiation, Top net thermal radiation, Total cloud cover, Total precipitation
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "daily", "single", "levels"]
@@ -7474,17 +7127,7 @@ SEASONAL_ORIGINAL_PL:
     of wind
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "subdaily", "pressure", "levels"]
@@ -7541,17 +7184,7 @@ SEASONAL_MONTHLY_PL:
     humidity, Temperature, U-component of wind, V-component of wind
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "pressure", "levels"]
@@ -7616,17 +7249,7 @@ SEASONAL_MONTHLY_SL:
     Total precipitation
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "single", "levels"]
@@ -7676,17 +7299,7 @@ SIS_HYDRO_MET_PROJ:
     Precipitation
   constellation:
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - name: Copernicus Climate Change Service (C3S)
-    description: Copernicus Climate Change Service (C3S)
-    url: https://climate.copernicus.eu/
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "hydrology", "meterology", "water", "precipitation", "temperature"]
@@ -7733,16 +7346,7 @@ CMIP6_CLIMATE_PROJECTIONS:
     data are produced by the participating institutes of the CMIP6 project.
   constellation: CMIP6
   instruments: ["CMIP6"]
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://climate.copernicus.eu/
-    name: Copernicus Climate Change Service (C3S)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   platform: CMIP6
   processing:level:
   eodag:sensor_type:
@@ -7768,16 +7372,7 @@ FIRE_HISTORICAL:
     code, Energy release component, Fine fuel moisture code, Fire daily severity index, Fire danger index, Fire weather
     index, Ignition component, Initial spread index, Keetch-Byram drought index, Spread component
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -7860,16 +7455,7 @@ GLOFAS_FORECAST:
     dataset/application are:\nRiver discharge in the last 24 hours\n\nVariables in the dataset/application
     are:\nUpstream area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -7888,16 +7474,7 @@ GLOFAS_HISTORICAL:
     simulation is from 1979-01-01 up to near real time.\n\nVariables in the dataset/application are:\nRiver discharge in the
     last 24 hours\n\nVariables in the dataset/application are:\nUpstream area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -7929,16 +7506,7 @@ GLOFAS_REFORECAST:
     Management Service (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the
     last 24 hours\n\nVariables in the dataset/application are:\nUpstream area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -7969,16 +7537,7 @@ GLOFAS_SEASONAL:
     (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24
     hours\n\nVariables in the dataset/application are:\nUpstream area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8013,16 +7572,7 @@ GLOFAS_SEASONAL_REFORECAST:
     (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24
     hours\n\nVariables in the dataset/application are:\nUpstream area"
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8061,16 +7611,7 @@ EFAS_FORECAST:
     River discharge in the last 6 hours, Snow depth water equivalent, Soil depth, Volumetric
     soil moisture\n\nVariables in the dataset/application are:\nOrography, Upstream area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8104,16 +7645,7 @@ EFAS_HISTORICAL:
     6 hours, Snow depth water equivalent, Soil depth, Volumetric soil moisture\n\nVariables in
     the dataset/application are:\nOrography, Upstream area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8150,16 +7682,7 @@ EFAS_REFORECAST:
     Volumetric soil moisture\n\nVariables in the dataset/application are:\nOrography, Upstream
     area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8195,16 +7718,7 @@ EFAS_SEASONAL:
     Soil depth, Volumetric soil moisture\n\nVariables in the dataset/application
     are:\nOrography, Upstream area
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8239,16 +7753,7 @@ EFAS_SEASONAL_REFORECAST:
     depth water equivalent, Soil depth, Volumetric soil moisture\n\nVariables in the dataset/application
     are:\nOrography, Upstream area"
   instruments: []
-  providers:
-  - name: ECMWF
-    description: European Centre for Medium-Range Weather Forecasts (ECMWF)
-    roles:
-    - licensor
-    - producer
-    - processor
-    url: https://www.ecmwf.int/
-  - url: https://emergency.copernicus.eu/
-    name: Copernicus Emergency Management Service (CEMS)
+  providers: [{"name":"ECMWF","description":"European Centre for Medium-Range Weather Forecasts (ECMWF)","roles":["licensor","producer","processor"],"url":"https://www.ecmwf.int/"}]
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8277,12 +7782,6 @@ COP_DEM_GLO30_DGED:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8319,12 +7818,6 @@ COP_DEM_GLO30_DTED:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8361,12 +7854,6 @@ COP_DEM_GLO90_DGED:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8403,12 +7890,6 @@ COP_DEM_GLO90_DTED:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
-  - url: https://dataspace.copernicus.eu/
-    name: Copernicus Data Space Ecosystem (CDSE)
-  - url: https://creodias.eu/
-    name: CREODIAS
   constellation: TerraSAR
   platform:
   processing:level:
@@ -8492,8 +7973,6 @@ CLMS_GLO_FCOVER_333M:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8528,8 +8007,6 @@ CLMS_GLO_NDVI_333M:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation:
   platform:
   processing:level:
@@ -8568,8 +8045,6 @@ CLMS_GLO_NDVI_1KM_LTS:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: SPOT
   platform:
   processing:level:
@@ -8607,8 +8082,6 @@ CLMS_GLO_DMP_333M:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8646,8 +8119,6 @@ CLMS_GLO_GDMP_333M:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8687,8 +8158,6 @@ CLMS_GLO_LAI_333M:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8726,8 +8195,6 @@ CLMS_GLO_FAPAR_333M:
     name: European Union (EU)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-3
   platform:
   processing:level:
@@ -8823,8 +8290,6 @@ CLMS_HRVPP_ST:
     name: European Environment Agency (EEA)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -8866,8 +8331,6 @@ CLMS_HRVPP_ST_LAEA:
     name: European Environment Agency (EEA)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -8908,8 +8371,6 @@ CLMS_HRVPP_VPP:
     name: European Environment Agency (EEA)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -8950,8 +8411,6 @@ CLMS_HRVPP_VPP_LAEA:
     name: European Environment Agency (EEA)
     roles:
     - licensor
-  - url: https://www.wekeo.eu/
-    name: WEkEO
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -8999,8 +8458,6 @@ AERIS_IAGOS:
     - producer
     - processor
     description: 'IAGOS-DC, Observatoire Midi-Pyrénées, AERIS, CNRS; contact: iagos-dc@iagos.org'
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
   constellation:
   platform:
   processing:level: L2
@@ -9030,14 +8487,7 @@ GSW_CHANGE:
     surface water occurrence increased, decreased or remained the same between 1984-1999
     and 2000-2021. Both the direction of change and its intensity are documented.
   instruments: []
-  providers:
-  - url: https://global-surface-water.appspot.com/
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
+  providers: [{"url":"https://global-surface-water.appspot.com/","name":"European Commission Joint Research Center","roles":["producer","licensor"]}]
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9065,14 +8515,7 @@ GSW_EXTENT:
     The Global Surface Water Maximum Water Extent shows all the locations ever detected as
     water over a 38-year period (1984-2021)
   instruments: []
-  providers:
-  - url: https://global-surface-water.appspot.com/
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
+  providers: [{"url":"https://global-surface-water.appspot.com/","name":"European Commission Joint Research Center","roles":["producer","licensor"]}]
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9101,14 +8544,7 @@ GSW_OCCURRENCE:
     and 2021 and provides information concerning overall water dynamics. This product
     captures both the intra and inter-annual variability and changes.
   instruments: []
-  providers:
-  - url: https://global-surface-water.appspot.com/
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
+  providers: [{"url":"https://global-surface-water.appspot.com/","name":"European Commission Joint Research Center","roles":["producer","licensor"]}]
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9137,14 +8573,7 @@ GSW_RECURRENCE:
     behaviour of water surfaces and captures the frequency with which water returns from
     year to year.
   instruments: []
-  providers:
-  - url: https://global-surface-water.appspot.com/
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
+  providers: [{"url":"https://global-surface-water.appspot.com/","name":"European Commission Joint Research Center","roles":["producer","licensor"]}]
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9173,14 +8602,7 @@ GSW_SEASONALITY:
     behaviour of water surfaces for a single year (2021) and shows permanent and seasonal
     water and the number of months water was present.
   instruments: []
-  providers:
-  - url: https://global-surface-water.appspot.com/
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
+  providers: [{"url":"https://global-surface-water.appspot.com/","name":"European Commission Joint Research Center","roles":["producer","licensor"]}]
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9209,14 +8631,7 @@ GSW_TRANSITIONS:
     water seasonality between the first and last years (between 1984 and 2021) and captures
     changes between the three classes of not water, seasonal water and permanent water.
   instruments: []
-  providers:
-  - url: https://global-surface-water.appspot.com/
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
+  providers: [{"url":"https://global-surface-water.appspot.com/","name":"European Commission Joint Research Center","roles":["producer","licensor"]}]
   constellation: GSW
   platform: GSW
   processing:level:
@@ -9581,8 +8996,6 @@ ISIMIP_CLIMATE_FORCING_ISIMIP3B:
     roles:
     - licensor
     description: 'ISIMIP Repository; contact: info@isimip.org'
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
   constellation: ISIMIP
   platform: ISIMIP
   processing:level:
@@ -9635,8 +9048,6 @@ ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
     roles:
     - licensor
     description: 'ISIMIP Repository; contact: info@isimip.org'
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
   constellation: ISIMIP
   platform: ISIMIP
   processing:level:
@@ -9702,15 +9113,7 @@ DT_EXTREMES:
     for the assessment and prediction of environmental extremes in support of risk
     assessment and management.
   instruments: []
-  providers:
-  - url: https://www.ecmwf.int/
-    name: ECMWF
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://data.destination-earth.eu/
-    name: Destination Earth Data Lake (DEDL)
+  providers: [{"url":"https://www.ecmwf.int/","name":"ECMWF","roles":["producer","processor","licensor"]}]
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -15610,8 +15013,6 @@ MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15645,8 +15046,6 @@ MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15683,8 +15082,6 @@ MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15717,8 +15114,6 @@ MO_GLOBAL_MULTIYEAR_BGC_001_033:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15749,8 +15144,6 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15784,8 +15177,6 @@ MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15815,8 +15206,6 @@ MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15843,8 +15232,6 @@ MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15870,8 +15257,6 @@ MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15900,8 +15285,6 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15956,8 +15339,6 @@ MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -15990,8 +15371,6 @@ MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16031,8 +15410,6 @@ MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16065,8 +15442,6 @@ MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16095,8 +15470,6 @@ MO_MULTIOBS_GLO_PHY_UVW_3D_MYNRT_015_007:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16124,8 +15497,6 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16150,8 +15521,6 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16180,8 +15549,6 @@ MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16209,8 +15576,6 @@ MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16235,8 +15600,6 @@ MO_SEALEVEL_GLO_PHY_MDT_008_063:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16265,8 +15628,6 @@ MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16301,8 +15662,6 @@ MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16331,8 +15690,6 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16369,8 +15726,6 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16405,8 +15760,6 @@ MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16442,8 +15795,6 @@ MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16473,8 +15824,6 @@ MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16502,8 +15851,6 @@ MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16534,8 +15881,6 @@ MO_WIND_GLO_PHY_L3_NRT_012_002:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16566,8 +15911,6 @@ MO_WIND_GLO_PHY_L3_MY_012_005:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16596,8 +15939,6 @@ MO_WIND_GLO_PHY_L4_NRT_012_004:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16627,8 +15968,6 @@ MO_WIND_GLO_PHY_L4_MY_012_006:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16657,8 +15996,6 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16689,8 +16026,6 @@ MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16720,8 +16055,6 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16753,8 +16086,6 @@ MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16786,8 +16117,6 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -16815,8 +16144,6 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
     roles:
     - producer
     - processor
-  - name: Copernicus Marine Environment Monitoring Service (CMEMS)
-    url: https://marine.copernicus.eu
   - name: European Union (EU)
     roles:
     - licensor
@@ -17061,15 +16388,7 @@ GHS_BUILT_S:
     1975, 1990, 2000, and 2014 epochs, while a Sentinel-2 (S2) image composite (GHS-composite-S2 R2020A)
     supports the 2018 epoch.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation: Sentinel-2, LANDSAT
   platform:
   processing:level:
@@ -17108,15 +16427,7 @@ GHS_BUILT_H:
     The building heights extracted from these sources are updated using the support of the shadow markers extracted from the Sentinel2 image
     data composite of the year 2018 (GHS-composite-S2 R2020A).
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation: Sentinel-2
   platform:
   processing:level:
@@ -17153,15 +16464,7 @@ GHS_BUILT_V:
     The data report about the total built-up volume and the built-up volume allocated to dominant non-residential (NRES) uses.
     Data are spatial-temporal interpolated or extrapolated from 1975 to 2030 in 5 years intervals.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation: Sentinel-2, LANDSAT, TanDEM-X
   platform:
   processing:level:
@@ -17202,15 +16505,7 @@ GHS_BUILT_C:
     MSZ, open spaces, and built spaces basic class abstractions are derived by mathematical morphology spatial filtering
     (opening, closing, regional maxima) from the BUFRAC function.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation: Sentinel-2
   platform:
   processing:level:
@@ -17245,15 +16540,7 @@ GHS_LAND:
   description: |
     Land fraction per pixel as derived from Sentinel2 data composite and OpenStreetMap (OSM) data.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation: Sentinel-2, Landsat
   platform:
   processing:level:
@@ -17291,15 +16578,7 @@ GHS_POP:
     were disaggregated from census or administrative units to grid cells, informed by the distribution, volume, and classification of
     built-up as mapped in the Global Human Settlement Layer (GHSL) global layer per corresponding epoch.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation:
   platform:
   processing:level:
@@ -17339,15 +16618,7 @@ GHS_SMOD:
     This product (v2) is an update of the data released in 2023 (v1) based on GHS-BUILT-S, GHS-POP and uses an updated definition of
     Semi-Dennse Urban Clusters. The Settlement Model is provided at the detailed level (Second Level - L2). First level can be obtained aggregating L2.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation: Landsat, Sentinel-2
   platform:
   processing:level:
@@ -17385,15 +16656,7 @@ GHS_ESM:
      exploits the Copernicus VHR_IMAGE_2015 dataset made of satellite images Pleiades, Deimos-02, WorldView-2,
      WorldView-3, GeoEye-01 and Spot 6/7 ranging from 2014 to 2016.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation: Deimos, Pleiades, WorldView, SPOT
   platform: Deimos-02, Pleiades-1A, Pleiades-1B, WorldView-2, WorldView-3, GeoEye-01, Spot 6, Spot 7
   processing:level:
@@ -17436,15 +16699,7 @@ GHS_DUC:
     layers (one for each level of subdivision/aggregation). The vector layers can be used to join each classification table (csv) with the actual spatial units.
     Version 2 includes the improvement of the classification of small spatial units by Degree of Urbanisation level 2 as described in the updated (EUROSTAT manual).
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation:
   platform:
   processing:level:
@@ -17485,15 +16740,7 @@ GHS_FUA:
     the closest (in time) Urban Centre is estimated by using the global friction matrix; the Urban Centre GDP is inherited from the
     country GDP per capita (World Development Indicators: NY.GDP.PCAP.CD), as provided by The World Bank.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation:
   platform:
   processing:level:
@@ -17530,15 +16777,7 @@ GHS_BUILT_LAUSTAT:
      from the 2020 layer provided by GISCO. For each LAU the table contains the sum of built-up surface (GHS-BUILT-S) between
      1975 and 2020 in 5 years interval, expressed in square kilometres.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation:
   platform:
   processing:level:
@@ -17576,15 +16815,7 @@ GHS_ENACT_POP:
       Lambert Azimuthal Equal Area (EPSG:3035, 12 monthly nighttime grids and 12 daytime grids), and at 30 arc-seconds in WGS-84 (EPSG:4326, 12 monthly
       nighttime grids and 12 daytime grids). The compressed ZIP files contain TIF files and short documentation.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation:
   platform:
   processing:level:
@@ -17622,15 +16853,7 @@ GHS_UCDB_DOMAIN:
        resident population and built-up surface share in a 1x1 km uniform global grid. The input data is generated by the GHSL, and the
        operating parameters are set in the frame of the “Degree of Urbanisation” (DEGURBA) methodology. The data is grouped by thematic domain.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation:
   platform:
   processing:level:
@@ -17676,15 +16899,7 @@ GHS_UCDB_REGION:
        resident population and built-up surface share in a 1x1 km uniform global grid. The input data is generated by the GHSL, and the
        operating parameters are set in the frame of the “Degree of Urbanisation” (DEGURBA) methodology. The data is grouped by region.
   instruments:
-  providers:
-  - url: https://data.jrc.ec.europa.eu/collection/ghsl
-    name: European Commission Joint Research Center
-    roles:
-    - producer
-    - processor
-    - licensor
-  - url: https://human-settlement.emergency.copernicus.eu/
-    name: GHSL - Global Human Settlement Layer
+  providers: [{"url":"https://data.jrc.ec.europa.eu/collection/ghsl","name":"European Commission Joint Research Center","roles":["producer","processor","licensor"]}]
   constellation:
   platform:
   processing:level:
