@@ -170,6 +170,12 @@ class TestEodagCli(unittest.TestCase):
         self.assertNotEqual(exit_code, 0)
         self.assertIsInstance(error, SystemExit)
 
+    def test_eodag_search_without_args_exit_code(self):
+        """Calling eodag search without criteria must exit 1, not -1 (255 on POSIX)"""
+        exit_code, _, error = self.eodag_command(["search"])
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, SystemExit)
+
     def test_eodag_search_without_collection_arg(self):
         """Calling eodag search without -p | --collection should print the help message and return error code"""  # noqa
         # Valid fixed dates keep the CLI help-path test deterministic.

@@ -313,7 +313,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         with click.Context(search_crunch) as ctx:
             print("Give me some work to do. See below for how to do that:", end="\n\n")
             click.echo(search_crunch.get_help(ctx))
-        sys.exit(-1)
+        sys.exit(1)
 
     from eodag.api.core import EODataAccessGateway
     from eodag.utils.dates import to_iso_utc_string
