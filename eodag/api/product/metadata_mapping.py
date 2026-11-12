@@ -249,8 +249,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``sanitize``: sanitize string
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``split``: split a string using given separator
-        - ``split_cop_dem_id``: get the bbox by splitting the product id
-        - ``split_corine_id``: get the collection by splitting the product id
         - ``split_id_into_s3_params``: parse a Sentinel-3 product id into S3 query parameter values
         - ``to_bounds``: convert an input geometry to [min_lon, min_lat, max_lon, max_lat]
         - ``to_bounds_lists``: convert to list(s) of bounds
