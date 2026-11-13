@@ -199,15 +199,18 @@ def get_metadata_path_value(map_value: str | list[str | None]) -> str:
     return cast(str, map_value[1]) if isinstance(map_value, list) else map_value
 
 
-def get_search_param(map_value: list[str]) -> str:
+def get_search_param(map_value: list[str | None]) -> str | None:
     """See :func:`~eodag.api.product.metadata_mapping.get_metadata_path`
 
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config
-    :returns: The value of the search parameter as defined in the provider config
+    :returns: The value of the search parameter as defined in the provider config,
+              or ``None`` when the mapping defines no search parameter
 
     >>> get_search_param(["platform", "$.properties.platform"])
     'platform'
+    >>> get_search_param([None, "$.properties.platform"]) is None
+    True
     """
     # Assume that caller will pass in the value as a list
     return map_value[0]
@@ -1894,9 +1897,11 @@ def _get_queryables(
                 )
             _, md_value = md_mapping
             # query param from defined metadata_mapping
-            if md_mapping is not None and isinstance(md_mapping, list):
+            if isinstance(md_mapping, list):
                 search_param = get_search_param(md_mapping)
-                if search_param is not None:
+                # `[None, path]` mappings can be skipped and will be parsed
+                # through `free_text_search_operations`
+                if search_param:
                     queryables[eodag_search_key] = search_param
             # query param from metadata auto discovery
             elif md_value == NOT_MAPPED and getattr(
