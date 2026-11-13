@@ -118,6 +118,14 @@ Download
 If the pattern does not match any asset of a product, ``download`` stops with an error instead of downloading the full
 product.
 
+* To download only the assets having at least one of the given roles, repeat ``--roles``:
+
+.. code-block:: console
+
+        eodag download --search-results my_search.geojson --roles data --roles data-mask
+
+When combined with ``--asset``, only the assets matching both the pattern and one of the roles are downloaded.
+
 * Using commands chaining, ``download`` can also directly be executed after a ``search`` in a single command:
 
 .. code-block:: console

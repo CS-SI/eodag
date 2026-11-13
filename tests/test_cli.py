@@ -1373,6 +1373,141 @@ class TestEodagCli(unittest.TestCase):
         )
 
     @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_roles(self, dag):
+        """Calling eodag download with repeated --roles must forward them to download_all"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult([])
+        dag.return_value.download_all.return_value = ["/fake_path"]
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--roles",
+                "data",
+                "--roles",
+                "data-mask",
+            ],
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertEqual("Downloaded /fake_path\n", output)
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY,
+            output_dir=None,
+            executor=mock.ANY,
+            roles=["data", "data-mask"],
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_asset_and_roles(self, dag):
+        """Calling eodag download with --asset and --roles must forward both to download_all"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult([])
+        dag.return_value.download_all.return_value = ["/fake_path"]
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--asset",
+                "foo",
+                "--roles",
+                "data",
+            ],
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY,
+            output_dir=None,
+            executor=mock.ANY,
+            asset="foo",
+            roles=["data"],
+        )
+
+    def test_eodag_download_roles_selection(self):
+        """The CLI must download only assets having the roles given with --roles."""
+        dag = EODataAccessGateway()
+        product = EOProduct(
+            "sara",
+            dict(geometry="POINT (0 0)", title="dummy_product", id="dummy"),
+        )
+        selected_href = "http://foo/x"
+        unselected_href = "http://bar/y"
+        product.assets.update(
+            {
+                "foo": {"href": selected_href, "roles": ["data"]},
+                "bar": {"href": unselected_href, "roles": ["thumbnail"]},
+            }
+        )
+        product.register_downloader(
+            dag._plugins_manager.get_download_plugin(product), None
+        )
+        product.location = product.remote_location = "http://somewhere"
+        search_result = SearchResult([product], 1)
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
+
+        with (
+            mock.patch.object(
+                EODataAccessGateway,
+                "deserialize_and_register",
+                return_value=search_result,
+            ),
+            mock.patch(
+                "eodag.plugins.download.http.requests.get", autospec=True
+            ) as mock_get,
+            mock.patch(
+                "eodag.plugins.download.http.requests.head", autospec=True
+            ) as mock_head,
+        ):
+            mock_get.return_value.__enter__.return_value.iter_content.return_value = (
+                iter([b"data"])
+            )
+            mock_get.return_value.__enter__.return_value.headers = {}
+            mock_head.return_value.headers = {"Content-Length": "4"}
+
+            exit_code, output, error = self.eodag_command(
+                [
+                    "download",
+                    "--search-results",
+                    search_results_path,
+                    "--roles",
+                    "data",
+                    "--output-dir",
+                    output_dir,
+                ],
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertTrue(os.path.isfile(os.path.join(output_dir, "dummy_product", "x")))
+        self.assertFalse(os.path.exists(os.path.join(output_dir, "dummy_product", "y")))
+        self.assertTrue(mock_get.call_args_list)
+        self.assertTrue(
+            all(call.args[0] == selected_href for call in mock_get.call_args_list)
+        )
+        self.assertTrue(mock_head.call_args_list)
+        self.assertTrue(
+            all(call.args[0] == selected_href for call in mock_head.call_args_list)
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_download_stac_items(self, dag):
         """Calling eodag download with --stac-item argument"""
         fake_result = SearchResult([mock.MagicMock() * 2], 2)
