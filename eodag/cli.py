@@ -120,7 +120,34 @@ def _deprecated_cli(message: str, version: str | None = None) -> Callable[..., A
     return decorator
 
 
-@click.group(chain=True)
+class EodagGroup(click.Group):
+    """Click group that prints errors raised by its commands as a one-line message.
+
+    The full traceback is only shown at maximum verbosity (``-vvv``).
+    """
+
+    def invoke(self, ctx: Context) -> Any:
+        """Invoke the group and its commands, turning their errors into a one-line message"""
+        try:
+            return super().invoke(ctx)
+        except (click.ClickException, click.exceptions.Exit, click.Abort):
+            # already handled by click
+            raise
+        except Exception as e:
+            if ctx.params.get("verbose", 0) >= 3:
+                raise
+            from eodag.utils.exceptions import EodagError
+
+            # eodag errors have a meaningful message, show the type of other errors
+            message = str(e)
+            if not message:
+                message = type(e).__name__
+            elif not isinstance(e, EodagError):
+                message = f"{type(e).__name__}: {message}"
+            raise click.ClickException(message) from e
+
+
+@click.group(cls=EodagGroup, chain=True)
 @click.option(
     "-v",
     "--verbose",
