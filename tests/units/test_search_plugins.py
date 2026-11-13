@@ -2572,6 +2572,42 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertNotIn("datetime", mock_requests_post.call_args.kwargs["json"])
 
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_filter_date_datetime_only(self, mock__request):
+        """Products from STAC items having only datetime must be filterable by date"""
+        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        # minimal planetary_computer sentinel-2-l2a items: no start/end_datetime
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "id": "S2A_MSIL2A_20210214T105131_R051_T30TXP_20210215T051748",
+                        "collection": "sentinel-2-l2a",
+                        "geometry": geojson_geometry,
+                        "properties": {"datetime": "2021-02-14T10:51:31.024000Z"},
+                    },
+                    {
+                        "id": "S2B_MSIL2A_20210211T105129_R051_T30TXP_20210212T053406",
+                        "collection": "sentinel-2-l2a",
+                        "geometry": geojson_geometry,
+                        "properties": {"datetime": "2021-02-11T10:51:29.024000Z"},
+                    },
+                ],
+            },
+        ]
+        search_plugin = self.get_search_plugin("S2_MSI_L2A", "planetary_computer")
+
+        products = search_plugin.query(prep=PreparedSearch(limit=2))
+        self.assertEqual(len(products), 2)
+        self.assertNotIn("start_datetime", products[0].properties)
+
+        filtered = products.filter_date("2021-02-10T00:00:00", "2021-02-12T00:00:00")
+        self.assertEqual(
+            [p.properties["id"] for p in filtered],
+            ["S2B_MSIL2A_20210211T105129_R051_T30TXP_20210212T053406"],
+        )
+
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
     def test_plugins_search_stacsearch_distinct_collection_mtd_mapping(
         self, mock__request
     ):

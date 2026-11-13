@@ -188,6 +188,45 @@ class TestPluginCrunch(unittest.TestCase):
         filtered_result = search_results.crunch(FilterDate(dict(end="2025-01-18")))
         self.assertEqual(len(filtered_result), 5)
 
+    def test_crunch_filterdate_datetime_only(self):
+        """Crunch FilterDate must use datetime for products having no start/end_datetime"""
+        search_results = self.__fake_search_result(
+            [
+                {"datetime": "2021-02-14T10:51:31.024000Z"},
+                {"datetime": "2021-02-12T11:00:59.024000Z"},
+                {"datetime": "2021-02-11T10:00:00Z"},
+            ]
+        )
+
+        filtered_result = search_results.crunch(
+            FilterDate(dict(start="2021-02-10", end="2021-02-12"))
+        )
+        self.assertEqual(len(filtered_result), 1)
+        self.assertEqual(
+            filtered_result[0].properties["datetime"], "2021-02-11T10:00:00Z"
+        )
+
+        filtered_result = search_results.crunch(FilterDate(dict(start="2021-02-12")))
+        self.assertEqual(len(filtered_result), 2)
+
+        filtered_result = search_results.crunch(FilterDate(dict(end="2021-02-13")))
+        self.assertEqual(len(filtered_result), 2)
+
+        # start_datetime and end_datetime take precedence over datetime
+        search_results = self.__fake_search_result(
+            [
+                {
+                    "datetime": "2021-02-20T00:00:00Z",
+                    "start_datetime": "2021-02-11T00:00:00Z",
+                    "end_datetime": "2021-02-11T12:00:00Z",
+                },
+            ]
+        )
+        filtered_result = search_results.crunch(
+            FilterDate(dict(start="2021-02-10", end="2021-02-12"))
+        )
+        self.assertEqual(len(filtered_result), 1)
+
     def test_crunch_filterdate_sort(self):
         """Crunch FilterDate.sort_product_by_start_date test"""
 
@@ -223,6 +262,20 @@ class TestPluginCrunch(unittest.TestCase):
         )
         self.assertEqual(
             products[2].properties.get("start_datetime", None), "2025-01-18"
+        )
+
+        # products having only datetime
+        products = self.__fake_search_result(
+            [
+                {"datetime": "2025-01-18"},
+                {"datetime": "2025-01-16"},
+                {"datetime": "2025-01-17"},
+            ]
+        )
+        products.sort(key=FilterDate.sort_product_by_start_date)
+        self.assertEqual(
+            [p.properties["datetime"] for p in products],
+            ["2025-01-16", "2025-01-17", "2025-01-18"],
         )
 
     def test_crunch_latest_intersect(self):
@@ -311,6 +364,22 @@ class TestPluginCrunch(unittest.TestCase):
         )
         self.assertEqual(
             products[2].properties.get("start_datetime", None), "2025-01-18"
+        )
+
+        # products having only datetime
+        products = self.__fake_search_result(
+            [
+                {"datetime": "2025-01-16"},
+                {"datetime": "2025-01-18"},
+                {"datetime": "2025-01-17"},
+            ]
+        )
+        products.sort(
+            key=FilterLatestIntersect.sort_product_by_start_date, reverse=True
+        )
+        self.assertEqual(
+            [p.properties["datetime"] for p in products],
+            ["2025-01-18", "2025-01-17", "2025-01-16"],
         )
 
     def test_crunch_lastestbyname(self):
