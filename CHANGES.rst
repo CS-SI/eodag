@@ -3,6 +3,59 @@ Release history
 ===============
 
 
+v4.11.0 (2026-11-13)
+====================
+
+Bug Fixes
+---------
+
+* **core**: Validate start and end dates before search (`#2435`_, `f58105f`_)
+
+* **crunch**: Use datetime when products have no start or end datetime (`#2441`_, `83b2d46`_)
+
+* **deps**: Raise minimum versions for vulnerable packages (`#2417`_, `8420c52`_)
+
+* **download**: Allow asset downloads without product URL (`#2438`_, `efaeebe`_)
+
+* **download**: Allow AWS asset downloads without product URL (`#2439`_, `516327c`_)
+
+Build System
+------------
+
+* Drop python 3.9 support (`#2432`_, `5eb75fc`_)
+
+Features
+--------
+
+* **cli**: Download single asset through CLI (`#2368`_, `14bf40d`_)
+
+Refactoring
+-----------
+
+* Modernize typing and stdlib usage for python 3.10 (`#2434`_, `17ae0b6`_)
+
+* **collections**: Updated licenses and providers (`#2433`_, `c0e9dba`_)
+
+.. _#2368: https://github.com/CS-SI/eodag/pull/2368
+.. _#2417: https://github.com/CS-SI/eodag/pull/2417
+.. _#2432: https://github.com/CS-SI/eodag/pull/2432
+.. _#2433: https://github.com/CS-SI/eodag/pull/2433
+.. _#2434: https://github.com/CS-SI/eodag/pull/2434
+.. _#2435: https://github.com/CS-SI/eodag/pull/2435
+.. _#2438: https://github.com/CS-SI/eodag/pull/2438
+.. _#2439: https://github.com/CS-SI/eodag/pull/2439
+.. _#2441: https://github.com/CS-SI/eodag/pull/2441
+.. _14bf40d: https://github.com/CS-SI/eodag/commit/14bf40de3d0fa34bb2aa54fcdd68933288ff6865
+.. _17ae0b6: https://github.com/CS-SI/eodag/commit/17ae0b6cccccd6b833d3b251ce7a35115ddecfeb
+.. _516327c: https://github.com/CS-SI/eodag/commit/516327c60292ce9ec99e6f10e0bf61fb76d46373
+.. _5eb75fc: https://github.com/CS-SI/eodag/commit/5eb75fc605a04c941f024f4f3f0a955cc372ec75
+.. _83b2d46: https://github.com/CS-SI/eodag/commit/83b2d4655f61ea2695c19fc3eb3f40bd7220d1c0
+.. _8420c52: https://github.com/CS-SI/eodag/commit/8420c526cedbfc1b26f30fda2fdee5d7ee02c66c
+.. _c0e9dba: https://github.com/CS-SI/eodag/commit/c0e9dba529814536c249d4ed015afa20109d5ad8
+.. _efaeebe: https://github.com/CS-SI/eodag/commit/efaeebeec0c8b287172545510dfc3a369f7bf269
+.. _f58105f: https://github.com/CS-SI/eodag/commit/f58105fb798780f9a7cc10bf188658a79122bc05
+
+
 v4.10.4 (2026-11-03)
 ====================
 
