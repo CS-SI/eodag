@@ -34,7 +34,7 @@ class FilterDate(Crunch):
     """FilterDate cruncher: filter products by date
 
     Allows to filter out products that are older than a start date (optional) or more recent than an end date
-    (optional).
+    (optional). Products having neither ``start_datetime`` nor ``end_datetime`` are filtered using their ``datetime``.
 
     :param config: Crunch configuration, may contain :
 
@@ -45,7 +45,8 @@ class FilterDate(Crunch):
     @staticmethod
     def sort_product_by_start_date(product: EOProduct) -> dt.datetime:
         """Get product start date"""
-        start_date = product.properties.get("start_datetime")
+        properties = product.properties
+        start_date = properties.get("start_datetime") or properties.get("datetime")
         if not start_date:
             return dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         return parse_to_utc(start_date)
@@ -82,15 +83,20 @@ class FilterDate(Crunch):
         filtered: list[EOProduct] = []
         for product in products:
 
+            properties = product.properties
+            product_start_str = properties.get("start_datetime")
+            product_end_str = properties.get("end_datetime")
+            # single-instant products (e.g. most STAC items) only have datetime
+            if not product_start_str and not product_end_str:
+                product_start_str = product_end_str = properties.get("datetime")
+
             # product start date
-            product_start_str = product.properties.get("start_datetime")
             if product_start_str:
                 product_start = parse_to_utc(product_start_str)
             else:
                 product_start = None
 
             # product end date
-            product_end_str = product.properties.get("end_datetime")
             if product_end_str:
                 product_end = parse_to_utc(product_end_str)
             else:

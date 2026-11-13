@@ -44,7 +44,8 @@ class FilterLatestIntersect(Crunch):
     @staticmethod
     def sort_product_by_start_date(product: EOProduct) -> dt.datetime:
         """Get product start date"""
-        start_date = product.properties.get("start_datetime")
+        properties = product.properties
+        start_date = properties.get("start_datetime") or properties.get("datetime")
         if not start_date:
             return dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         return parse_to_utc(start_date)
