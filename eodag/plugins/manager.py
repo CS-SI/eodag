@@ -17,11 +17,10 @@
 # limitations under the License.
 from __future__ import annotations
 
+import importlib
 import logging
 import re
 from typing import TYPE_CHECKING, Any, Iterator, Optional, TypeVar
-
-import importlib_metadata
 
 from eodag.config import PluginConfig, load_config
 from eodag.plugins.apis.base import Api
@@ -86,7 +85,7 @@ class PluginManager:
         self._db = db
 
         for topic in PLUGINS_TOPIC_KEYS:
-            for entry_point in importlib_metadata.entry_points(
+            for entry_point in importlib.metadata.entry_points(
                 group="eodag.plugins.{}".format(topic)
             ):
                 try:
