@@ -100,9 +100,8 @@ class OIDCRefreshTokenBase(Authentication):
             auth_config = response.json()
         except requests.HTTPError as e:
             raise MisconfiguredError(
-                f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}"
-                f"Request returned {e.response.text}."
-            )
+                f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}Request returned {e.response.text}."
+            ) from e
         return auth_config
 
     def decode_jwt_token(self, token: str) -> dict[str, Any]:
@@ -125,7 +124,7 @@ class OIDCRefreshTokenBase(Authentication):
                     algorithms=self.algorithms,
                 )
         except (jwt.exceptions.InvalidTokenError, jwt.exceptions.DecodeError) as e:
-            raise AuthenticationError(e)
+            raise AuthenticationError(e) from e
 
     def _get_access_token(self) -> str:
         now = dt.datetime.now(dt.timezone.utc)

@@ -269,10 +269,15 @@ class QueryablesDict(UserDict[str, Any]):
             if self.additional_information
             else ""
         )
-        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
-                {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={
-                self.additional_properties}
-            """ + add_info + "</td></tr></thead>" if not embedded else ""
+        thead = (
+            f"""<thead><tr><td style='text-align: left; color: grey;'>
+                {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={self.additional_properties}
+            """
+            + add_info
+            + "</td></tr></thead>"
+            if not embedded
+            else ""
+        )
         tr_style = "style='background-color: transparent;'" if embedded else ""
         table = f"<table>{thead}<tbody>"
         table_rows = []
@@ -303,14 +308,25 @@ class QueryablesDict(UserDict[str, Any]):
                         <details><summary style='color: grey;'>
                         <span style='color: black'>'{k}'</span>:&ensp;
                         typing.Annotated[{
-                        "<span style='color: black'>" + shorter_type_repr(v.__args__[0]) + "</span>,&ensp;"}
-                        FieldInfo({"'default': '<span style='color: black'>"
-                                   + str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
-                                   if v.__metadata__[0].get_default()
-                                   and v.__metadata__[0].get_default() != PydanticUndefined else ""}
-                                  {"'required': <span style='color: black'>"
-                                   + str(v.__metadata__[0].is_required()) + "</span>,"
-                                   if v.__metadata__[0].is_required() else ""}
+                "<span style='color: black'>"
+                + shorter_type_repr(v.__args__[0])
+                + "</span>,&ensp;"
+            }
+                        FieldInfo({
+                "'default': '<span style='color: black'>"
+                + str(v.__metadata__[0].get_default())
+                + "</span>',&ensp;"
+                if v.__metadata__[0].get_default()
+                and v.__metadata__[0].get_default() != PydanticUndefined
+                else ""
+            }
+                                  {
+                "'required': <span style='color: black'>"
+                + str(v.__metadata__[0].is_required())
+                + "</span>,"
+                if v.__metadata__[0].is_required()
+                else ""
+            }
                                   {alias_str}
                                   ...
                                  )]

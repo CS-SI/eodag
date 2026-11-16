@@ -31,7 +31,6 @@ import orjson
 from pydantic import AliasChoices
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
-from typing_extensions import get_args  # noqa: F401
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -46,7 +45,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.search_result import RawSearchResult, SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
-from eodag.types import json_field_definition_to_python  # noqa: F401
+from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.stac_extensions import EcmwfItemProperties
 from eodag.utils import (
@@ -343,7 +342,7 @@ class ECMWFSearch(PostJsonSearch):
         )
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
+        self, prep: PreparedSearch | None = None, **kwargs: Any
     ) -> RawSearchResult:
         """Should perform the actual search request.
 
@@ -351,6 +350,9 @@ class ECMWFSearch(PostJsonSearch):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
+        if prep is None:
+            prep = PreparedSearch(limit=None)
+
         # no real search. We fake it all
         raw_search_results = RawSearchResult([{}])
         raw_search_results.search_params = kwargs
@@ -364,7 +366,7 @@ class ECMWFSearch(PostJsonSearch):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Build ready-to-download SearchResult.
@@ -373,6 +375,9 @@ class ECMWFSearch(PostJsonSearch):
         :param kwargs: keyword arguments to be used in the search
         :returns: list of products and number of products (optional)
         """
+        if prep is None:
+            prep = PreparedSearch()
+
         collection = prep.collection
         if not collection:
             collection = kwargs.get("collection")
@@ -431,9 +436,7 @@ class ECMWFSearch(PostJsonSearch):
                 (
                     params[START],
                     params[END],
-                ) = _dc_qp[
-                    "date"
-                ].split("/")
+                ) = _dc_qp["date"].split("/")
             elif _dc_qp.get("date"):
                 params[START] = params[END] = _dc_qp["date"]
 
@@ -520,7 +523,7 @@ class ECMWFSearch(PostJsonSearch):
                     'Malformed parameter "date" (date given "{}", time given: "{}"): {}'.format(
                         params.get("date"), params.get("time"), str(e)
                     )
-                )
+                ) from e
 
         # Compute date range from year/month/day/time params
         start, end = compute_date_range_from_params(
@@ -576,9 +579,9 @@ class ECMWFSearch(PostJsonSearch):
         pattern = discover_metadata.get("metadata_pattern") or ""
         try:
             return bool(pattern and re.match(pattern, key))
-        except re.error:
+        except re.error as e:
             msg = f"Invalid discover_metadata.metadata_pattern for provider {self.provider}: {pattern}"
-            raise MisconfiguredError(msg)
+            raise MisconfiguredError(msg) from e
 
     def discover_queryables(
         self,
@@ -741,7 +744,7 @@ class ECMWFSearch(PostJsonSearch):
 
         return queryables
 
-    def available_values_from_constraints(
+    def available_values_from_constraints(  # noqa: C901
         self,
         constraints: list[dict[str, Any]],
         input_keywords: dict[str, Any],
@@ -889,9 +892,7 @@ class ECMWFSearch(PostJsonSearch):
                         f"{keyword} cannot be used with this combination of parameters."
                     )
                 raise ValidationError(
-                    f"{keyword}={values} is not available"
-                    f"{all_keywords_str}."
-                    f" {allowed_values_str}",
+                    f"{keyword}={values} is not available{all_keywords_str}. {allowed_values_str}",
                     set(
                         [keyword] + [k for k in parsed_keywords if k in input_keywords]
                     ),
@@ -993,17 +994,13 @@ class ECMWFSearch(PostJsonSearch):
 
             formatted_param = ecmwf_format(name, alias=False)
             formatted_alias = ecmwf_format(name)
-            queryables[formatted_param] = Annotated[
-                get_args(
-                    json_field_definition_to_python(
-                        prop,
-                        default_value=default,
-                        required=is_required,
-                        validation_alias=AliasChoices(formatted_alias, name),
-                        serialization_alias=formatted_alias,
-                    )
-                )
-            ]
+            queryables[formatted_param] = json_field_definition_to_python(
+                prop,
+                default_value=default,
+                required=is_required,
+                validation_alias=AliasChoices(formatted_alias, name),
+                serialization_alias=formatted_alias,
+            )
 
         return queryables
 
@@ -1024,7 +1021,7 @@ class ECMWFSearch(PostJsonSearch):
         """
         # Rename keywords from form with metadata mapping.
         # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
-        required = [ecmwf_format(k) for k in required_keywords]  # noqa: F841
+        required = [ecmwf_format(k) for k in required_keywords]
 
         queryables: dict[str, Annotated[Any, FieldInfo]] = {}
         for name, values in available_values.items():
@@ -1033,17 +1030,13 @@ class ECMWFSearch(PostJsonSearch):
             formatted_param = ecmwf_format(name, alias=False)
             formatted_alias = ecmwf_format(name)
 
-            queryables[formatted_param] = Annotated[
-                get_args(
-                    json_field_definition_to_python(
-                        {"type": "string", "title": name, "enum": values},
-                        default_value=defaults.get(name),
-                        required=bool(formatted_alias in required),
-                        validation_alias=AliasChoices(formatted_alias, name),
-                        serialization_alias=formatted_alias,
-                    )
-                )
-            ]
+            queryables[formatted_param] = json_field_definition_to_python(
+                {"type": "string", "title": name, "enum": values},
+                default_value=defaults.get(name),
+                required=bool(formatted_alias in required),
+                validation_alias=AliasChoices(formatted_alias, name),
+                serialization_alias=formatted_alias,
+            )
 
         return queryables
 
@@ -1375,7 +1368,7 @@ class MeteoblueSearch(ECMWFSearch):
 
     def collect_search_urls(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> tuple[list[str], int]:
         """Wrap PostJsonSearch.collect_search_urls to force product count to 1.
@@ -1384,11 +1377,14 @@ class MeteoblueSearch(ECMWFSearch):
         :param kwargs: keyword arguments used in the search
         :return: list of search url and number of results
         """
+        if prep is None:
+            prep = PreparedSearch()
+
         urls, _ = super().collect_search_urls(prep, **kwargs)
         return urls, 1
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
+        self, prep: PreparedSearch | None = None, **kwargs: Any
     ) -> RawSearchResult:
         """Perform the actual search request, and return result in a single element.
 
@@ -1396,11 +1392,14 @@ class MeteoblueSearch(ECMWFSearch):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
+        if prep is None:
+            prep = PreparedSearch(limit=None)
+
         prep.url = prep.search_urls[0]
         prep.info_message = f"Sending search request: {prep.url}"
         prep.exception_message = (
-            f"Skipping error while searching for {self.provider}"
-            f" {self.__class__.__name__} instance"
+            f"Skipping error while searching for {self.provider} "
+            f"{self.__class__.__name__} instance"
         )
         response = self._request(prep)
         raw_search_results = RawSearchResult([response.json()])
@@ -1583,7 +1582,7 @@ class WekeoECMWFSearch(ECMWFSearch):
         return normalized
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
+        self, prep: PreparedSearch | None = None, **kwargs: Any
     ) -> RawSearchResult:
         """Should perform the actual search request.
 
@@ -1591,6 +1590,9 @@ class WekeoECMWFSearch(ECMWFSearch):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
+        if prep is None:
+            prep = PreparedSearch(limit=None)
+
         if "id" in kwargs and "ORDERABLE" not in kwargs["id"]:
             # id is order id (only letters and numbers) -> use parent normalize results.
             # No real search. We fake it all, then check order status using given id

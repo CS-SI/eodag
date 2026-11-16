@@ -75,7 +75,7 @@ def _instantiate_eodag_subprocess(env):
         [
             sys.executable,
             "-c",
-            ("from eodag import EODataAccessGateway;" "EODataAccessGateway()"),
+            ("from eodag import EODataAccessGateway;EODataAccessGateway()"),
         ],
         env,
     )

@@ -18,28 +18,12 @@ repos:
     -   id: debug-statements
     -   id: check-merge-conflict
 
--   repo: 'https://github.com/PyCQA/flake8'
-    rev: 7.3.0
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.4
     hooks:
-    -   id: flake8
-        additional_dependencies:
-          - flake8-eradicate
-
--   repo: 'https://github.com/ambv/black'
-    rev: 26.5.1
-    hooks:
-    -   id: black
-        args: ['--safe', '--target-version=py310']
-
--   repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
-    hooks:
-    -   id: pydocstyle
-
--   repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.10.1
-    hooks:
-    -   id: isort
+    -   id: ruff
+        args: [--fix]
+    -   id: ruff-format
 
 -   repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1

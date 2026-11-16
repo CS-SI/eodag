@@ -119,10 +119,10 @@ test = [
 ]
 dev = [
     "eodag[stubs,test]",
-    "flake8",
     "mypy",
     "prek",
     "py >= 1.8.2",
+    "ruff == 0.9.4",
     "stac-valid",
     "tox-uv",
     "tox",
@@ -217,27 +217,6 @@ include = ["eodag*"]
 [tool.setuptools_scm]
 fallback_version = "4.10.5.dev0"
 
-[tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 88
-ensure_newline_before_comments = true
-known_first_party = ["eodag", "tests"]
-known_third_party = ["concurrent.futures"]
-default_section = "THIRDPARTY"
-skip = [
-    ".git",
-    "__pycache__",
-    ".tox",
-    "build",
-    "dist",
-    "docs/conf.py",
-    "tests/utils.py",
-    "eodag/utils/__init__.py",
-]
-
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
@@ -270,6 +249,58 @@ ignore_missing_imports = true
 
 [tool.uv]
 cache-keys = [{ git = true }]
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py310"
+force-exclude = true
+extend-exclude = [
+    ".tox",
+    "build",
+    "dist",
+    "docs/conf.py",
+    "docs/**/*.ipynb",
+    "tests/context.py",
+]
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+select = [
+    "B",       # flake8-bugbear
+    "E",       # pycodestyle errors
+    "W",       # pycodestyle warnings
+    "F",       # Pyflakes
+    "C90",     # mccabe complexity
+    "I",       # isort
+    "T20",     # flake8-print
+    "D1",      # pydocstyle docstring presence
+    "ERA001",  # flake8-eradicate commented-out code
+]
+ignore = [
+    "E203",  # Whitespace before '{symbol}'
+    "E266",  # Too many leading '#' for block comment
+    "D100",  # Missing docstring in public module
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test*.py" = ["D"]                 # Tests do not require docstrings
+"tests/utils.py" = ["I"]              # Preserve intentional import ordering
+"eodag/utils/__init__.py" = ["I"]     # Preserve intentional import ordering
+"utils/ext_collections_cmp.py" = ["T201"]     # Prints formatted comparison reports
+"utils/ext_product_types_cmp.py" = ["T201"]   # Prints formatted comparison reports
+
+[tool.ruff.lint.isort]
+known-first-party = ["eodag", "tests"]
+known-third-party = ["concurrent.futures"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 120
+
+[tool.ruff.lint.mccabe]
+max-complexity = 18
 
 [tool.semantic_release.branches.main]
 match = "(master|develop)"

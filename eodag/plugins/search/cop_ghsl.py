@@ -26,7 +26,6 @@ from typing import Annotated, Any, cast
 import requests
 from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
-from typing_extensions import get_args
 
 from eodag.api.product._assets import AssetsDict
 from eodag.api.product._product import EOProduct
@@ -93,7 +92,7 @@ def _convert_bbox_to_lonlat_EPSG3035(bbox: list[str]) -> list[float]:
     return [lon1, lat1, lon2, lat2]
 
 
-def _get_available_values_from_constraints(
+def _get_available_values_from_constraints(  # noqa: C901
     constraints: list[dict[str, Any]], filters: dict[str, Any], collection: str
 ) -> dict[str, list[Any]]:
     """get the available values for each parameter from the constraints"""
@@ -118,7 +117,7 @@ def _get_available_values_from_constraints(
     for filter_key, value in filters.items():
         available_values_key = []
         values_in_constraints = []
-        for i, constraint in enumerate(constraints):
+        for constraint in constraints:
             if constraint not in filtered_constraints:
                 continue
             if filter_key in constraint and isinstance(value, list):
@@ -390,9 +389,7 @@ class CopGhslSearch(Search):
         self, collection: str, prep: PreparedSearch, filter_params: dict[str, Any]
     ) -> tuple[list[EOProduct], int | None]:
         filters = deepcopy(filter_params)
-        default_geometry = getattr(self.config, "metadata_mapping")[
-            "eodag:default_geometry"
-        ]
+        default_geometry = self.config.metadata_mapping["eodag:default_geometry"]
         properties = {}
         properties["geometry"] = default_geometry[1]
         properties["order:status"] = "succeeded"
@@ -550,8 +547,7 @@ class CopGhslSearch(Search):
         for year in list_years:
             try:
                 filter_str = (
-                    f"{provider_product_type}_{year}_"
-                    f"{params['tile_size']}_{proj_code}"
+                    f"{provider_product_type}_{year}_{params['tile_size']}_{proj_code}"
                 )
             except KeyError:
                 logger.warning(f"no tiles available for {collection}")
@@ -582,7 +578,7 @@ class CopGhslSearch(Search):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """
@@ -592,8 +588,11 @@ class CopGhslSearch(Search):
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
-        page = int(getattr(prep, "next_page_token") or "1")
-        limit = getattr(prep, "limit") or DEFAULT_LIMIT
+        if prep is None:
+            prep = PreparedSearch()
+
+        page = int(prep.next_page_token or "1")
+        limit = prep.limit or DEFAULT_LIMIT
         number_matched = kwargs.pop("number_matched", None)
 
         # get year/month from start/end time if not given separately
@@ -702,18 +701,11 @@ class CopGhslSearch(Search):
         )
         queryables = {}
         for name, values in available_values.items():
-            required = True
-            if name == grouped_by:
-                required = False
-            queryables[name] = Annotated[
-                get_args(
-                    json_field_definition_to_python(
-                        {"type": "string", "title": name, "enum": values},
-                        default_value=kwargs.get(name, None),
-                        required=required,
-                    )
-                )
-            ]
+            queryables[name] = json_field_definition_to_python(
+                {"type": "string", "title": name, "enum": values},
+                default_value=kwargs.get(name, None),
+                required=name != grouped_by,
+            )
         # add datetimes queryables if year filter is available
         if "year" in available_values:
             queryables.update(

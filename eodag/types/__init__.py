@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from copy import deepcopy as copy_deepcopy
 from types import UnionType
-from typing import Annotated, Any, Literal, Type, Union, get_args, get_origin
+from typing import Annotated, Any, Literal, Type, Union, cast, get_args, get_origin
 
 from annotated_types import Ge, Gt, Le, Lt
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, create_model
@@ -353,9 +353,9 @@ def python_field_definition_to_json(
         if isinstance(type_data, str):
             json_field_definition["type"] = type_data
         elif type_data is None:
-            json_field_definition["type"] = json_field_definition["min"] = (
-                json_field_definition["max"]
-            ) = None
+            json_field_definition["type"] = json_field_definition[
+                "min"
+            ] = json_field_definition["max"] = None
         elif isinstance(type_data, dict):
             json_field_definition.update(type_data)
         else:
@@ -375,9 +375,9 @@ def python_field_definition_to_json(
         elif isinstance(field_type, dict):
             json_field_definition.update(field_type)
         elif field_type is None:
-            json_field_definition["type"] = json_field_definition["min"] = (
-                json_field_definition["max"]
-            ) = None
+            json_field_definition["type"] = json_field_definition[
+                "min"
+            ] = json_field_definition["max"] = None
         else:
             json_field_definition["type"] = [row["type"] for row in field_type]
             json_field_definition["min"] = [
@@ -466,7 +466,7 @@ class BaseModelCustomJsonSchema(BaseModel):
         json_schema = handler.resolve_ref_schema(handler(core_schema))
 
         required = []
-        by_alias = getattr(handler, "generate_json_schema").by_alias
+        by_alias = cast(Any, handler).generate_json_schema.by_alias
         for key, field_info in cls.model_fields.items():
             if "json_schema_required" not in field_info.metadata:
                 continue

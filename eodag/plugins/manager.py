@@ -223,7 +223,7 @@ class PluginManager:
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
 
-        def get_plugin() -> Search | Api:
+        def get_plugin(config: ProviderConfig) -> Search | Api:
             plugin: Search | Api
             if search := getattr(config, "search", None):
                 config.search.products = config.products
@@ -264,7 +264,7 @@ class PluginManager:
             raise UnsupportedProvider(f"{provider} is not (yet) supported")
 
         for config in sorted(configs, key=attrgetter("priority"), reverse=True):
-            yield get_plugin()
+            yield get_plugin(config)
 
     def get_download_plugin(self, product: EOProduct) -> Download | Api:
         """Build and return the download plugin capable of downloading the given
