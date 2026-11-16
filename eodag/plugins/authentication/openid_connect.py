@@ -123,7 +123,7 @@ class OIDCRefreshTokenBase(Authentication):
                     key,
                     algorithms=self.algorithms,
                 )
-        except (jwt.exceptions.InvalidTokenError, jwt.exceptions.DecodeError) as e:
+        except jwt.exceptions.InvalidTokenError as e:
             raise AuthenticationError(e) from e
 
     def _get_access_token(self) -> str:

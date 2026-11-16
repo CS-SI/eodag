@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
-from typing import Callable
+from typing import Any, Callable
 
 from eodag.utils.exceptions import ValidationError
 
@@ -126,9 +126,9 @@ def _make_evaluator(postfix_expr: list[str]) -> Callable[[dict[str, str]], bool]
     True
     """
 
-    def evaluate(entry: dict[str, str]) -> bool:
+    def evaluate(entry: dict[str, Any]) -> bool:
         stack: list[bool] = []
-        text = " ".join(str(v) for v in entry.values()).lower()
+        text = " ".join(str(value) for value in entry.values()).lower()
 
         for token in postfix_expr:
             if token == "AND":

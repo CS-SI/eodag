@@ -775,7 +775,7 @@ class HTTPDownload(Download):
             )
         if not filename:
             # default filename extracted from path
-            filename = str(os.path.basename(product._stream.url))
+            filename = os.path.basename(product._stream.url)
 
             # remove http get params and anchors
             filename = filename.split("?")[0]
@@ -1219,9 +1219,7 @@ class HTTPDownload(Download):
                         # default filename extracted from path
                         asset.filename = os.path.basename(asset.rel_path)
 
-                    asset.rel_path = os.path.join(
-                        asset_rel_dir, cast(str, asset.filename)
-                    )
+                    asset.rel_path = os.path.join(asset_rel_dir, asset.filename)
 
                     for chunk in stream.iter_content(chunk_size=64 * 1024):
                         if chunk:

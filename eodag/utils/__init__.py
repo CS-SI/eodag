@@ -47,7 +47,7 @@ from importlib.metadata import metadata
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, Any, Callable, Iterator, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
@@ -378,7 +378,7 @@ def sanitize(value: str) -> str:
     tobereplaced += r"\s"
 
     rv = re.sub(r"[" + tobereplaced + r"]+", "_", rv)
-    return str(rv)
+    return rv
 
 
 def strip_accents(s: str) -> str:
@@ -1022,7 +1022,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> str | JSONPath:
     """
     from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 
-    path_str: str = args[-1]
+    path_str = args[-1]
     if JSONPATH_MATCH.match(str(path_str)) or force:
         try:
             common_jsonpath = "$"
@@ -1211,7 +1211,7 @@ def get_geometry_from_various(
         bbox_keys = ["lonmin", "latmin", "lonmax", "latmax"]
         if isinstance(geom_arg, dict) and geom_arg.get("type") in GEOMETRY_TYPES:
             # geojson geometry
-            geom = cast(BaseGeometry, shape(geom_arg))
+            geom = shape(geom_arg)
         elif isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
             # bbox dict
             geom = Polygon(
@@ -1288,7 +1288,7 @@ def _ecmwf_point_to_lonlat(
         lat, lon = point[0], point[1]
     else:
         axis_list = [axes] if isinstance(axes, str) else list(axes)
-        axis_list_lower = [str(axis).lower() for axis in axis_list]
+        axis_list_lower = [axis.lower() for axis in axis_list]
         lat_index = None
         lon_index = None
         for name in ("latitude", "lat"):

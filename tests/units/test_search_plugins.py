@@ -1993,13 +1993,15 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.search.qssearch.get_ssl_context", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.Request", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
-    @mock.patch("eodag.plugins.search.qssearch.cast", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.HTTPAdapter.build_response", autospec=True
+    )
     def test_plugins_search_odatav4search_with_ssl_context(
-        self, mock_cast, mock_urlopen, mock_request, mock_get_ssl_context
+        self, mock_build_response, mock_urlopen, mock_request, mock_get_ssl_context
     ):
         """A query with a ODataV4Search (here onda) must return tuple with a list of EOProduct and a number of available products"""  # noqa
         self.onda_search_plugin.config.ssl_verify = False
-        mock_cast.return_value.json.return_value = 2
+        mock_build_response.return_value.json.return_value = 2
 
         ssl_ctx = ssl.create_default_context()
         ssl_ctx.check_hostname = False

@@ -68,9 +68,11 @@ from eodag.utils.s3 import (
 from .base import Download
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3ServiceResource
-    from mypy_boto3_s3.client import S3Client
-    from mypy_boto3_s3.service_resource import BucketObjectsCollection, ObjectSummary
+    from mypy_boto3_s3.service_resource import (
+        BucketObjectsCollection,
+        ObjectSummary,
+        S3ServiceResource,
+    )
 
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
@@ -851,7 +853,7 @@ class AwsDownload(Download):
 
         # check if auth is a S3 resource by verifying it has the meta.client attribute.
         if auth and hasattr(auth, "meta") and hasattr(auth.meta, "client"):
-            s3_resource = auth
+            s3_resource = cast("S3ServiceResource", auth)
         else:
             s3_resource = boto3.resource(
                 service_name="s3",
@@ -909,7 +911,7 @@ class AwsDownload(Download):
         zip_filename = sanitize(title)
 
         return stream_download_from_s3(
-            cast("S3Client", s3_resource.meta.client),
+            s3_resource.meta.client,
             files_info,
             byte_range,
             compress,

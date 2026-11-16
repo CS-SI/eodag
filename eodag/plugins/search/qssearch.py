@@ -48,6 +48,7 @@ from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
+from requests.models import PreparedRequest
 from typing_extensions import TypedDict
 from urllib3 import Retry
 
@@ -916,9 +917,7 @@ class QueryStringSearch(Search):
         token = getattr(prep, "next_page_token", None)
         limit = prep.limit
         count = prep.count
-        next_page_token_key = str(
-            self.config.pagination.get("next_page_token_key", "page")
-        )
+        next_page_token_key = self.config.pagination.get("next_page_token_key", "page")
 
         urls = []
         total_results = 0 if count else None
@@ -1145,10 +1144,11 @@ class QueryStringSearch(Search):
                 and self.config.result_type == "json"
             ):
                 json_result = cast(list[dict[str, Any]], result)
-                results = (
-                    [dict(r, **json_result[i]) for i, r in enumerate(results)]
-                    if results
-                    else result
+                json_results = cast(list[dict[str, Any]], results)
+                results[:] = (
+                    [dict(row, **json_result[i]) for i, row in enumerate(json_results)]
+                    if json_results
+                    else json_result
                 )
             else:
                 results.extend(result)
@@ -1175,7 +1175,7 @@ class QueryStringSearch(Search):
 
     def _build_raw_search_results(
         self,
-        results: list[dict[str, Any]],
+        results: list[Any],
         resp_as_json: dict[str, Any],
         search_kwargs: dict[str, Any],
         limit: int | None,
@@ -1258,9 +1258,14 @@ class QueryStringSearch(Search):
                 )
                 raw_search_results.next_page_token_key = next_page_token_key
                 # Try to extract the token from the found value
-                if next_page_token_key in href_value:
+                if (
+                    next_page_token_key is not None
+                    and next_page_token_key in href_value
+                ):
                     raw_search_results.next_page_token = href_value[next_page_token_key]
-                elif next_page_token_key in unquote(href_value):
+                elif next_page_token_key is not None and next_page_token_key in unquote(
+                    href_value
+                ):
                     # If the token is in the URL query string
                     query = urlparse(href_value).query
                     page_param = parse_qs(query).get(next_page_token_key)
@@ -1282,7 +1287,7 @@ class QueryStringSearch(Search):
             # skip as next_page_token_key
             elif next_page_token is not None and next_page_token_key == "skip":
                 raw_search_results.next_page_token = str(
-                    int(next_page_token) + int(prep.limit or DEFAULT_LIMIT)
+                    int(next_page_token) + (prep.limit or DEFAULT_LIMIT)
                 )
             else:
                 raw_search_results.next_page_token = None
@@ -1480,7 +1485,10 @@ class QueryStringSearch(Search):
                 and hasattr(prep, "auth")
                 and callable(prep.auth)
             ):
-                kwargs["auth"] = prep.auth
+                kwargs["auth"] = cast(
+                    AuthBase | Callable[[PreparedRequest], PreparedRequest],
+                    prep.auth,
+                )
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
 
@@ -1504,9 +1512,7 @@ class QueryStringSearch(Search):
                 urllib_response = urlopen(urllib_req, timeout=timeout, context=ssl_ctx)
                 # build Response
                 adapter = HTTPAdapter()
-                response = cast(
-                    Response, adapter.build_response(req_prep, urllib_response)
-                )
+                response = adapter.build_response(req_prep, urllib_response)
             else:
                 if info_message:
                     logger.info(info_message)
@@ -2064,7 +2070,9 @@ class PostJsonSearch(QueryStringSearch):
         try:
             # auth if needed
             RequestsKwargs = TypedDict(
-                "RequestsKwargs", {"auth": AuthBase}, total=False
+                "RequestsKwargs",
+                {"auth": AuthBase | Callable[[PreparedRequest], PreparedRequest]},
+                total=False,
             )
             kwargs: RequestsKwargs = {}
             if (

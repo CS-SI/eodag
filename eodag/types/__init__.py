@@ -21,7 +21,17 @@ from __future__ import annotations
 
 from copy import deepcopy as copy_deepcopy
 from types import UnionType
-from typing import Annotated, Any, Literal, Type, Union, cast, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    Protocol,
+    Type,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
 
 from annotated_types import Ge, Gt, Le, Lt
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, create_model
@@ -110,6 +120,10 @@ def _get_type_info_from_annotated(
     return type_data
 
 
+def _make_annotated_type(base_type: Any, *metadata: Any) -> Any:
+    return cast(Any, Annotated)[(base_type, *metadata)]
+
+
 def _typed_dict_to_json(python_type: type) -> dict[str, Any]:
     properties = {}
     required = []
@@ -133,7 +147,7 @@ def _typed_dict_to_json(python_type: type) -> dict[str, Any]:
         if name in getattr(python_type, "__required_keys__", set()):
             required.append(name)
 
-    result = {
+    result: dict[str, Any] = {
         "type": "object",
         "properties": properties,
     }
@@ -211,7 +225,7 @@ def _strip_fieldinfo_default(
             new_metadata.append(new_fi)
         else:
             new_metadata.append(m)
-    return Annotated[tuple([base_type] + new_metadata)]
+    return _make_annotated_type(base_type, *new_metadata)
 
 
 def json_field_definition_to_python(
@@ -243,7 +257,7 @@ def json_field_definition_to_python(
     """
     python_type = json_type_to_python(json_field_definition.get("type"))
 
-    field_type_kwargs = dict(
+    field_type_kwargs: dict[str, Any] = dict(
         title=json_field_definition.get("title", PydanticUndefined),
         description=json_field_definition.get("description", PydanticUndefined),
         pattern=json_field_definition.get("pattern", PydanticUndefined),
@@ -261,7 +275,7 @@ def json_field_definition_to_python(
     if python_type in (list, set):
         items = json_field_definition.get("items")
         if isinstance(items, list):
-            python_type = tuple[  # type: ignore
+            python_type = cast(Any, tuple)[
                 tuple(
                     _strip_fieldinfo_default(
                         json_field_definition_to_python(item, required=required)
@@ -292,10 +306,10 @@ def json_field_definition_to_python(
             python_type = typed_dict_type
 
     if enum:
-        literal = Literal[tuple(sorted(enum))]  # type: ignore
+        literal = cast(Any, Literal)[tuple(sorted(enum))]
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
     elif const:
-        literal = Literal[const]
+        literal = cast(Any, Literal)[const]
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
     elif one_of and all(
         isinstance(option, dict) and "const" in option for option in one_of
@@ -313,10 +327,10 @@ def json_field_definition_to_python(
     else:
         field_default = default_value
 
-    field = Field(field_default, **field_type_kwargs)
+    field = cast(Any, Field)(field_default, **field_type_kwargs)
     if required:
         field.metadata.append("json_schema_required")
-    return Annotated[python_type, field]
+    return _make_annotated_type(python_type, field)
 
 
 def python_field_definition_to_json(
@@ -446,8 +460,16 @@ def model_fields_to_annotated(
         field_type = field_info.annotation or type(None)
         new_field_info = copy_deepcopy(field_info)
         new_field_info.annotation = None
-        annotated_model_fields[param] = Annotated[field_type, new_field_info]
+        annotated_model_fields[param] = _make_annotated_type(field_type, new_field_info)
     return annotated_model_fields
+
+
+class _GenerateJsonSchemaWithAlias(Protocol):
+    by_alias: bool
+
+
+class _JsonSchemaHandlerWithGenerator(Protocol):
+    generate_json_schema: _GenerateJsonSchemaWithAlias
 
 
 class BaseModelCustomJsonSchema(BaseModel):
@@ -466,7 +488,9 @@ class BaseModelCustomJsonSchema(BaseModel):
         json_schema = handler.resolve_ref_schema(handler(core_schema))
 
         required = []
-        by_alias = cast(Any, handler).generate_json_schema.by_alias
+        by_alias = cast(
+            _JsonSchemaHandlerWithGenerator, handler
+        ).generate_json_schema.by_alias
         for key, field_info in cls.model_fields.items():
             if "json_schema_required" not in field_info.metadata:
                 continue
@@ -528,22 +552,22 @@ def annotated_dict_to_model(
     :param model_config: (optional) configuration for the returned model
     :returns: pydantic model
     """
-    fields = {}
+    fields: dict[str, Any] = {}
     for name, field in annotated_fields.items():
         base_type, field_info, *metadata = get_args(field)
         fields[name] = (
-            Annotated[tuple([base_type] + metadata)] if metadata else base_type,
+            _make_annotated_type(base_type, *metadata) if metadata else base_type,
             field_info,
         )
 
-    custom_model = create_model(
+    custom_model = cast(Any, create_model)(
         model_name,
         __base__=model_class,
         __config__=model_config,
-        **fields,  # type: ignore
+        **fields,
     )
 
-    return custom_model
+    return cast(BaseModel, custom_model)
 
 
 class ProviderSortables(TypedDict):

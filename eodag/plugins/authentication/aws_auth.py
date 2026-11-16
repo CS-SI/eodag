@@ -31,8 +31,11 @@ from eodag.utils import get_bucket_name_and_prefix
 from eodag.utils.exceptions import AuthenticationError, EodagError
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client, S3ServiceResource
-    from mypy_boto3_s3.service_resource import BucketObjectsCollection
+    from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.service_resource import (
+        BucketObjectsCollection,
+        S3ServiceResource,
+    )
 
     from eodag.config import PluginConfig
 
@@ -142,7 +145,9 @@ class AwsAuth(Authentication):
         logger.debug(
             "Authentication using AWS no-sign-request strategy (no credentials found)"
         )
-        s3_resource = boto3.resource(service_name="s3", endpoint_url=endpoint_url)
+        s3_resource: S3ServiceResource = boto3.resource(
+            service_name="s3", endpoint_url=endpoint_url
+        )
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
         )

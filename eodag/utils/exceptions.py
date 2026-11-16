@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, cast
+from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
     from typing_extensions import Doc, Self
@@ -117,7 +117,7 @@ class ValidationError(RequestError):
     @classmethod
     def from_error(cls, error: Exception, msg: str | None = None) -> Self:
         """Override parent from_error to handle ValidationError specificities."""
-        cast(Any, error).msg = msg
+        error.__setattr__("msg", msg)
         validation_error = super().from_error(error)
         return validation_error
 

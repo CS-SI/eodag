@@ -453,13 +453,13 @@ class PluginManager:
         return None
 
     @staticmethod
-    def get_crunch_plugin(name: str, **options: Any) -> Crunch:
-        """Instantiate a eodag Crunch plugin whom class name is `name`, and configure
-        it with the `options`
+    def get_crunch_plugin(name: str, /, **options: Any) -> Crunch:
+        """Instantiate and configure a crunch plugin.
 
-        :param name: The name of the Crunch plugin to instantiate
-        :param options: The configuration parameters of the cruncher
-        :returns: The cruncher named `name`
+        :param name: Crunch plugin class name used to select the plugin.
+        :param options: Configuration passed to the plugin, which may include its own
+            ``name`` field.
+        :returns: The configured crunch plugin.
         """
         klass = Crunch.get_plugin_by_class_name(name)
         return klass(options)

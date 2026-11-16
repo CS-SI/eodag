@@ -41,7 +41,7 @@ If you intend to contribute to eodag source code:
 
 We use ``prek`` (faster ``pre-commit``) to run the repository checks. Ruff provides linting (``ruff check .``) and
 formatting (``ruff format --check .``), and ``prek run --all-files`` runs the configured hooks as in Continuous
-Integration. The ``linters`` tox environment additionally runs mypy.
+Integration. The ``linters`` tox environment additionally runs Pyrefly.
 
 The default branch for development is `develop`. Please create your new branch from `develop` to work on your patch, and open a pull request against `develop` when you are done.
 If you do not have permissions to push to the main repository, you can fork it and push your branch to your forked repository. Then, you can open a pull request against the main repository.
