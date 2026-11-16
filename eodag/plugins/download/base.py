@@ -50,7 +50,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.notebook import NotebookWidgets
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3ServiceResource
+    from mypy_boto3_s3.service_resource import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.api.product._product import EOProduct

@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from eodag.utils import GENERIC_STAC_PROVIDER
 from eodag.utils.exceptions import MisconfiguredError
@@ -127,6 +127,7 @@ def _import_stac_item_from_known_provider(
     :returns: An EOProduct created from the STAC item
     """
     # Delayed import to avoid import cycle with eodag.api.product.
+    from eodag.api.search_result import RawSearchResult
     from eodag.plugins.search.qssearch import StacSearch
 
     item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
@@ -143,7 +144,7 @@ def _import_stac_item_from_known_provider(
             )
             # compare the item href with the provider base URL
             if item_href and item_href.startswith(provider_base_url):
-                products = search_plugin.normalize_results(cast(Any, [feature]))
+                products = search_plugin.normalize_results(RawSearchResult([feature]))
                 if len(products) == 0 or len(products[0].assets) == 0:
                     continue
                 logger.debug(

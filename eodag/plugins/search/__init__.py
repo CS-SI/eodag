@@ -25,10 +25,12 @@ from typing import TYPE_CHECKING
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from typing import Any
 
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
+    from requests.models import PreparedRequest
 
     from eodag.plugins.authentication.base import Authentication
 
@@ -40,13 +42,18 @@ class PreparedSearch:
     collection: str | None = None
     page: int | None = DEFAULT_PAGE
     limit: int | None = DEFAULT_LIMIT
-    auth: AuthBase | S3ServiceResource | None = None
+    auth: (
+        AuthBase
+        | Callable[[PreparedRequest], PreparedRequest]
+        | S3ServiceResource
+        | None
+    ) = None
     auth_plugin: Authentication | None = None
     count: bool = True
     url: str | None = None
     info_message: str | None = None
     exception_message: str | None = None
-    next_page_token: str | None = None
+    next_page_token: str | int | None = None
     next_page_token_key: str | None = None
 
     need_count: bool = field(init=False, repr=False)
@@ -54,6 +61,6 @@ class PreparedSearch:
     query_string: str = field(init=False, repr=False)
     search_urls: list[str] = field(init=False, repr=False)
     collection_def_params: dict[str, Any] = field(init=False, repr=False)
-    total_items_nb: int = field(init=False, repr=False)
+    total_items_nb: int | None = field(init=False, repr=False)
     sort_by_qs: str = field(init=False, repr=False)
     raise_errors: bool | None = field(init=False, repr=False)

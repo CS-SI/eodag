@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from annotated_types import Lt
@@ -103,7 +104,7 @@ class CommonQueryables(BaseModelCustomJsonSchema):
     @classmethod
     def from_stac_models(
         cls,
-        extensions: list[BaseStacExtension] = STAC_EXTENSIONS,
+        extensions: Sequence[BaseStacExtension] = STAC_EXTENSIONS,
         base_model: type[BaseModel] = CommonStacMetadata,
     ) -> type[Queryables]:
         """Creates Queryables from STAC models.

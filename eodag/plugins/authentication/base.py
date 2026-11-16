@@ -24,7 +24,7 @@ from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3ServiceResource
+    from mypy_boto3_s3.service_resource import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.config import PluginConfig

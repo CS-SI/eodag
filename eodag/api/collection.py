@@ -34,6 +34,7 @@ from pydantic import ValidationError as PydanticValidationError
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Extent, Provider, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
+from typing_extensions import LiteralString
 
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
@@ -217,9 +218,13 @@ class Collection(BaseModel):
             error_title = f"collection {values_dict['id']}"
             init_errors: list[InitErrorDetails] = [
                 InitErrorDetails(
-                    type=PydanticCustomError(error["type"], error["msg"]),
+                    type=PydanticCustomError(
+                        cast(LiteralString, error["type"]),
+                        cast(LiteralString, error["msg"]),
+                    ),
                     loc=error["loc"],
                     input=error["input"],
+                    ctx=error.get("ctx") or {},
                 )
                 for error in errors
             ]

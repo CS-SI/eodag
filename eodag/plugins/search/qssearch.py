@@ -48,6 +48,7 @@ from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
+from requests.models import PreparedRequest
 from typing_extensions import TypedDict
 from urllib3 import Retry
 
@@ -1145,10 +1146,11 @@ class QueryStringSearch(Search):
                 and self.config.result_type == "json"
             ):
                 json_result = cast(list[dict[str, Any]], result)
-                results = (
-                    [dict(r, **json_result[i]) for i, r in enumerate(results)]
-                    if results
-                    else result
+                json_results = cast(list[dict[str, Any]], results)
+                results[:] = (
+                    [dict(row, **json_result[i]) for i, row in enumerate(json_results)]
+                    if json_results
+                    else json_result
                 )
             else:
                 results.extend(result)
@@ -1175,7 +1177,7 @@ class QueryStringSearch(Search):
 
     def _build_raw_search_results(
         self,
-        results: list[dict[str, Any]],
+        results: list[Any],
         resp_as_json: dict[str, Any],
         search_kwargs: dict[str, Any],
         limit: int | None,
@@ -1258,9 +1260,14 @@ class QueryStringSearch(Search):
                 )
                 raw_search_results.next_page_token_key = next_page_token_key
                 # Try to extract the token from the found value
-                if next_page_token_key in href_value:
+                if (
+                    next_page_token_key is not None
+                    and next_page_token_key in href_value
+                ):
                     raw_search_results.next_page_token = href_value[next_page_token_key]
-                elif next_page_token_key in unquote(href_value):
+                elif next_page_token_key is not None and next_page_token_key in unquote(
+                    href_value
+                ):
                     # If the token is in the URL query string
                     query = urlparse(href_value).query
                     page_param = parse_qs(query).get(next_page_token_key)
@@ -1480,7 +1487,10 @@ class QueryStringSearch(Search):
                 and hasattr(prep, "auth")
                 and callable(prep.auth)
             ):
-                kwargs["auth"] = prep.auth
+                kwargs["auth"] = cast(
+                    AuthBase | Callable[[PreparedRequest], PreparedRequest],
+                    prep.auth,
+                )
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
 
@@ -2064,7 +2074,9 @@ class PostJsonSearch(QueryStringSearch):
         try:
             # auth if needed
             RequestsKwargs = TypedDict(
-                "RequestsKwargs", {"auth": AuthBase}, total=False
+                "RequestsKwargs",
+                {"auth": AuthBase | Callable[[PreparedRequest], PreparedRequest]},
+                total=False,
             )
             kwargs: RequestsKwargs = {}
             if (

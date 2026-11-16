@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import orjson
 from pydantic import AliasChoices
@@ -51,8 +51,6 @@ from eodag.utils.dates import get_datetime
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
@@ -71,7 +69,7 @@ class Search(PluginTopic):
     auth: AuthBase | S3ServiceResource
     next_page_url: str | None
     next_page_query_obj: dict[str, Any] | None
-    total_items_nb: int
+    total_items_nb: int | None
     need_count: bool
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -149,7 +147,9 @@ class Search(PluginTopic):
 
         queryables: dict[str, Annotated[Any, FieldInfo]] = {}
         for parameter, value in defaults.items():
-            queryables[parameter] = Annotated[type(value), Field(default=value)]
+            queryables[parameter] = cast(Any, Annotated)[
+                (type(value), Field(default=value))
+            ]
         return queryables
 
     def map_collection(self, collection: str | None, **kwargs: Any) -> str | None:
@@ -549,11 +549,15 @@ class Search(PluginTopic):
             queryable_alias = field_info.alias
             # Collect every alias under which the queryable could appear in the
             # metadata_mapping (model field name + declared alias(es)).
-            candidates = (
-                [a[0] for a in queryable_alias.convert_to_aliases()]
-                if isinstance(queryable_alias, AliasChoices)
-                else [queryable_alias]
-            )
+            candidates: list[str] = []
+            if isinstance(queryable_alias, AliasChoices):
+                candidates.extend(
+                    alias[0]
+                    for alias in queryable_alias.convert_to_aliases()
+                    if alias and alias[0] is not None
+                )
+            elif queryable_alias is not None:
+                candidates.append(queryable_alias)
             candidates.append(k)
             # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
             # from user-supplied keys before sending them to the plugin, so the

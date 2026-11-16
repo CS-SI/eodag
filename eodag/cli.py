@@ -361,7 +361,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 
     start_date = kwargs.pop("start")
     stop_date = kwargs.pop("end")
-    criteria = {
+    criteria: dict[str, Any] = {
         "provider": provider,
         "geometry": footprint,
         "start_datetime": None,

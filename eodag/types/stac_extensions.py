@@ -458,7 +458,9 @@ class LabelFields(BaseModel):
                 else methods
             )
             if None in values["methods"]:
-                values["methods"].remove(None)
+                values["methods"] = [
+                    method for method in values["methods"] if method is not None
+                ]
         return values
 
     label_properties: Annotated[list[str] | None, Field(None)]
