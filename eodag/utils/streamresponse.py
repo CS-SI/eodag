@@ -19,10 +19,15 @@ from __future__ import annotations
 
 import os
 import signal
+import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Iterable, Iterator, Mapping
+from functools import partial
+from typing import TYPE_CHECKING, ClassVar, Iterable, Iterator, Mapping
 
 if TYPE_CHECKING:
+    from types import FrameType
+
     from requests.structures import CaseInsensitiveDict
 
 
@@ -39,23 +44,58 @@ class StreamResponseContent(Iterable[bytes]):
     usually expect BytesIO object, not Iterable[bytes]
     """
 
-    __initialized: bool = False
+    __signal_handlers: ClassVar[dict[int, Callable[[int, FrameType | None], None]]] = {}
     __instances: list["StreamResponseContent"] = []
 
     @staticmethod
-    def init():
-        """Main static initializer"""
-        if not StreamResponseContent.__initialized:
-            StreamResponseContent.__initialized = True
+    def install_signal_handlers() -> bool:
+        """Register SIGINT/SIGTERM handlers that interrupt any live stream.
+        This must be called explicitly from the main thread (typically during a
+        server's startup) because :func:`signal.signal` only works there. It is
+        a no-op if the handlers are still installed or if it is called outside
+        of the main thread. Existing handlers are called after stream interruption
+        so server shutdown and default signal behavior are preserved. Call this
+        after the server registers its handlers, including on subsequent startups.
 
-            # Catch end of main process to internal status
-            def signal_handler(sig, frame):
-                for stream in StreamResponseContent.__instances:
-                    stream.interrupt()
-                StreamResponseContent.__instances = []
+        :returns: ``True`` if any handler was installed, ``False`` otherwise.
+        """
+        if threading.current_thread() is not threading.main_thread():
+            return False
 
-            signal.signal(signal.SIGINT, signal_handler)
-            signal.signal(signal.SIGTERM, signal_handler)
+        installed = False
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            previous_handler = signal.getsignal(sig)
+            if (
+                sig in StreamResponseContent.__signal_handlers
+                and previous_handler is StreamResponseContent.__signal_handlers[sig]
+            ):
+                continue
+            handler = partial(StreamResponseContent.__handle_signal, previous_handler)
+            signal.signal(sig, handler)
+            StreamResponseContent.__signal_handlers[sig] = handler
+            installed = True
+        return installed
+
+    @staticmethod
+    def __handle_signal(
+        previous_handler: Callable[[int, FrameType | None], object] | int | None,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
+        streams, StreamResponseContent.__instances = (
+            StreamResponseContent.__instances,
+            [],
+        )
+        try:
+            for stream in streams:
+                stream.interrupt()
+        finally:
+            # A failed interruption must not prevent the server from shutting down.
+            if callable(previous_handler):
+                previous_handler(sig, frame)
+            elif previous_handler is None or previous_handler == signal.SIG_DFL:
+                signal.signal(sig, signal.SIG_DFL)
+                os.kill(os.getpid(), sig)
 
     def __init__(self, content: Iterable[bytes] | bytes):
         self.buffer: bytes = b""
