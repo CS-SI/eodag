@@ -1,9 +1,13 @@
 import os
 import shutil
 import signal
+import subprocess
+import sys
 import tempfile
+import textwrap
 import threading
 import unittest
+from unittest.mock import Mock
 
 from eodag.utils import StreamResponse, StreamResponseContent
 
@@ -156,13 +160,16 @@ class StreamResponseSignalHandlersTest(unittest.TestCase):
         # Preserve handlers possibly set by other tests/the runtime.
         self._sigint = signal.getsignal(signal.SIGINT)
         self._sigterm = signal.getsignal(signal.SIGTERM)
-        # Reset the one-shot installation flag so each test starts clean.
-        StreamResponseContent._StreamResponseContent__initialized = False
+        self._handlers = StreamResponseContent._StreamResponseContent__signal_handlers
+        self._instances = StreamResponseContent._StreamResponseContent__instances
+        StreamResponseContent._StreamResponseContent__signal_handlers = {}
+        StreamResponseContent._StreamResponseContent__instances = []
 
     def tearDown(self):
         signal.signal(signal.SIGINT, self._sigint)
         signal.signal(signal.SIGTERM, self._sigterm)
-        StreamResponseContent._StreamResponseContent__initialized = False
+        StreamResponseContent._StreamResponseContent__signal_handlers = self._handlers
+        StreamResponseContent._StreamResponseContent__instances = self._instances
 
     def test_importing_streamresponse_does_not_register_handlers(self):
         """Importing streamresponse must not modify process signal handlers."""
@@ -211,6 +218,7 @@ class StreamResponseSignalHandlersTest(unittest.TestCase):
 
     def test_handler_interrupts_live_stream(self):
         """Installed signal handler must interrupt active stream reads."""
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         StreamResponseContent.install_signal_handlers()
         stream = StreamResponseContent(iter([b"abc", b"def"]))
 
@@ -219,3 +227,96 @@ class StreamResponseSignalHandlersTest(unittest.TestCase):
 
         with self.assertRaises(InterruptedError):
             stream.read(1)
+
+    def test_handler_preserves_server_shutdown(self):
+        """Interrupt streams before delegating to the server's signal handler."""
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            with self.subTest(signal=sig):
+                stream = StreamResponseContent(b"abc")
+                server_handler = Mock(
+                    side_effect=lambda *args, stream=stream: self.assertTrue(
+                        stream.interrupted
+                    )
+                )
+                signal.signal(sig, server_handler)
+                StreamResponseContent.install_signal_handlers()
+
+                signal.getsignal(sig)(sig, None)
+
+                server_handler.assert_called_once_with(sig, None)
+
+    def test_reinstall_after_server_replaces_handler(self):
+        """Rewrap a new server handler without stacking interruption callbacks."""
+        old_handler = Mock()
+        signal.signal(signal.SIGTERM, old_handler)
+        self.assertTrue(StreamResponseContent.install_signal_handlers())
+        first_handler = signal.getsignal(signal.SIGTERM)
+        self.assertFalse(StreamResponseContent.install_signal_handlers())
+        self.assertIs(signal.getsignal(signal.SIGTERM), first_handler)
+
+        new_handler = Mock()
+        signal.signal(signal.SIGTERM, new_handler)
+        self.assertTrue(StreamResponseContent.install_signal_handlers())
+        self.assertFalse(StreamResponseContent.install_signal_handlers())
+        stream = StreamResponseContent(b"abc")
+        stream.interrupt = Mock(wraps=stream.interrupt)
+
+        signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
+
+        stream.interrupt.assert_called_once_with()
+        new_handler.assert_called_once_with(signal.SIGTERM, None)
+        old_handler.assert_not_called()
+
+    def test_failed_interruption_preserves_server_shutdown(self):
+        """Even a failing stream must not swallow the server shutdown callback."""
+        server_handler = Mock()
+        signal.signal(signal.SIGTERM, server_handler)
+        StreamResponseContent.install_signal_handlers()
+        stream = StreamResponseContent(b"abc")
+        stream.interrupt = Mock(side_effect=RuntimeError("interruption failed"))
+
+        with self.assertRaisesRegex(RuntimeError, "interruption failed"):
+            signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
+
+        server_handler.assert_called_once_with(signal.SIGTERM, None)
+
+    @unittest.skipUnless(os.name == "posix", "POSIX signal exit codes required")
+    def test_real_signals_preserve_process_behavior(self):
+        """Real signals must preserve server exit, default exit, and ignore."""
+        code = textwrap.dedent("""
+            import os
+            import signal
+            import sys
+            from eodag.utils import StreamResponseContent
+
+            sig = int(sys.argv[1])
+            mode = sys.argv[2]
+            stream = StreamResponseContent(b"abc")
+
+            def server_handler(sig, frame):
+                assert stream.interrupted
+                sys.exit(0)
+
+            previous = {
+                "server": server_handler,
+                "default": signal.SIG_DFL,
+                "ignore": signal.SIG_IGN,
+            }[mode]
+            signal.signal(sig, previous)
+            StreamResponseContent.install_signal_handlers()
+            os.kill(os.getpid(), sig)
+            assert stream.interrupted
+            sys.exit(0 if mode == "ignore" else 42)
+            """)
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            for mode in ("server", "default", "ignore"):
+                with self.subTest(signal=sig, mode=mode):
+                    result = subprocess.run(
+                        [sys.executable, "-c", code, str(int(sig)), mode],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                        timeout=20,
+                    )
+                    expected = -int(sig) if mode == "default" else 0
+                    self.assertEqual(result.returncode, expected, result.stderr)
