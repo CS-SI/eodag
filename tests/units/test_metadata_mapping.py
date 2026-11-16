@@ -218,6 +218,29 @@ class TestMetadataFormatter(unittest.TestCase):
             {"platformSerialIdentifier": "B", "processingLevel": "L1"},
         )
 
+    def test_format_query_params_skips_none_search_param(self):
+        config = PluginConfig.from_mapping(
+            {
+                "type": "QueryStringSearch",
+                "products": {},
+                "metadata_mapping": mtd_cfg_as_conversion_and_querypath(
+                    {
+                        "start": ["startDate", "$.properties.start_datetime"],
+                        "platform": [None, "$.properties.platform"],
+                        "id": "$.properties.id",
+                    }
+                ),
+            }
+        )
+        self.assertEqual(
+            format_query_params(
+                "S2_MSI_L1C",
+                config,
+                {"start": "2021-01-01", "platform": "S2A", "id": "foo"},
+            ),
+            {"startDate": "2021-01-01"},
+        )
+
     def test_converter_chain_ingestion(self):
         expression = r'{$.platform#to_lower#replace_str(r"^([a-c])$", r"sentinel-1\1")}'
         mapping = mtd_cfg_as_conversion_and_querypath({"platform": expression})
