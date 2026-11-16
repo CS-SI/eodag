@@ -38,7 +38,7 @@ class FilterOverlap(Crunch):
 
     :param config: Crunch configuration may contain the following parameters which are mutually exclusive:
 
-        * ``minimum_overlap`` (``Union[float, str]``): minimal overlap percentage; default: ``"0"``
+        * ``minimum_overlap`` (``float | str``): minimal overlap percentage; default: ``"0"``
         * ``contains`` (``bool``): ``True`` if product geometry contains the search area; default: ``False``
         * ``intersects`` (``bool``): ``True`` if product geometry intersects the search area; default: ``False``
         * ``within`` (``bool``): ``True`` if product geometry is within the search area; default: ``False``
@@ -137,13 +137,11 @@ class FilterOverlap(Crunch):
                 ipos = (intersection.area / search_geom.area) * 100
                 ipop = (intersection.area / product_geometry.area) * 100
                 logger.debug(
-                    "Intersection of product extent and search extent covers %f percent of the search extent "
-                    "area",
+                    "Intersection of product extent and search extent covers %f percent of the search extent area",
                     ipos,
                 )
                 logger.debug(
-                    "Intersection of product extent and search extent covers %f percent of the product extent "
-                    "area",
+                    "Intersection of product extent and search extent covers %f percent of the product extent area",
                     ipop,
                 )
                 if any(
@@ -161,8 +159,7 @@ class FilterOverlap(Crunch):
                     add_to_filtered(product)
                 else:
                     logger.debug(
-                        "Product %r does not overlaps the search extent by the specified constraint. "
-                        "Skipping it",
+                        "Product %r does not overlaps the search extent by the specified constraint. Skipping it",
                         product,
                     )
         logger.info("Finished filtering products. %s resulting products", len(filtered))

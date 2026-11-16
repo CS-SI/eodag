@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import collections.abc
 import re
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 
@@ -39,7 +39,7 @@ def str_as_href(link: str) -> str:
         return link
 
 
-def html_table(input: Any, depth: Optional[int] = None) -> str:
+def html_table(input: Any, depth: int | None = None) -> str:
     """Transform input object to HTML table.
 
     :param input: input object to represent
@@ -59,7 +59,7 @@ def html_table(input: Any, depth: Optional[int] = None) -> str:
 
 def dict_to_html_table(
     input_dict: collections.abc.Mapping,
-    depth: Optional[int] = None,
+    depth: int | None = None,
     brackets: bool = True,
 ) -> str:
     """Transform input dict to HTML table.
@@ -80,25 +80,37 @@ def dict_to_html_table(
     if depth is None or depth >= 0:
         return (
             f"{opening_bracket}<table style='margin: 0;'>"
-            + "".join([f"""<tr style='background-color: transparent;'>
+            + "".join(
+                [
+                    f"""<tr style='background-color: transparent;'>
                     <td style='padding: 5px 0 0 {indent}; text-align: left; color: grey; vertical-align:top;'>{k}:</td>
                     <td style='padding: 5px 0 0 10px; text-align: left;'>{html_table(v, depth=depth)},</td>
                 </tr>
-                """ for k, v in input_dict.items() if v is not None])
+                """
+                    for k, v in input_dict.items()
+                    if v is not None
+                ]
+            )
             + f"</table>{closing_bracket}"
         )
     else:
         return (
             f"{opening_bracket}"
-            + ", ".join([f"""<span style='text-align: left;'>
+            + ", ".join(
+                [
+                    f"""<span style='text-align: left;'>
                     '{k}': {html_table(v, depth=depth)}
-                </span>""" for k, v in input_dict.items() if v is not None])
+                </span>"""
+                    for k, v in input_dict.items()
+                    if v is not None
+                ]
+            )
             + f"{closing_bracket}"
         )
 
 
 def list_to_html_table(
-    input_list: collections.abc.Sequence, depth: Optional[int] = None
+    input_list: collections.abc.Sequence, depth: int | None = None
 ) -> str:
     """Transform input list to HTML table.
 
@@ -117,8 +129,11 @@ def list_to_html_table(
     return (
         "<span style='color: grey;'>[</span>"
         + separator.join(
-            [f"""<span style='text-align: left;'>{html_table(v, depth=depth)}</span>
-            """ for v in input_list]
+            [
+                f"""<span style='text-align: left;'>{html_table(v, depth=depth)}</span>
+            """
+                for v in input_list
+            ]
         )
         + "<span style='color: grey;'>]</span>"
     )
@@ -142,7 +157,7 @@ def remove_class_repr(type_repr: str) -> str:
     return re.sub(r"<class '([\w.]+)'>", r"\1", type_repr)
 
 
-def shorter_type_repr(long_type: str) -> str:
+def shorter_type_repr(long_type: object) -> str:
     """Shorten long type representation.
 
     :param long_type: long type representation
@@ -153,7 +168,7 @@ def shorter_type_repr(long_type: str) -> str:
     "Literal['foo', ...]"
     """
     # shorten lists
-    shorter = re.sub(r",[^\[^\]]+\]", ", ...]", str(long_type))
+    shorter = re.sub(r",[^\[ ^\]]+\]", ", ...]", str(long_type))
     # remove class prefix
     shorter = remove_class_repr(shorter)
     # remove parent objects

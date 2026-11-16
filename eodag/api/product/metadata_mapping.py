@@ -23,12 +23,11 @@ import json
 import logging
 import re
 from string import Formatter
-from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, cast
 
 import geojson
 import orjson
 import pyproj
-import shapely
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzutc
 from jsonpath_ng.jsonpath import Child, JSONPath
@@ -82,7 +81,7 @@ DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 def _parse_converter_chain(
     expression: str,
-) -> tuple[str, list[tuple[str, Optional[str]]]]:
+) -> tuple[str, list[tuple[str, str | None]]]:
     """Split a field and its converters, preserving separators inside arguments."""
     if SEP not in expression:
         return expression, []
@@ -127,8 +126,8 @@ def _parse_converter_chain(
 
 
 def get_metadata_path(
-    map_value: Union[str, list[Optional[str]]],
-) -> tuple[Union[list[Optional[str]], str, None], str]:
+    map_value: str | list[str | None],
+) -> tuple[list[str | None] | str | None, str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
 
@@ -183,12 +182,12 @@ def get_metadata_path(
             if converters:
                 return path[1 + len(field) + len(SEP) : -1], field
     except TypeError as e:
-        logger.error("Could not match regex on metadata path '%s'" % str(path))
+        logger.error("Could not match regex on metadata path '%s'" % path)
         raise e
     return None, path
 
 
-def get_metadata_path_value(map_value: Union[str, list[Optional[str]]]) -> str:
+def get_metadata_path_value(map_value: str | list[str | None]) -> str:
     """Get raw metadata path without converter
 
     >>> get_metadata_path_value("$.properties.id")
@@ -199,21 +198,24 @@ def get_metadata_path_value(map_value: Union[str, list[Optional[str]]]) -> str:
     return cast(str, map_value[1]) if isinstance(map_value, list) else map_value
 
 
-def get_search_param(map_value: list[str]) -> str:
+def get_search_param(map_value: list[str | None]) -> str | None:
     """See :func:`~eodag.api.product.metadata_mapping.get_metadata_path`
 
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config
-    :returns: The value of the search parameter as defined in the provider config
+    :returns: The value of the search parameter as defined in the provider config,
+              or ``None`` when the mapping defines no search parameter
 
     >>> get_search_param(["platform", "$.properties.platform"])
     'platform'
+    >>> get_search_param([None, "$.properties.platform"]) is None
+    True
     """
     # Assume that caller will pass in the value as a list
     return map_value[0]
 
 
-def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
+def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noqa: C901
     """Format a string of form ``{<field_name>#<conversion_function>}``
 
     Converters can be chained with ``#`` and are applied from left to right.
@@ -249,8 +251,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``sanitize``: sanitize string
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``split``: split a string using given separator
-        - ``split_cop_dem_id``: get the bbox by splitting the product id
-        - ``split_corine_id``: get the collection by splitting the product id
         - ``split_id_into_s3_params``: parse a Sentinel-3 product id into S3 query parameter values
         - ``to_bounds``: convert an input geometry to [min_lon, min_lat, max_lon, max_lat]
         - ``to_bounds_lists``: convert to list(s) of bounds
@@ -285,7 +285,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
     class MetadataFormatter(Formatter):
         def __init__(self) -> None:
-            self.custom_converters: list[tuple[Callable, Optional[str]]] = []
+            self.custom_converters: list[tuple[Callable, str | None]] = []
 
         def parse(self, format_string: str):
             """
@@ -374,7 +374,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_iso_utc_datetime_from_milliseconds(
             timestamp: int,
-        ) -> Union[str, int]:
+        ) -> str | int:
             """Convert a timestamp in milliseconds (int) to its ISO8601 UTC format
 
             1619029639123 => "2021-04-21T18:27:19.123Z"
@@ -430,9 +430,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_to_rounded_wkt(value: BaseGeometry) -> str:
-            wkt_value = cast(
-                str, wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
-            )
+            wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
             # If needed, simplify WKT to prevent too long request failure
             tolerance = 0.1
             while len(wkt_value) > WKT_MAX_LEN and tolerance <= 1:
@@ -441,12 +439,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                     len(wkt_value),
                     tolerance,
                 )
-                wkt_value = cast(
-                    str,
-                    wkt.dumps(
-                        value.simplify(tolerance),
-                        rounding_precision=COORDS_ROUNDING_PRECISION,
-                    ),
+                wkt_value = wkt.dumps(
+                    value.simplify(tolerance),
+                    rounding_precision=COORDS_ROUNDING_PRECISION,
                 )
                 tolerance += 0.1
             if len(wkt_value) > WKT_MAX_LEN and tolerance > 1:
@@ -493,7 +488,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_nwse_bounds(input_geom: BaseGeometry) -> list[float]:
             if isinstance(input_geom, str):
-                input_geom = shapely.wkt.loads(input_geom)
+                input_geom = wkt.loads(input_geom)
             return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
 
         @staticmethod
@@ -511,7 +506,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_geojson_polytope(
             value: BaseGeometry,
-        ) -> Union[dict[Any, Any], str]:
+        ) -> dict[Any, Any] | str:
             """Convert a shapely Point/LineString/Polygon to ECMWF polytope feature dicts"""
             # ECMWF Polytope uses non-geojson structure for features
             if isinstance(value, Polygon):
@@ -532,7 +527,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             )
 
         @staticmethod
-        def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
+        def convert_from_ewkt(ewkt_string: str) -> BaseGeometry | str:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
             ewkt_regex = re.compile(
@@ -569,7 +564,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return f"{proj};{wkt_geom}"
 
         @staticmethod
-        def convert_from_georss(georss: Any) -> Union[BaseGeometry, Any]:
+        def convert_from_georss(georss: Any) -> BaseGeometry | Any:
             """Convert GeoRSS to shapely geometry"""
 
             if "polygon" in georss.tag:
@@ -644,7 +639,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return ""
 
         @staticmethod
-        def convert_get_group_name(string: str, pattern: str) -> str:
+        def convert_get_group_name(string: Any, pattern: str) -> str:
             sanitized_pattern = pattern.replace(" ", "_SPACE_")
             try:
                 match = re.search(sanitized_pattern, str(string))
@@ -674,9 +669,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         @_deprecated(reason="Please chain 'replace_str' converters instead")
-        def convert_replace_str_tuple(
-            value: Union[str, dict[Any, Any]], args: str
-        ) -> str:
+        def convert_replace_str_tuple(value: str | dict[Any, Any], args: str) -> str:
             """
             Apply multiple replacements on a string (parts or complete).
 
@@ -775,8 +768,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_recursive_sub_str(
-            input_obj: Union[dict[Any, Any], list[Any]], args: str
-        ) -> Union[dict[Any, Any], list[Any]]:
+            input_obj: dict[Any, Any] | list[Any], args: str
+        ) -> dict[Any, Any] | list[Any]:
             old, new = ast.literal_eval(args)
             return items_recursive_apply(
                 input_obj,
@@ -830,7 +823,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         )
         def convert_dict_filter_and_sub(
             input_dict: dict[Any, Any], args: str
-        ) -> Union[dict[Any, Any], list[Any]]:
+        ) -> dict[Any, Any] | list[Any]:
             """Filter dict items using jsonpath and apply recursive_sub_str.
 
             Deprecated: chain ``dict_filter`` and ``recursive_sub_str`` instead.
@@ -997,7 +990,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_datetime_dict(
             date: str, format: str
-        ) -> dict[str, Union[list[str], str]]:
+        ) -> dict[str, list[str] | str]:
             """Convert a date (str) to a dictionary where values are in the format given in argument
 
             date == "2021-04-21T18:27:19.123Z" and format == "list" => {
@@ -1227,10 +1220,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
 
-def properties_from_json(
+def properties_from_json(  # noqa: C901
     json: dict[str, Any],
     mapping: dict[str, Any],
-    discovery_config: Optional[dict[str, Any]] = None,
+    discovery_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Extract properties from a provider json result.
 
@@ -1393,11 +1386,11 @@ def properties_from_json(
     return properties
 
 
-def properties_from_xml(
+def properties_from_xml(  # noqa: C901
     xml_as_text: AnyStr,
     mapping: Any,
     empty_ns_prefix: str = "ns",
-    discovery_config: Optional[dict[str, Any]] = None,
+    discovery_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Extract properties from a provider xml result.
 
@@ -1545,7 +1538,7 @@ def properties_from_xml(
 
 def mtd_cfg_as_conversion_and_querypath(
     src_dict: dict[str, Any],
-    dest_dict: dict[str, Any] = {},
+    dest_dict: dict[str, Any] | None = None,
     result_type: str = "json",
 ) -> dict[str, Any]:
     """Metadata configuration dictionary to querypath with conversion dictionary
@@ -1571,6 +1564,9 @@ def mtd_cfg_as_conversion_and_querypath(
     >>> result["id"]
     (None, '//id/text()')
     """
+    if dest_dict is None:
+        dest_dict = {}
+
     # check if the configuration has already been converted
     some_configured_value = (
         next(iter(dest_dict.values())) if dest_dict else next(iter(src_dict.values()))
@@ -1896,9 +1892,11 @@ def _get_queryables(
                 )
             _, md_value = md_mapping
             # query param from defined metadata_mapping
-            if md_mapping is not None and isinstance(md_mapping, list):
+            if isinstance(md_mapping, list):
                 search_param = get_search_param(md_mapping)
-                if search_param is not None:
+                # `[None, path]` mappings can be skipped and will be parsed
+                # through `free_text_search_operations`
+                if search_param:
                     queryables[eodag_search_key] = search_param
             # query param from metadata auto discovery
             elif md_value == NOT_MAPPED and getattr(
@@ -1926,7 +1924,9 @@ def _get_queryables(
                 ):
                     search_param_cfg_parsed = dict_items_recursive_apply(
                         search_param_cfg,
-                        lambda k, v: v.format(metadata=eodag_search_key),
+                        lambda k, v, metadata_key=eodag_search_key: v.format(
+                            metadata=metadata_key
+                        ),
                     )
                     for k, v in search_param_cfg_parsed.items():
                         if getattr(config, k, None):
@@ -1946,9 +1946,9 @@ def _get_queryables(
 
 def get_queryable_from_provider(
     provider_queryable: str,
-    metadata_mapping: dict[str, Union[str, list[Optional[str]]]],
-    provider: Optional[str] = None,
-) -> Optional[str]:
+    metadata_mapping: dict[str, str | list[str | None]],
+    provider: str | None = None,
+) -> str | None:
     """Get EODAG configured queryable parameter from provider queryable parameter.
 
     :param provider_queryable: provider queryable parameter
@@ -1983,7 +1983,7 @@ def get_queryable_from_provider(
     ]
     StacQueryables = Queryables.from_stac_models()
 
-    eodag_queryable: Optional[str] = None
+    eodag_queryable: str | None = None
     if provider_queryable in mapping_values:
         ind = mapping_values.index(provider_queryable)
         eodag_queryable = StacQueryables.get_queryable_from_alias(
@@ -2025,7 +2025,9 @@ def get_queryable_from_provider(
         candidates: list[str] = (
             [str(a[0]) for a in queryable_alias.convert_to_aliases()]
             if isinstance(queryable_alias, AliasChoices)
-            else [queryable_alias] if queryable_alias is not None else []
+            else [queryable_alias]
+            if queryable_alias is not None
+            else []
         )
         candidates.append(k)
         # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
@@ -2045,8 +2047,8 @@ def get_queryable_from_provider(
 
 
 def get_provider_queryable_path(
-    queryable: str, metadata_mapping: dict[str, Union[str, list[str]]]
-) -> Optional[str]:
+    queryable: str, metadata_mapping: dict[str, str | list[str]]
+) -> str | None:
     """Get EODAG configured queryable path from its parameter
 
     :param queryable: eodag queryable parameter
@@ -2074,7 +2076,7 @@ def get_provider_queryable_path(
 def get_provider_queryable_key(
     eodag_key: str,
     provider_queryables: dict[str, Any],
-    metadata_mapping: dict[str, Union[list[Any], str]],
+    metadata_mapping: dict[str, list[Any] | str],
 ) -> str:
     """Finds the provider queryable corresponding to the given eodag key based on the metadata mapping
 
@@ -2110,7 +2112,7 @@ def get_provider_queryable_key(
         return eodag_key
 
 
-def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
+def normalize_bands(data: dict | Asset) -> dict | Asset:  # noqa: C901
     """Migrate ``eo:bands`` / ``raster:bands`` of ``data`` into a STAC 1.1
     ``bands`` array, in place. Returns ``data`` for convenience.
 
@@ -2140,7 +2142,6 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
     # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
     # Migrate band STAC 1.0 to 1.1
     if isinstance(data, dict) or isinstance(data, Asset):
-
         # Gather eo:band et raster:bands
         bands: dict[str, Any] = {"eo:bands": [], "raster:bands": []}
         hasData = False

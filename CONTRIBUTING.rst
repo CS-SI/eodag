@@ -39,9 +39,9 @@ If you intend to contribute to eodag source code:
     pip install -e ".[dev]"
     prek install
 
-We use ``prek`` (faster ``pre-commit``) to run a suite of linters, formatters and pre-commit hooks (``black``, ``isort``
-, ``flake8``) to ensure the code base is homogeneously formatted and easier to read. It's important that you install it,
-since we run the exact same hooks in the Continuous Integration.
+We use ``prek`` (faster ``pre-commit``) to run the repository checks. Ruff provides linting (``ruff check .``) and
+formatting (``ruff format --check .``), and ``prek run --all-files`` runs the configured hooks as in Continuous
+Integration. The ``linters`` tox environment additionally runs Pyrefly.
 
 The default branch for development is `develop`. Please create your new branch from `develop` to work on your patch, and open a pull request against `develop` when you are done.
 If you do not have permissions to push to the main repository, you can fork it and push your branch to your forked repository. Then, you can open a pull request against the main repository.
@@ -58,7 +58,7 @@ To run the default test suite in parallel:
 
     tox -p
 
-To test the lowest direct runtime dependency versions on Python 3.9:
+To test the lowest direct runtime dependency versions on Python 3.10:
 
 .. code-block:: bash
 
@@ -87,10 +87,11 @@ To run the entire tests (units, integration and end-to-end):
       you, please `install <https://pandoc.org/installing.html>`_ pandoc and try
       again.
 
-    * eodag is tested against python versions 3.9, 3.10, 3.11, 3.12, 3.13 and 3.14. Ensure you have
+    * eodag is tested against python versions 3.10, 3.11, 3.12, 3.13 and 3.14. Ensure you have
       these versions installed before you run tox. You can use
+      `uv <https://docs.astral.sh/uv/guides/install-python/#installing-a-specific-version>`_ or
       `pyenv <https://github.com/pyenv/pyenv>`_ to manage many different versions
-      of python
+      of python.
 
 Contribute to the docs
 ----------------------

@@ -19,9 +19,11 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 import requests
+from requests.adapters import BaseAdapter
+from requests.auth import AuthBase
 
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, path_to_uri, uri_to_path
 from eodag.utils.exceptions import RequestError, TimeOutError
@@ -31,8 +33,8 @@ logger = logging.getLogger("eodag.utils.requests")
 
 def fetch_json(
     url: str,
-    req_session: Optional[requests.Session] = None,
-    auth: Optional[requests.auth.AuthBase] = None,
+    req_session: requests.Session | None = None,
+    auth: AuthBase | None = None,
     timeout: float = HTTP_REQ_TIMEOUT,
 ) -> Any:
     """
@@ -68,7 +70,7 @@ def fetch_json(
         return res.json()
 
 
-class LocalFileAdapter(requests.adapters.BaseAdapter):
+class LocalFileAdapter(BaseAdapter):
     """Protocol Adapter to allow Requests to GET file:// URLs inspired
     by https://stackoverflow.com/questions/10123929/fetch-a-file-from-a-local-url-with-python-requests/27786580
     `LocalFileAdapter` class available for the moment (on the 2024-04-22)
@@ -115,7 +117,7 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
         if response.status_code == 200 and request.method.lower() != "head":
             try:
                 response.raw = open(path_url, "rb")
-            except (OSError, IOError) as err:
+            except OSError as err:
                 response.status_code = 500
                 response.reason = str(err)
         response.url = request.url

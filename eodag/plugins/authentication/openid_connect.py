@@ -24,7 +24,7 @@ import re
 import string
 from random import SystemRandom
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlparse
 
 import jwt
@@ -100,9 +100,8 @@ class OIDCRefreshTokenBase(Authentication):
             auth_config = response.json()
         except requests.HTTPError as e:
             raise MisconfiguredError(
-                f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}"
-                f"Request returned {e.response.text}."
-            )
+                f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}Request returned {e.response.text}."
+            ) from e
         return auth_config
 
     def decode_jwt_token(self, token: str) -> dict[str, Any]:
@@ -124,8 +123,8 @@ class OIDCRefreshTokenBase(Authentication):
                     key,
                     algorithms=self.algorithms,
                 )
-        except (jwt.exceptions.InvalidTokenError, jwt.exceptions.DecodeError) as e:
-            raise AuthenticationError(e)
+        except jwt.exceptions.InvalidTokenError as e:
+            raise AuthenticationError(e) from e
 
     def _get_access_token(self) -> str:
         now = dt.datetime.now(dt.timezone.utc)
@@ -564,9 +563,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 exc, "An error occurred while authenticating the user."
             ) from exc
 
-    def _constant_or_xpath_extracted(
-        self, value: str, form_element: Any
-    ) -> Optional[str]:
+    def _constant_or_xpath_extracted(self, value: str, form_element: Any) -> str | None:
         match = self.CONFIG_XPATH_REGEX.match(value)
         if not match:
             return value
@@ -597,8 +594,8 @@ class CodeAuthorizedAuth(AuthBase):
         self,
         token: str,
         where: str,
-        key: Optional[str] = None,
-        refresh_token: Optional[str] = None,
+        key: str | None = None,
+        refresh_token: str | None = None,
     ) -> None:
         self.token = token
         self.where = where

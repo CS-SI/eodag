@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import TypedDict
 
@@ -76,7 +76,7 @@ class DatasetDriver(metaclass=type):
 
     def guess_asset_key_and_roles(
         self, href: str, eo_product: EOProduct
-    ) -> tuple[Optional[str], Optional[list[str]]]:
+    ) -> tuple[str | None, list[str] | None]:
         """Guess the asset key and roles from the given href.
 
         :param href: The asset href

@@ -28,7 +28,7 @@ from copy import deepcopy
 from importlib.metadata import version
 from operator import attrgetter, itemgetter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import geojson
 import yaml
@@ -73,7 +73,12 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
-from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
+from eodag.utils.dates import (
+    get_date,
+    get_datetime,
+    parse_to_utc,
+    rfc3339_str_to_datetime,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     NoMatchingCollection,
@@ -132,16 +137,14 @@ class EODataAccessGateway:
     ) -> None:
         if user_conf_file_path is not None:
             warnings.warn(
-                "'user_conf_file_path' parameter is deprecated. "
-                "Use EODAGSettings(cfg_file=...) instead.",
+                "'user_conf_file_path' parameter is deprecated. Use EODAGSettings(cfg_file=...) instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         if locations_conf_path is not None:
             warnings.warn(
-                "'locations_conf_path' parameter is deprecated. "
-                "Use EODAGSettings(locations_cfg_file=...) instead.",
+                "'locations_conf_path' parameter is deprecated. Use EODAGSettings(locations_cfg_file=...) instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -156,8 +159,7 @@ class EODataAccessGateway:
 
         if settings is not None and settings_kwargs:
             raise ValueError(
-                "'settings' cannot be used together with "
-                "'user_conf_file_path' or 'locations_conf_path'."
+                "'settings' cannot be used together with 'user_conf_file_path' or 'locations_conf_path'."
             )
 
         self.settings = ensure_config_files(
@@ -255,8 +257,8 @@ class EODataAccessGateway:
 
     def update_providers_config(
         self,
-        yaml_conf: Optional[str] = None,
-        dict_conf: Optional[dict[str, Any]] = None,
+        yaml_conf: str | None = None,
+        dict_conf: dict[str, Any] | None = None,
     ) -> None:
         """Update providers configuration with given input.
         Can be used to add a provider to existing configuration or update
@@ -309,13 +311,11 @@ class EODataAccessGateway:
     def add_provider(
         self,
         name: str,
-        url: Optional[str] = None,
-        priority: Optional[int] = None,
-        search: dict[str, Any] = {"type": "StacSearch"},
-        products: dict[str, Any] = {
-            GENERIC_COLLECTION: {"_collection": "{collection}"}
-        },
-        download: dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
+        url: str | None = None,
+        priority: int | None = None,
+        search: dict[str, Any] | None = None,
+        products: dict[str, Any] | None = None,
+        download: dict[str, Any] | None = None,
         **kwargs: dict[str, Any],
     ):
         """Adds a new provider.
@@ -339,15 +339,15 @@ class EODataAccessGateway:
             name: {
                 "name": name,
                 "url": url,
-                "search": {"type": "StacSearch", **search},
+                "search": {"type": "StacSearch", **(search or {})},
                 "products": {
                     GENERIC_COLLECTION: {"_collection": "{collection}"},
-                    **products,
+                    **(products or {}),
                 },
                 "download": {
                     "type": "HTTPDownload",
                     "auth_error_code": 401,
-                    **download,
+                    **(download or {}),
                 },
                 **kwargs,
             }
@@ -378,7 +378,7 @@ class EODataAccessGateway:
         update_needed = False
 
         # loop over a copy to allow popping items
-        for name, provider in list(self._providers.items()):
+        for _, provider in list(self._providers.items()):
             conf = provider.config
 
             # remove providers using skipped plugins
@@ -411,8 +411,7 @@ class EODataAccessGateway:
                     self._providers.pruned_providers_config[provider.name] = conf
                     self._providers.pruned_providers_reasons[provider.name] = {
                         "reason": (
-                            "provider needing auth for search was pruned because "
-                            "no credentials could be found"
+                            "provider needing auth for search was pruned because no credentials could be found"
                         ),
                         "reason_type": "missing_credentials",
                     }
@@ -454,8 +453,7 @@ class EODataAccessGateway:
                     self._providers.pruned_providers_config[provider.name] = conf
                     self._providers.pruned_providers_reasons[provider.name] = {
                         "reason": (
-                            "provider needing auth for search was pruned because "
-                            "no credentials could be found"
+                            "provider needing auth for search was pruned because no credentials could be found"
                         ),
                         "reason_type": "missing_credentials",
                     }
@@ -472,8 +470,7 @@ class EODataAccessGateway:
                 self._providers.pruned_providers_config[provider.name] = conf
                 self._providers.pruned_providers_reasons[provider.name] = {
                     "reason": (
-                        "provider has been pruned because no api or search plugin "
-                        "could be found"
+                        "provider has been pruned because no api or search plugin could be found"
                     ),
                     "reason_type": "missing_search_plugin",
                 }
@@ -490,7 +487,7 @@ class EODataAccessGateway:
             self._plugins_manager.rebuild(self._providers)
 
     def list_collections(
-        self, provider: Optional[str] = None, fetch_providers: bool = True
+        self, provider: str | None = None, fetch_providers: bool = True
     ) -> CollectionsList:
         """Lists supported collections.
 
@@ -528,7 +525,7 @@ class EODataAccessGateway:
         collections.sort(key=attrgetter("id"))
         return collections
 
-    def fetch_collections_list(self, provider: Optional[str] = None) -> None:
+    def fetch_collections_list(self, provider: str | None = None) -> None:
         """Fetch collections list and update if needed.
 
         If strict mode is enabled (by setting the ``EODAG_STRICT_COLLECTIONS`` environment variable
@@ -649,8 +646,8 @@ class EODataAccessGateway:
                 self.update_collections_list(provider_ext_collections_conf)
 
     def discover_collections(
-        self, provider: Optional[str] = None
-    ) -> Optional[dict[str, Any]]:
+        self, provider: str | None = None
+    ) -> dict[str, Any] | None:
         """Fetch providers for collections
 
         :param provider: The name of a provider or provider-group to fetch. Defaults to
@@ -673,7 +670,7 @@ class EODataAccessGateway:
                 return None
 
             if p.fetchable:
-                search_plugin: Union[Search, Api] = next(
+                search_plugin: Search | Api = next(
                     self._plugins_manager.get_search_plugins(provider=p.name)
                 )
 
@@ -705,7 +702,7 @@ class EODataAccessGateway:
         return sort_dict(ext_collections_conf)
 
     def update_collections_list(
-        self, ext_collections_conf: dict[str, Optional[dict[str, dict[str, Any]]]]
+        self, ext_collections_conf: dict[str, dict[str, dict[str, Any]] | None]
     ) -> None:
         """Update eodag collections list
 
@@ -820,7 +817,7 @@ class EODataAccessGateway:
         version="4.0.0",
     )
     def available_providers(
-        self, collection: Optional[str] = None, by_group: bool = False
+        self, collection: str | None = None, by_group: bool = False
     ) -> list[str]:
         """Gives the sorted list of the available providers or groups
 
@@ -899,18 +896,18 @@ class EODataAccessGateway:
 
     def guess_collection(
         self,
-        free_text: Optional[str] = None,
+        free_text: str | None = None,
         intersect: bool = False,
-        instruments: Optional[str] = None,
-        platform: Optional[str] = None,
-        constellation: Optional[str] = None,
-        processing_level: Optional[str] = None,
-        sensor_type: Optional[str] = None,
-        keywords: Optional[str] = None,
-        description: Optional[str] = None,
-        title: Optional[str] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
+        instruments: str | None = None,
+        platform: str | None = None,
+        constellation: str | None = None,
+        processing_level: str | None = None,
+        sensor_type: str | None = None,
+        keywords: str | None = None,
+        description: str | None = None,
+        title: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         **kwargs: Any,
     ) -> CollectionsList:
         """
@@ -1062,16 +1059,16 @@ class EODataAccessGateway:
     def search(
         self,
         page: int = DEFAULT_PAGE,
-        limit: Optional[int] = DEFAULT_LIMIT,
-        items_per_page: Optional[int] = DEFAULT_LIMIT,
+        limit: int | None = DEFAULT_LIMIT,
+        items_per_page: int | None = DEFAULT_LIMIT,
         raise_errors: bool = False,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
-        locations: Optional[dict[str, str]] = None,
-        provider: Optional[str] = None,
+        start: str | None = None,
+        end: str | None = None,
+        geom: str | dict[str, float] | BaseGeometry | None = None,
+        locations: dict[str, str] | None = None,
+        provider: str | None = None,
         count: bool = False,
-        validate: Optional[bool] = True,
+        validate: bool | None = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Look for products matching criteria on known providers.
@@ -1221,11 +1218,11 @@ class EODataAccessGateway:
     def search_iter_page(
         self,
         limit: int = DEFAULT_LIMIT,
-        items_per_page: Optional[int] = DEFAULT_LIMIT,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
-        locations: Optional[dict[str, str]] = None,
+        items_per_page: int | None = DEFAULT_LIMIT,
+        start: str | None = None,
+        end: str | None = None,
+        geom: str | dict[str, float] | BaseGeometry | None = None,
+        locations: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search.
@@ -1303,9 +1300,9 @@ class EODataAccessGateway:
     )
     def search_iter_page_plugin(
         self,
-        search_plugin: Union[Search, Api],
+        search_plugin: Search | Api,
         limit: int = DEFAULT_LIMIT,
-        items_per_page: Optional[int] = DEFAULT_LIMIT,
+        items_per_page: int | None = DEFAULT_LIMIT,
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
@@ -1371,12 +1368,12 @@ class EODataAccessGateway:
 
     def search_all(
         self,
-        limit: Optional[int] = None,
-        items_per_page: Optional[int] = None,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
-        locations: Optional[dict[str, str]] = None,
+        limit: int | None = None,
+        items_per_page: int | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        geom: str | dict[str, float] | BaseGeometry | None = None,
+        locations: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Search and return all the products matching the search criteria.
@@ -1461,8 +1458,7 @@ class EODataAccessGateway:
             search_results.number_matched = len(search_results)
         except RequestError:
             logger.warning(
-                "Found %s result(s) on provider '%s', but it may be incomplete "
-                "as it ended with an error",
+                "Found %s result(s) on provider '%s', but it may be incomplete as it ended with an error",
                 len(search_results),
                 search_results[0].provider,
             )
@@ -1470,7 +1466,7 @@ class EODataAccessGateway:
         return search_results
 
     def _search_by_id(
-        self, uid: str, provider: Optional[str] = None, **kwargs: Any
+        self, uid: str, provider: str | None = None, **kwargs: Any
     ) -> SearchResult:
         """Internal method that enables searching a product by its id.
 
@@ -1586,15 +1582,15 @@ class EODataAccessGateway:
         collection_config = plugin.discover_collections(**kwargs)
         self.update_collections_list({provider: collection_config})
 
-    def _prepare_search(
+    def _prepare_search(  # noqa: C901
         self,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
-        locations: Optional[dict[str, str]] = None,
-        provider: Optional[str] = None,
+        start: str | None = None,
+        end: str | None = None,
+        geom: str | dict[str, float] | BaseGeometry | None = None,
+        locations: dict[str, str] | None = None,
+        provider: str | None = None,
         **kwargs: Any,
-    ) -> tuple[list[Union[Search, Api]], dict[str, Any]]:
+    ) -> tuple[list[Search | Api], dict[str, Any]]:
         """Internal method to prepare the search kwargs and get the search plugins.
 
         Product query:
@@ -1625,7 +1621,7 @@ class EODataAccessGateway:
                        * other criteria compatible with the provider
         :returns: Search plugins list and the prepared kwargs to make a query.
         """
-        collection: Optional[str] = kwargs.get("collection")
+        collection: str | None = kwargs.get("collection")
         if collection is None:
             try:
                 guesses = self.guess_collection(**kwargs)
@@ -1672,6 +1668,22 @@ class EODataAccessGateway:
             datetimes = get_datetime(kwargs)
             kwargs["start_datetime"] = datetimes[0]
             kwargs["end_datetime"] = datetimes[1]
+        date_bounds: dict[str, dt.datetime] = {}
+        for date_key in ("start_datetime", "end_datetime"):
+            date_value = kwargs.get(date_key)
+            if date_value == "":
+                kwargs[date_key] = None
+            elif date_value is not None:
+                kwargs[date_key] = get_date(date_value)
+                date_bounds[date_key] = parse_to_utc(date_value)
+        if (
+            "start_datetime" in date_bounds
+            and "end_datetime" in date_bounds
+            and date_bounds["start_datetime"] > date_bounds["end_datetime"]
+        ):
+            raise ValidationError(
+                "start_datetime must be before or equal to end_datetime"
+            )
         if "sort_by" in kwargs:
             new_sort_by = []
             for param_tuple in kwargs["sort_by"]:
@@ -1727,7 +1739,7 @@ class EODataAccessGateway:
 
         preferred_provider = self.get_preferred_provider()[0]
 
-        search_plugins: list[Union[Search, Api]] = []
+        search_plugins: list[Search | Api] = []
         for plugin in self._plugins_manager.get_search_plugins(
             collection=collection, provider=provider
         ):
@@ -1766,10 +1778,10 @@ class EODataAccessGateway:
 
     def _do_search(
         self,
-        search_plugin: Union[Search, Api],
+        search_plugin: Search | Api,
         count: bool = False,
         raise_errors: bool = False,
-        validate: Optional[bool] = True,
+        validate: bool | None = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Internal method that performs a search on a given provider.
@@ -1854,8 +1866,9 @@ class EODataAccessGateway:
 
             if not isinstance(search_result, SearchResult):
                 raise PluginImplementationError(
-                    "The query function of a Search plugin must return a SearchResult "
-                    "results, got {} instead".format(type(search_result))
+                    "The query function of a Search plugin must return a SearchResult results, got {} instead".format(
+                        type(search_result)
+                    )
                 )
             # Filter and attach to each eoproduct in the result the plugin capable of
             # downloading it (this is done to enable the eo_product to download itself
@@ -1957,9 +1970,9 @@ class EODataAccessGateway:
     def download_all(
         self,
         search_result: SearchResult,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        downloaded_callback: DownloadedCallback | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -1994,6 +2007,8 @@ class EODataAccessGateway:
                        * ``dl_url_params`` - additional parameters to pass over to the download url as an url parameter
                        * ``delete_archive`` - whether to delete the downloaded archives
                        * ``asset`` - regex filter to identify assets to download
+                       * ``roles`` - only download the assets having at least one of these roles
+                         (combined with ``asset``: an asset must match both)
         :returns: A collection of the absolute paths to the downloaded products
         """
         paths = []
@@ -2096,8 +2111,8 @@ class EODataAccessGateway:
     def download(
         self,
         product: EOProduct,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -2145,6 +2160,8 @@ class EODataAccessGateway:
                        * ``dl_url_params`` - additional parameters to pass over to the download url as an url parameter
                        * ``delete_archive`` - whether to delete the downloaded archives
                        * ``asset`` - regex filter to identify assets to download
+                       * ``roles`` - only download the assets having at least one of these roles
+                         (combined with ``asset``: an asset must match both)
         :returns: The absolute path to the downloaded product in the local filesystem
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
@@ -2184,7 +2201,7 @@ class EODataAccessGateway:
 
     def list_queryables(
         self,
-        provider: Optional[str] = None,
+        provider: str | None = None,
         fetch_providers: bool = True,
         **kwargs: Any,
     ) -> QueryablesDict:
@@ -2201,8 +2218,8 @@ class EODataAccessGateway:
             col.id
             for col in self.list_collections(provider=provider, fetch_providers=False)
         ]
-        collection: Optional[str] = kwargs.get("collection")
-        coll_alias: Optional[str] = collection
+        collection: str | None = kwargs.get("collection")
+        coll_alias: str | None = collection
 
         if collection:
             if collection not in available_collections:
@@ -2290,7 +2307,7 @@ class EODataAccessGateway:
             **queryable_properties,
         )
 
-    def available_sortables(self) -> dict[str, Optional[ProviderSortables]]:
+    def available_sortables(self) -> dict[str, ProviderSortables | None]:
         """For each provider, gives its available sortable parameter(s) and its maximum
         number of them if it supports the sorting feature, otherwise gives None.
 
@@ -2298,7 +2315,7 @@ class EODataAccessGateway:
                   its (their) maximum number as value(s).
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-        sortables: dict[str, Optional[ProviderSortables]] = {}
+        sortables: dict[str, ProviderSortables | None] = {}
         provider_search_plugins = self._plugins_manager.get_search_plugins()
         for provider_search_plugin in provider_search_plugins:
             provider = provider_search_plugin.provider
@@ -2349,7 +2366,7 @@ class EODataAccessGateway:
             )
 
     def import_stac_items(
-        self, items_urls: list[str], provider: Optional[str] = None
+        self, items_urls: list[str], provider: str | None = None
     ) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
 

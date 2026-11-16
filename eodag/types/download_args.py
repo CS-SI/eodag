@@ -17,8 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Optional, Union
-
 from typing_extensions import TypedDict
 
 
@@ -32,11 +30,14 @@ class DownloadConf(TypedDict, total=False):
     :cvar dl_url_params: additional parameters to pass over to the download url as an url parameter
     :cvar delete_archive: whether to delete the downloaded archives
     :cvar asset: regex filter to identify assets to download
+    :cvar roles: only download the assets having at least one of these roles
+                 (combined with ``asset``: an asset must match both)
     """
 
     output_dir: str
-    output_extension: Union[str, None]
+    output_extension: str | None
     extract: bool
     dl_url_params: dict[str, str]
     delete_archive: bool
-    asset: Optional[str]
+    asset: str | None
+    roles: list[str] | None

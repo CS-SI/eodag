@@ -20,7 +20,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,7 +31,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "annotated-types >= 0.6.0",
     "boto3 >= 1.16.0",
@@ -41,10 +40,9 @@ dependencies = [
     "certifi >= 2026.10.19",
     "click >= 8.1.8",
     "geojson >= 2.5.0",
-    "importlib_metadata >= 5.0",
     "jsonpath-ng != 1.8.0, >= 1.6.0",
-    "lxml >= 4.6.1",
-    "orjson >= 3.4.0",
+    "lxml >= 4.6.5",
+    "orjson >= 3.11.5",
     "pydantic >= 2.13.0",
     "pydantic-settings>=2.11.0",
     "pydantic_core >= 2.46.0",
@@ -53,13 +51,15 @@ dependencies = [
     "pyshp >= 2.0.0",
     "pystac >= 1.9.0",
     "python-dateutil >= 2.7.0",
-    "PyYAML >= 5.4",
-    "requests >= 2.32.3",
+    # Bound pydantic-settings' transitive python-dotenv version.
+    "python-dotenv >= 1.2.2",
+    "PyYAML >= 6.0",
+    "requests >= 2.33.0",
     "shapely >= 2.0.6",
     "stac-pydantic >= 3.5.0",
     "tqdm >= 4.56.2",
     "typing_extensions >= 4.8.0",
-    "urllib3 >= 1.26.0",
+    "urllib3 >= 2.8.0",
     "zipstream-ng >= 1.4.0",
 ]
 dynamic = ["version"]
@@ -102,7 +102,7 @@ tutorials = [
     "rasterio",
     "netcdf4",
     "cartopy",
-    "covjsonkit >= 0.0.18; python_version > '3.9'",
+    "covjsonkit >= 0.0.18",
 ]
 test = [
     "eodag[all-providers,csw]",
@@ -115,15 +115,14 @@ test = [
     "pytest-xdist",
     "pytest",
     "responses != 0.24.0",
-    "stdlib-list",
     "tomli; python_version < '3.11'",
 ]
 dev = [
     "eodag[stubs,test]",
-    "flake8",
-    "mypy",
     "prek",
+    "pyrefly == 1.4.1",
     "py >= 1.8.2",
+    "ruff == 0.9.4",
     "stac-valid",
     "tox-uv",
     "tox",
@@ -216,28 +215,7 @@ include = ["eodag*"]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.10.5.dev0"
-
-[tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 88
-ensure_newline_before_comments = true
-known_first_party = ["eodag", "tests"]
-known_third_party = ["concurrent.futures"]
-default_section = "THIRDPARTY"
-skip = [
-    ".git",
-    "__pycache__",
-    ".tox",
-    "build",
-    "dist",
-    "docs/conf.py",
-    "tests/utils.py",
-    "eodag/utils/__init__.py",
-]
+fallback_version = "4.11.1.dev0"
 
 [tool.coverage.report]
 exclude_lines = [
@@ -245,8 +223,13 @@ exclude_lines = [
     "if TYPE_CHECKING:"
 ]
 
-[[tool.mypy.overrides]]
-module = [
+[tool.pyrefly]
+preset = "legacy"
+project-includes = ["eodag"]
+python-version = "3.10"
+check-unannotated-defs = false
+infer-return-types = "never"
+ignore-missing-imports = [
     "click",
     "click.*",
     "ecmwfapi",
@@ -267,10 +250,61 @@ module = [
     "zipstream",
     "zipstream.*",
 ]
-ignore_missing_imports = true
 
 [tool.uv]
 cache-keys = [{ git = true }]
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py310"
+force-exclude = true
+extend-exclude = [
+    ".tox",
+    "build",
+    "dist",
+    "docs/conf.py",
+    "docs/**/*.ipynb",
+    "tests/context.py",
+]
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+select = [
+    "B",       # flake8-bugbear
+    "E",       # pycodestyle errors
+    "W",       # pycodestyle warnings
+    "F",       # Pyflakes
+    "C90",     # mccabe complexity
+    "I",       # isort
+    "T20",     # flake8-print
+    "D1",      # pydocstyle docstring presence
+    "ERA001",  # flake8-eradicate commented-out code
+]
+ignore = [
+    "E203",  # Whitespace before '{symbol}'
+    "E266",  # Too many leading '#' for block comment
+    "D100",  # Missing docstring in public module
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test*.py" = ["D"]                 # Tests do not require docstrings
+"tests/utils.py" = ["I"]              # Preserve intentional import ordering
+"eodag/utils/__init__.py" = ["I"]     # Preserve intentional import ordering
+"utils/ext_collections_cmp.py" = ["T201"]     # Prints formatted comparison reports
+"utils/ext_product_types_cmp.py" = ["T201"]   # Prints formatted comparison reports
+
+[tool.ruff.lint.isort]
+known-first-party = ["eodag", "tests"]
+known-third-party = ["concurrent.futures"]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 120
+
+[tool.ruff.lint.mccabe]
+max-complexity = 18
 
 [tool.semantic_release.branches.main]
 match = "(master|develop)"

@@ -28,7 +28,7 @@ import zipfile
 from abc import abstractmethod
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -50,7 +50,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.notebook import NotebookWidgets
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3ServiceResource
+    from mypy_boto3_s3.service_resource import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.api.product._product import EOProduct
@@ -113,20 +113,20 @@ class Download(PluginTopic):
         if not getattr(config, "output_dir", None):
             config.output_dir = tempfile.gettempdir()
         if not getattr(config, "delete_archive", None):
-            setattr(config, "delete_archive", True)
+            config.delete_archive = True
         return config
 
     @abstractmethod
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
@@ -153,8 +153,8 @@ class Download(PluginTopic):
     def stream_download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        auth: AuthBase | S3ServiceResource | None = None,
+        byte_range: tuple[int | None, int | None] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -182,13 +182,15 @@ class Download(PluginTopic):
     def _prepare_download(
         self,
         product: EOProduct,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
+        download_assets: bool = False,
         **kwargs: Unpack[DownloadConf],
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
         :param progress_callback: (optional) A progress callback
+        :param download_assets: (optional) Allow preparation without a product URL when downloadable assets exist
         :returns: fs_path, record_filename
         """
         if product.location != product.remote_location:
@@ -202,14 +204,18 @@ class Download(PluginTopic):
                 return fs_path, None
 
         url = product.remote_location
-        if not url:
+        has_downloadable_assets = download_assets and any(
+            "href" in asset for asset in product.assets.values()
+        )
+        if not url and not has_downloadable_assets:
             logger.debug(
                 f"Unable to get download url for {product}, skipping download",
             )
             return None, None
-        logger.info(
-            f"Download url: {url}",
-        )
+        if url:
+            logger.info(
+                f"Download url: {url}",
+            )
 
         output_dir = (
             kwargs.pop("output_dir", None)
@@ -255,13 +261,14 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        old_record_filename = os.path.join(download_records_dir, url_hash)
         record_filename = os.path.join(
             download_records_dir, self.generate_record_hash(product)
         )
-        if os.path.isfile(old_record_filename):
-            os.rename(old_record_filename, record_filename)
+        if url:
+            url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
+            old_record_filename = os.path.join(download_records_dir, url_hash)
+            if os.path.isfile(old_record_filename):
+                os.rename(old_record_filename, record_filename)
 
         # path with or without extension
         path_obj = Path(fs_path)
@@ -345,7 +352,7 @@ class Download(PluginTopic):
     def _finalize(
         self,
         fs_path: str,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
         **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Finalize the download process.
@@ -487,10 +494,10 @@ class Download(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        downloaded_callback: DownloadedCallback | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -522,6 +529,14 @@ class Download(PluginTopic):
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
         """
+        if self._has_asset_filter(kwargs):
+            # A product whose asset filter matches nothing is retried until
+            # ``timeout`` is reached, so check the filter first and fail fast.
+            for product in products:
+                product.assets.get_values(
+                    kwargs.get("asset") or "", roles=kwargs.get("roles")
+                )
+
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]
@@ -570,13 +585,14 @@ class Download(PluginTopic):
                 or len(product.assets) > 0
                 and (
                     not getattr(self.config, "ignore_assets", False)
-                    or kwargs.get("asset") is not None
+                    or self._has_asset_filter(kwargs)
                 )
             )
         )
 
         with progress_callback as bar:
-            while "Loop until all products are download or timeout is reached":
+            # Loop until all products are download or timeout is reached
+            while True:
                 # try downloading each product in parallel before retry
 
                 # Download products in batches to handle nested tasks to download assets in parallel.
@@ -635,8 +651,7 @@ class Download(PluginTopic):
                         import traceback as tb
 
                         logger.error(
-                            f"A problem occurred during download of product: {product}. "
-                            "Skipping it"
+                            f"A problem occurred during download of product: {product}. Skipping it"
                         )
                         logger.debug(f"\n{tb.format_exc()}")
 
@@ -699,7 +714,8 @@ class Download(PluginTopic):
                 # another output for notebooks
                 nb_info = NotebookWidgets()
 
-                while "Loop until products download succeeds or timeout is reached":
+                # Loop until all products are download or timeout is reached
+                while True:
                     datetime_now = dt.datetime.now()
 
                     if datetime_now >= product.next_try:
@@ -722,7 +738,7 @@ class Download(PluginTopic):
                             )
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
-                        wait_seconds: Union[float, int] = (
+                        wait_seconds: float | int = (
                             datetime_now - product.next_try + dt.timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
@@ -782,8 +798,17 @@ class Download(PluginTopic):
 
         return decorator
 
+    @staticmethod
+    def _has_asset_filter(kwargs: DownloadConf) -> bool:
+        """Tell whether the download is restricted to some assets (``asset`` and/or ``roles``).
+
+        :param kwargs: download keyword arguments
+        :returns: ``True`` if assets have to be filtered, ``False`` if all of them are downloaded
+        """
+        return kwargs.get("asset") is not None or kwargs.get("roles") is not None
+
     def _config_executor(
-        self, executor: ThreadPoolExecutor, thread_name_prefix: Optional[str] = None
+        self, executor: ThreadPoolExecutor, thread_name_prefix: str | None = None
     ) -> None:
         """
         Configure a ThreadPoolExecutor instance.

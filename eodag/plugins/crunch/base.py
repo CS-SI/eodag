@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
@@ -33,7 +33,7 @@ class Crunch(PluginTopic):
     :param config: Crunch configuration
     """
 
-    def __init__(self, config: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         self.config = PluginConfig()
         self.config.__dict__ = config if config is not None else {}
 

@@ -45,7 +45,7 @@ import json
 import sys
 import textwrap
 from importlib.metadata import metadata
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Mapping
 from urllib.parse import parse_qs
 
 import click
@@ -85,8 +85,9 @@ class MutuallyExclusiveOption(click.Option):
         if self.mutually_exclusive:
             ex_str = ", ".join(self.mutually_exclusive)
             kwargs["help"] = help + (
-                " NOTE: This argument is mutually exclusive with "
-                " arguments: [" + ex_str + "]."
+                " NOTE: This argument is mutually exclusive with  arguments: ["
+                + ex_str
+                + "]."
             )
         super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
 
@@ -104,7 +105,7 @@ class MutuallyExclusiveOption(click.Option):
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
 
 
-def _deprecated_cli(message: str, version: Optional[str] = None) -> Callable[..., Any]:
+def _deprecated_cli(message: str, version: str | None = None) -> Callable[..., Any]:
     """Decorator to mark a CLI command as deprecated and print a bold yellow warning."""
     version_msg = f" -- Deprecated since v{version}" if version else ""
 
@@ -120,7 +121,34 @@ def _deprecated_cli(message: str, version: Optional[str] = None) -> Callable[...
     return decorator
 
 
-@click.group(chain=True)
+class EodagGroup(click.Group):
+    """Click group that prints errors raised by its commands as a one-line message.
+
+    The full traceback is only shown at maximum verbosity (``-vvv``).
+    """
+
+    def invoke(self, ctx: Context) -> Any:
+        """Invoke the group and its commands, turning their errors into a one-line message"""
+        try:
+            return super().invoke(ctx)
+        except (click.ClickException, click.exceptions.Exit, click.Abort):
+            # already handled by click
+            raise
+        except Exception as e:
+            if ctx.params.get("verbose", 0) >= 3:
+                raise
+            from eodag.utils.exceptions import EodagError
+
+            # eodag errors have a meaningful message, show the type of other errors
+            message = str(e)
+            if not message:
+                message = type(e).__name__
+            elif not isinstance(e, EodagError):
+                message = f"{type(e).__name__}: {message}"
+            raise click.ClickException(message) from e
+
+
+@click.group(cls=EodagGroup, chain=True)
 @click.option(
     "-v",
     "--verbose",
@@ -174,8 +202,7 @@ def version() -> None:
     default=(None,) * 4,
     cls=MutuallyExclusiveOption,
     mutually_exclusive=["geom"],
-    help="Search for a product on a bounding box, providing its minlon, minlat, "
-    "maxlon and maxlat (in this order).",
+    help="Search for a product on a bounding box, providing its minlon, minlat, maxlon and maxlat (in this order).",
 )
 @click.option(
     "-g",
@@ -226,8 +253,7 @@ def version() -> None:
     "--cruncher",
     type=click.Choice(CRUNCHERS),
     multiple=True,
-    help="A cruncher to be applied to search results. Repeat option many times to "
-    "apply many crunchers",
+    help="A cruncher to be applied to search results. Repeat option many times to apply many crunchers",
 )
 @click.option(
     "--cruncher-args",
@@ -311,7 +337,8 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         ]
     ):
         with click.Context(search_crunch) as ctx:
-            print("Give me some work to do. See below for how to do that:", end="\n\n")
+            click.echo("Give me some work to do. See below for how to do that:")
+            click.echo()
             click.echo(search_crunch.get_help(ctx))
         sys.exit(-1)
 
@@ -334,7 +361,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 
     start_date = kwargs.pop("start")
     stop_date = kwargs.pop("end")
-    criteria = {
+    criteria: dict[str, Any] = {
         "provider": provider,
         "geometry": footprint,
         "start_datetime": None,
@@ -644,6 +671,16 @@ Examples:
     help="Download only quicklooks of products instead full set of files",
 )
 @click.option(
+    "--asset",
+    help="Regex filter to identify assets to download instead of the full product",
+)
+@click.option(
+    "--roles",
+    multiple=True,
+    help="Only download the assets having at least one of these roles, combined with --asset if given "
+    "(multiple values accepted)",
+)
+@click.option(
     "--output-dir",
     type=click.Path(dir_okay=True, file_okay=False),
     help="Products or quicklooks download directory [default: local temporary directory]",
@@ -669,6 +706,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     from eodag.api.core import EODataAccessGateway
     from eodag.api.search_result import SearchResult
+    from eodag.utils.exceptions import NotAvailableError
     from eodag.utils.logging import setup_logging
 
     setup_logging(verbose=ctx.obj["verbosity"])
@@ -685,6 +723,8 @@ def download(ctx: Context, **kwargs: Any) -> None:
         search_results.extend(satim_api.import_stac_items(list(stac_items)))
 
     output_dir = kwargs.pop("output_dir")
+    asset = kwargs.pop("asset")
+    roles = kwargs.pop("roles")
     get_quicklooks = kwargs.pop("quicklooks")
 
     if get_quicklooks:
@@ -693,7 +733,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
             "Flag 'quicklooks' specified, downloading only quicklooks of products"
         )
 
-        for idx, product in enumerate(search_results):
+        for product in search_results:
             downloaded_file = product.get_quicklook(output_dir=output_dir)
             if not downloaded_file:
                 click.echo(
@@ -706,9 +746,20 @@ def download(ctx: Context, **kwargs: Any) -> None:
     else:
         # Download products
         executor = ThreadPoolExecutor(max_workers=kwargs.pop("max_workers"))
-        downloaded_files = satim_api.download_all(
-            search_results, output_dir=output_dir, executor=executor
-        )
+        download_kwargs: dict[str, Any] = {"asset": asset} if asset is not None else {}
+        if roles:
+            download_kwargs["roles"] = list(roles)
+        try:
+            downloaded_files = satim_api.download_all(
+                search_results,
+                output_dir=output_dir,
+                executor=executor,
+                **download_kwargs,
+            )
+        except NotAvailableError as e:
+            # download_all checks the asset and roles filters before attempting any download
+            click.echo(f"Error: {e}")
+            sys.exit(1)
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
                 if downloaded_file is None:

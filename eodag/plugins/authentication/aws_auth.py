@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
@@ -31,8 +31,11 @@ from eodag.utils import get_bucket_name_and_prefix
 from eodag.utils.exceptions import AuthenticationError, EodagError
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client, S3ServiceResource
-    from mypy_boto3_s3.service_resource import BucketObjectsCollection
+    from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.service_resource import (
+        BucketObjectsCollection,
+        S3ServiceResource,
+    )
 
     from eodag.config import PluginConfig
 
@@ -66,10 +69,10 @@ def create_s3_session(**kwargs) -> boto3.Session:
     """
     try:
         s3_session = boto3.Session(**kwargs)
-    except ProfileNotFound:
+    except ProfileNotFound as e:
         raise AuthenticationError(
             f"AWS profile {kwargs['profile_name']} not found, please check your credentials configuration"
-        )
+        ) from e
     return s3_session
 
 
@@ -100,8 +103,8 @@ class AwsAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsAuth, self).__init__(provider, config)
-        self.s3_session: Optional[boto3.Session] = None
-        self.s3_resource: Optional[S3ServiceResource] = None
+        self.s3_session: boto3.Session | None = None
+        self.s3_resource: S3ServiceResource | None = None
         # set default for requester_pays if not given
         self.config.__dict__.setdefault("requester_pays", False)
 
@@ -142,7 +145,9 @@ class AwsAuth(Authentication):
         logger.debug(
             "Authentication using AWS no-sign-request strategy (no credentials found)"
         )
-        s3_resource = boto3.resource(service_name="s3", endpoint_url=endpoint_url)
+        s3_resource: S3ServiceResource = boto3.resource(
+            service_name="s3", endpoint_url=endpoint_url
+        )
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
         )
@@ -216,7 +221,7 @@ class AwsAuth(Authentication):
 
     def authenticate_objects(
         self,
-        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: list[tuple[str, str | None]],
     ) -> dict[str, BucketObjectsCollection]:
         """
         Authenticates with s3 and retrieves the available objects
@@ -229,7 +234,6 @@ class AwsAuth(Authentication):
         authenticated_objects: dict[str, BucketObjectsCollection] = {}
         auth_error_messages: set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
-
             bucket_name, prefix = pack
             if not prefix:
                 continue
@@ -325,5 +329,5 @@ class AwsAuth(Authentication):
                 ExpiresIn=expires_in,
             )
             return presigned_url
-        except ClientError:
-            raise EodagError(f"Couldn't get a presigned URL for '{asset}'.")
+        except ClientError as e:
+            raise EodagError(f"Couldn't get a presigned URL for '{asset}'.") from e

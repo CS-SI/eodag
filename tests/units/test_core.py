@@ -1813,7 +1813,7 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
 
-    @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
+    @mock.patch("eodag.plugins.manager.metadata.entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
         empty_conf_file = str(
@@ -1935,8 +1935,7 @@ class TestCore(TestCoreBase):
         try:
             self.assertRaisesRegex(
                 MisconfiguredError,
-                "creodias: provider needing auth for search was pruned "
-                "because no credentials could be found",
+                "creodias: provider needing auth for search was pruned because no credentials could be found",
                 self.dag.set_preferred_provider,
                 "creodias",
             )
@@ -2904,6 +2903,16 @@ class TestCore(TestCoreBase):
         # No validation, no exception
         self.dag.search(validate=False, raise_errors=True, **filter)
 
+        # Core date validation is independent of queryable validation.
+        with self.assertRaises(ValidationError):
+            self.dag.search(
+                provider="cop_dataspace",
+                collection="S1_SAR_GRD",
+                end="2023-11-31",
+                validate=False,
+                raise_errors=True,
+            )
+
 
 class TestCoreConfWithEnvVar(TestCoreBase):
     def tearDown(self):
@@ -3066,7 +3075,7 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
                 olds.append(old)
                 currents.append(current)
             EODataAccessGateway()
-            for old, current in zip(olds, currents):
+            for old, current in zip(olds, currents, strict=True):
                 self.assertTrue(os.path.exists(current))
                 if old != current:
                     try:
@@ -3438,8 +3447,28 @@ class TestCoreSearch(TestCoreBase):
             "end": "2020-02-01",
         }
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["start_datetime"], base["start"])
-        self.assertEqual(prepared_search["end_datetime"], base["end"])
+        self.assertEqual(prepared_search["start_datetime"], "2020-01-01T00:00:00.000Z")
+        self.assertEqual(prepared_search["end_datetime"], "2020-02-01T00:00:00.000Z")
+        # with empty start and end
+        _, prepared_search = self.dag._prepare_search(start="", end="")
+        self.assertIsNone(prepared_search["start_datetime"])
+        self.assertIsNone(prepared_search["end_datetime"])
+        # with a timezone offset
+        _, prepared_search = self.dag._prepare_search(
+            start_datetime="2020-01-01T02:00:00+02:00",
+            end_datetime="2020-01-02T00:00:00Z",
+        )
+        self.assertEqual(prepared_search["start_datetime"], "2020-01-01T00:00:00.000Z")
+        # with a reversed range
+        with self.assertRaises(ValidationError):
+            self.dag._prepare_search(start="2020-02-02", end="2020-02-01")
+        with self.assertRaises(ValidationError):
+            self.dag._prepare_search(datetime="2020-02-02/2020-02-01")
+        # with an invalid start or end date
+        with self.assertRaises(ValidationError):
+            self.dag._prepare_search(start="2020-01-01", end="2023-11-31")
+        with self.assertRaises(ValidationError):
+            self.dag._prepare_search(start="2023-11-31", end="2023-12-01")
         # with datetime
         base = {"datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z"}
         _, prepared_search = self.dag._prepare_search(**base)
@@ -3452,8 +3481,8 @@ class TestCoreSearch(TestCoreBase):
             "datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z",
         }
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["start_datetime"], base["start"])
-        self.assertEqual(prepared_search["end_datetime"], base["end"])
+        self.assertEqual(prepared_search["start_datetime"], "2020-01-01T00:00:00.000Z")
+        self.assertEqual(prepared_search["end_datetime"], "2020-02-01T00:00:00.000Z")
         # with sort by datetime
         base = {
             "datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z",
@@ -3711,9 +3740,9 @@ class TestCoreSearch(TestCoreBase):
         type(mock_get_search_plugins.return_value[0]).config = mock.PropertyMock(
             return_value=mock_config
         )
-        type(mock_get_search_plugins.return_value[0]).next_page_query_obj = (
-            mock.PropertyMock(return_value={})
-        )
+        type(
+            mock_get_search_plugins.return_value[0]
+        ).next_page_query_obj = mock.PropertyMock(return_value={})
         # mocked search result id
         type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
             return_value={"id": "foo"}
@@ -5262,8 +5291,8 @@ class TestCoreProviderGroup(TestCoreBase):
         cls.dag = EODataAccessGateway()
         providers_configs = cls.dag._providers.configs
 
-        setattr(providers_configs[cls.group[0]], "group", cls.group_name)
-        setattr(providers_configs[cls.group[1]], "group", cls.group_name)
+        providers_configs[cls.group[0]].group = cls.group_name
+        providers_configs[cls.group[1]].group = cls.group_name
 
     def test_available_providers_by_group(self) -> None:
         """
@@ -5464,8 +5493,7 @@ class TestCoreProviderGroup(TestCoreBase):
         try:
             with self.assertRaisesRegex(
                 MisconfiguredError,
-                f"{self.group[0]}: provider needing auth for search was pruned "
-                "because no credentials could be found",
+                f"{self.group[0]}: provider needing auth for search was pruned because no credentials could be found",
             ):
                 list(
                     self.dag._plugins_manager.get_search_plugins(provider=self.group[0])

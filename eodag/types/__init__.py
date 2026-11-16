@@ -20,7 +20,18 @@
 from __future__ import annotations
 
 from copy import deepcopy as copy_deepcopy
-from typing import Annotated, Any, Literal, Optional, Type, Union, get_args, get_origin
+from types import UnionType
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    Protocol,
+    Type,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
 
 from annotated_types import Ge, Gt, Le, Lt
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, create_model
@@ -45,7 +56,7 @@ JSON_TYPES_MAPPING: dict[str, type] = {
 }
 
 
-def json_type_to_python(json_type: Union[str, list[str], None]) -> type:
+def json_type_to_python(json_type: str | list[str] | None) -> type:
     """Get python type from json type https://spec.openapis.org/oas/v3.1.0#data-types.
 
     >>> json_type_to_python("number")
@@ -62,7 +73,7 @@ def json_type_to_python(json_type: Union[str, list[str], None]) -> type:
         return type(None)
 
 
-def _get_min_or_max(type_info: Union[Lt, Le, Gt, Ge, Any]) -> tuple[str, Any]:
+def _get_min_or_max(type_info: Lt | Le | Gt | Ge | Any) -> tuple[str, Any]:
     """Check if the value from an Annotated object is a minimum or maximum.
 
     :param type_info: info from Annotated
@@ -109,6 +120,10 @@ def _get_type_info_from_annotated(
     return type_data
 
 
+def _make_annotated_type(base_type: Any, *metadata: Any) -> Any:
+    return cast(Any, Annotated)[(base_type, *metadata)]
+
+
 def _typed_dict_to_json(python_type: type) -> dict[str, Any]:
     properties = {}
     required = []
@@ -132,7 +147,7 @@ def _typed_dict_to_json(python_type: type) -> dict[str, Any]:
         if name in getattr(python_type, "__required_keys__", set()):
             required.append(name)
 
-    result = {
+    result: dict[str, Any] = {
         "type": "object",
         "properties": properties,
     }
@@ -145,19 +160,19 @@ def _typed_dict_to_json(python_type: type) -> dict[str, Any]:
 
 def python_type_to_json(
     python_type: type,
-) -> Optional[Union[str, dict[str, Any], list[dict[str, Any]]]]:
+) -> str | dict[str, Any] | list[dict[str, Any]] | None:
     """Get json type from python https://spec.openapis.org/oas/v3.1.0#data-types.
 
     >>> python_type_to_json(int)
     'integer'
-    >>> python_type_to_json(Union[float, str])
+    >>> python_type_to_json(float | str)
     [{'type': 'number'}, {'type': 'string'}]
 
     :param python_type: the python type
     :returns: the json type
     """
     origin = get_origin(python_type)
-    if origin is Union:
+    if origin in (Union, UnionType):
         json_type = list()
         for single_python_type in get_args(python_type):
             type_data = {}
@@ -210,15 +225,15 @@ def _strip_fieldinfo_default(
             new_metadata.append(new_fi)
         else:
             new_metadata.append(m)
-    return Annotated[tuple([base_type] + new_metadata)]
+    return _make_annotated_type(base_type, *new_metadata)
 
 
 def json_field_definition_to_python(
     json_field_definition: dict[str, Any],
-    default_value: Optional[Any] = None,
-    required: Optional[bool] = False,
-    validation_alias: Optional[Union[str, AliasChoices]] = None,
-    serialization_alias: Optional[str] = None,
+    default_value: Any | None = None,
+    required: bool | None = False,
+    validation_alias: str | AliasChoices | None = None,
+    serialization_alias: str | None = None,
 ) -> Annotated[Any, FieldInfo]:
     """Get python field definition from json object.
 
@@ -242,7 +257,7 @@ def json_field_definition_to_python(
     """
     python_type = json_type_to_python(json_field_definition.get("type"))
 
-    field_type_kwargs = dict(
+    field_type_kwargs: dict[str, Any] = dict(
         title=json_field_definition.get("title", PydanticUndefined),
         description=json_field_definition.get("description", PydanticUndefined),
         pattern=json_field_definition.get("pattern", PydanticUndefined),
@@ -260,7 +275,7 @@ def json_field_definition_to_python(
     if python_type in (list, set):
         items = json_field_definition.get("items")
         if isinstance(items, list):
-            python_type = tuple[  # type: ignore
+            python_type = cast(Any, tuple)[
                 tuple(
                     _strip_fieldinfo_default(
                         json_field_definition_to_python(item, required=required)
@@ -291,10 +306,10 @@ def json_field_definition_to_python(
             python_type = typed_dict_type
 
     if enum:
-        literal = Literal[tuple(sorted(enum))]  # type: ignore
+        literal = cast(Any, Literal)[tuple(sorted(enum))]
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
     elif const:
-        literal = Literal[const]
+        literal = cast(Any, Literal)[const]
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
     elif one_of and all(
         isinstance(option, dict) and "const" in option for option in one_of
@@ -312,10 +327,10 @@ def json_field_definition_to_python(
     else:
         field_default = default_value
 
-    field = Field(field_default, **field_type_kwargs)
+    field = cast(Any, Field)(field_default, **field_type_kwargs)
     if required:
         field.metadata.append("json_schema_required")
-    return Annotated[python_type, field]
+    return _make_annotated_type(python_type, field)
 
 
 def python_field_definition_to_json(
@@ -327,7 +342,7 @@ def python_field_definition_to_json(
     >>> from typing import Annotated
     >>> python_field_definition_to_json(
     ...     Annotated[
-    ...         Optional[str],
+    ...         str | None,
     ...         Field(None, description='Foo bar', json_schema_extra={'$ref': '/path/to/schema'})
     ...     ]
     ... )
@@ -352,9 +367,9 @@ def python_field_definition_to_json(
         if isinstance(type_data, str):
             json_field_definition["type"] = type_data
         elif type_data is None:
-            json_field_definition["type"] = json_field_definition["min"] = (
-                json_field_definition["max"]
-            ) = None
+            json_field_definition["type"] = json_field_definition[
+                "min"
+            ] = json_field_definition["max"] = None
         elif isinstance(type_data, dict):
             json_field_definition.update(type_data)
         else:
@@ -374,9 +389,9 @@ def python_field_definition_to_json(
         elif isinstance(field_type, dict):
             json_field_definition.update(field_type)
         elif field_type is None:
-            json_field_definition["type"] = json_field_definition["min"] = (
-                json_field_definition["max"]
-            ) = None
+            json_field_definition["type"] = json_field_definition[
+                "min"
+            ] = json_field_definition["max"] = None
         else:
             json_field_definition["type"] = [row["type"] for row in field_type]
             json_field_definition["min"] = [
@@ -445,8 +460,16 @@ def model_fields_to_annotated(
         field_type = field_info.annotation or type(None)
         new_field_info = copy_deepcopy(field_info)
         new_field_info.annotation = None
-        annotated_model_fields[param] = Annotated[field_type, new_field_info]
+        annotated_model_fields[param] = _make_annotated_type(field_type, new_field_info)
     return annotated_model_fields
+
+
+class _GenerateJsonSchemaWithAlias(Protocol):
+    by_alias: bool
+
+
+class _JsonSchemaHandlerWithGenerator(Protocol):
+    generate_json_schema: _GenerateJsonSchemaWithAlias
 
 
 class BaseModelCustomJsonSchema(BaseModel):
@@ -465,7 +488,9 @@ class BaseModelCustomJsonSchema(BaseModel):
         json_schema = handler.resolve_ref_schema(handler(core_schema))
 
         required = []
-        by_alias = getattr(handler, "generate_json_schema").by_alias
+        by_alias = cast(
+            _JsonSchemaHandlerWithGenerator, handler
+        ).generate_json_schema.by_alias
         for key, field_info in cls.model_fields.items():
             if "json_schema_required" not in field_info.metadata:
                 continue
@@ -497,8 +522,8 @@ class BaseModelCustomJsonSchema(BaseModel):
 def annotated_dict_to_model(
     model_name: str,
     annotated_fields: dict[str, Annotated[Any, FieldInfo]],
-    model_class: Optional[type[BaseModel]] = BaseModelCustomJsonSchema,
-    model_config: Optional[ConfigDict] = None,
+    model_class: type[BaseModel] | None = BaseModelCustomJsonSchema,
+    model_config: ConfigDict | None = None,
 ) -> BaseModel:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
 
@@ -527,22 +552,22 @@ def annotated_dict_to_model(
     :param model_config: (optional) configuration for the returned model
     :returns: pydantic model
     """
-    fields = {}
+    fields: dict[str, Any] = {}
     for name, field in annotated_fields.items():
         base_type, field_info, *metadata = get_args(field)
         fields[name] = (
-            Annotated[tuple([base_type] + metadata)] if metadata else base_type,
+            _make_annotated_type(base_type, *metadata) if metadata else base_type,
             field_info,
         )
 
-    custom_model = create_model(
+    custom_model = cast(Any, create_model)(
         model_name,
         __base__=model_class,
         __config__=model_config,
-        **fields,  # type: ignore
+        **fields,
     )
 
-    return custom_model
+    return cast(BaseModel, custom_model)
 
 
 class ProviderSortables(TypedDict):
@@ -554,13 +579,13 @@ class ProviderSortables(TypedDict):
     """
 
     sortables: list[str]
-    max_sort_params: Annotated[Optional[int], Gt(0)]
+    max_sort_params: Annotated[int | None, Gt(0)]
 
 
 class S3SessionKwargs(TypedDict, total=False):
     """A class representing available keyword arguments to pass to :class:`boto3.session.Session` for authentication."""
 
-    aws_access_key_id: Optional[str]
-    aws_secret_access_key: Optional[str]
-    aws_session_token: Optional[str]
-    profile_name: Optional[str]
+    aws_access_key_id: str | None
+    aws_secret_access_key: str | None
+    aws_session_token: str | None
+    profile_name: str | None

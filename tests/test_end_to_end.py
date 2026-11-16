@@ -18,6 +18,7 @@
 
 import datetime as dt
 import hashlib
+import logging
 import os
 import re
 import shutil
@@ -40,6 +41,8 @@ from tests.context import (
     sanitize,
     uri_to_path,
 )
+
+logger = logging.getLogger(__name__)
 
 GEODES_SEARCH_ARGS = [
     "geodes",
@@ -248,7 +251,7 @@ class EndToEndBase(unittest.TestCase):
         page=None,
         limit=None,
         check_product=True,
-        search_kwargs_dict={},
+        search_kwargs_dict: dict | None = None,
     ):
         """Search products on provider:
 
@@ -263,7 +266,7 @@ class EndToEndBase(unittest.TestCase):
             "end": end,
             "geom": geom,
             "raise_errors": True,
-            **search_kwargs_dict,
+            **(search_kwargs_dict or {}),
         }
         if limit:
             search_criteria["limit"] = limit
@@ -393,8 +396,7 @@ class TestEODagEndToEnd(EndToEndBase):
         # Wait for the thread to complete or timeout
         download_thread.join(timeout=wait_sec)
 
-        stop_time = time.time()
-        print(stop_time - start_time)
+        logger.info("Download completed in %.2f seconds", time.time() - start_time)
 
         if expected_filename is None:
             expected_filename = product.properties["title"]
@@ -431,9 +433,9 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
-        self.eodag._providers.configs["creodias"].auth.credentials[
-            "totp"
-        ] = "PLEASE_CHANGE_ME"
+        self.eodag._providers.configs["creodias"].auth.credentials["totp"] = (
+            "PLEASE_CHANGE_ME"
+        )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
@@ -740,9 +742,9 @@ class TestEODagEndToEndComplete(EndToEndBase):
     def test_end_to_end_complete_cop_dataspace(self):
         """Complete end-to-end test with cop_dataspace for download and download_all"""
 
-        self.eodag._providers.configs["cop_dataspace"].download.output_dir = (
-            self.tmp_download_path
-        )
+        self.eodag._providers.configs[
+            "cop_dataspace"
+        ].download.output_dir = self.tmp_download_path
 
         # Search for products that are online and as small as possible (smallest area first)
         today = dt.date.today()
@@ -917,7 +919,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
     def tearDownClass(cls):
         super(TestEODagEndToEndWrongCredentials, cls).tearDownClass()
         # restore os.environ
-        for k, v in os.environ.items():
+        for k, _ in os.environ.items():
             if cls.eodag_env_pattern.match(k):
                 os.environ.pop(k)
         os.environ.update(cls.eodag_env_backup)
@@ -928,7 +930,11 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(
+                        ["collection", "start", "end", "geom"],
+                        AWSEOS_SEARCH_ARGS[1:],
+                        strict=True,
+                    )
                 ),
             )
 
@@ -956,7 +962,11 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             results = eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(
+                        ["collection", "start", "end", "geom"],
+                        AWSEOS_SEARCH_ARGS[1:],
+                        strict=True,
+                    )
                 ),
             )
             self.assertGreater(len(results), 0)
@@ -990,6 +1000,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         USGS_RECENT_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1004,6 +1015,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         METEOBLUE_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1018,6 +1030,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         HYDROWBEB_NEXT_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1032,6 +1045,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         WEKEO_MAIN_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )
@@ -1046,6 +1060,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     zip(
                         ["collection", "start", "end", "geom"],
                         WEKEO_ECMWF_SEARCH_ARGS[1:],
+                        strict=True,
                     )
                 ),
             )

@@ -55,6 +55,7 @@ from tests.context import (
     PluginManager,
     ProvidersDict,
     S3FileInfo,
+    SearchResult,
     StreamResponse,
     load_provider_configs,
     path_to_uri,
@@ -99,11 +100,14 @@ class BaseDownloadPluginTest(unittest.TestCase):
         cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        expanduser_mock_side_effect = (
-            lambda *x: x[0]
-            .replace("~user", cls.tmp_home_dir.name)
-            .replace("~", cls.tmp_home_dir.name)
-        )
+
+        def expanduser_mock_side_effect(*args):
+            return (
+                args[0]
+                .replace("~user", cls.tmp_home_dir.name)
+                .replace("~", cls.tmp_home_dir.name)
+            )
+
         cls.expanduser_mock = mock.patch(
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
@@ -139,14 +143,53 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def get_auth_plugin(self, associated_plugin, product, not_none=True):
         plugin = self.plugins_manager.get_auth_plugin(associated_plugin, product)
         if not_none:
-            assert (
-                plugin is not None
-            ), f"Cannot get auth plugin for {associated_plugin} and {product}"
+            assert plugin is not None, (
+                f"Cannot get auth plugin for {associated_plugin} and {product}"
+            )
         return plugin
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
     """Test cases for the base download plugin."""
+
+    def test_plugins_download_all_asset_not_available(self):
+        """Fail before downloading if any product has no matching asset."""
+        self.product.assets.update({"foo": {"href": "http://foo/x"}})
+        unmatched_product = EOProduct(
+            "wekeo_main",
+            dict(geometry="POINT (0 0)", title="unmatched_product", id="unmatched"),
+        )
+        unmatched_product.assets.update({"bar": {"href": "http://bar/y"}})
+        plugin = self.get_download_plugin(self.product)
+
+        with mock.patch.object(self.product, "download") as mock_download:
+            with self.assertRaises(NotAvailableError):
+                plugin.download_all(
+                    SearchResult([self.product, unmatched_product], 2), asset="foo"
+                )
+
+        mock_download.assert_not_called()
+
+    def test_plugins_download_all_roles_not_available(self):
+        """Fail before downloading if any product has no asset with the given roles."""
+        self.product.assets.update({"foo": {"href": "http://foo/x", "roles": ["data"]}})
+        unmatched_product = EOProduct(
+            "wekeo_main",
+            dict(geometry="POINT (0 0)", title="unmatched_product", id="unmatched"),
+        )
+        unmatched_product.assets.update(
+            {"bar": {"href": "http://bar/y", "roles": ["thumbnail"]}}
+        )
+        plugin = self.get_download_plugin(self.product)
+
+        with mock.patch.object(self.product, "download") as mock_download:
+            with self.assertRaises(NotAvailableError):
+                plugin.download_all(
+                    SearchResult([self.product, unmatched_product], 2),
+                    roles=["data"],
+                )
+
+        mock_download.assert_not_called()
 
     def test_plugins_download_base_prepare_download_existing(self):
         """Download._prepare_download must detect if product destination already exists."""
@@ -257,6 +300,31 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
 
         fs_path, record_filename = plugin._prepare_download(self.product)
+
+        self.assertIsNone(fs_path)
+        self.assertIsNone(record_filename)
+
+    def test_plugins_download_base_prepare_download_assets_without_url(self):
+        """Download._prepare_download allows selected assets without a product URL."""
+        self.product.assets.update({"foo": {"href": "s3://bucket/key"}})
+        plugin = self.get_download_plugin(self.product)
+
+        with TemporaryDirectory() as output_dir:
+            fs_path, record_filename = plugin._prepare_download(
+                self.product, download_assets=True, output_dir=output_dir
+            )
+
+        self.assertIsNotNone(fs_path)
+        self.assertIsNotNone(record_filename)
+
+    def test_plugins_download_base_prepare_download_assets_without_href(self):
+        """Download._prepare_download still requires a URL if selected assets lack hrefs."""
+        self.product.assets.update({"foo": {"type": "application/octet-stream"}})
+        plugin = self.get_download_plugin(self.product)
+
+        fs_path, record_filename = plugin._prepare_download(
+            self.product, download_assets=True
+        )
 
         self.assertIsNone(fs_path)
         self.assertIsNone(record_filename)
@@ -593,8 +661,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
-        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
-            b"some content"
+        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = (
+            lambda *x, **y: io.BytesIO(b"some content")
         )
 
         mock_stream_download.return_value = [b"a"]
@@ -657,8 +725,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
-        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
-            b"some content"
+        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = (
+            lambda *x, **y: io.BytesIO(b"some content")
         )
         # download asset if ssl_verify = False
         plugin.config.ssl_verify = False
@@ -756,6 +824,24 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin.download(product, output_dir=self.output_dir)
         mock_download_assets.assert_called_once()
         mock_stream_download.assert_not_called()
+
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._download_assets", autospec=True
+    )
+    def test_plugins_download_http_assets_without_product_url(
+        self, mock_download_assets
+    ):
+        """HTTPDownload.download() must download assets when the product has no URL."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
+        mock_download_assets.return_value = os.path.join(
+            self.output_dir, "dummy_product"
+        )
+
+        result = plugin.download(self.product, output_dir=self.output_dir)
+
+        mock_download_assets.assert_called_once()
+        self.assertEqual(result, mock_download_assets.return_value)
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
@@ -1259,6 +1345,54 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
         )
         self.assertEqual(2, mock_requests_get.call_count)
+        self.product.location = self.product.remote_location = "http://elsewhere"
+        plugin.download(self.product, output_dir=self.output_dir)
+        self.assertEqual(6, mock_requests_get.call_count)
+
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_roles_filter(
+        self, mock_requests_get, mock_requests_head
+    ):
+        """HTTPDownload.download() must only download the assets having the given roles."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "somewhere": {
+                    "href": "http://somewhere/something",
+                    "roles": ["thumbnail"],
+                },
+                "elsewhere": {"href": "http://elsewhere/anything", "roles": ["data"]},
+            }
+        )
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict({"Content-Disposition": '; filename = "somethingelse"'})
+        )
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"Content-Disposition": ""}
+        )
+
+        path = plugin.download(self.product, output_dir=self.output_dir, roles=["data"])
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(self.output_dir, "dummy_product", "somethingelse")
+            )
+        )
+        # only the asset having the role was requested
+        self.assertEqual(2, mock_requests_get.call_count)
+        requested_urls = [c.args[0] for c in mock_requests_get.call_args_list]
+        self.assertTrue(all(u == "http://elsewhere/anything" for u in requested_urls))
+
+        # a partial download is not recorded: the whole product is downloaded later
         self.product.location = self.product.remote_location = "http://elsewhere"
         plugin.download(self.product, output_dir=self.output_dir)
         self.assertEqual(6, mock_requests_get.call_count)
@@ -2239,6 +2373,23 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             "http://somebucket.somehost.com/path/to/some/product"
         )
 
+    def test_plugins_download_aws_prepare_download_assets_without_product_url(self):
+        """AwsDownload preparation allows asset downloads when the product has no URL."""
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties.pop("eodag:download_link", None)
+        self.product.location = self.product.remote_location = ""
+        self.product.assets.update({"foo": {"href": "s3://bucket/key"}})
+
+        with TemporaryDirectory() as output_dir:
+            product_path, record_filename = plugin._download_preparation(
+                self.product,
+                progress_callback=ProgressCallback(disable=True),
+                download_assets=True,
+                output_dir=output_dir,
+            )
+            self.assertTrue(os.path.isdir(product_path))
+            self.assertIsNotNone(record_filename)
+
     def test_plugins_download_aws_get_bucket_prefix(self):
         """AwsDownload.get_product_bucket_name_and_prefix() must extract bucket & prefix from location."""
         plugin = self.get_download_plugin(self.product)
@@ -3062,10 +3213,67 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         # with filter for assets
         self.product.properties["title"] = "newTitle"
-        setattr(self.product, "location", "file://path/to/file")
+        self.product.location = "file://path/to/file"
         plugin.download(self.product, output_dir=self.output_dir, asset="file1")
         # 2 additional calls
         self.assertEqual(5, mock_get_chunk_dest_path.call_count)
+
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._get_authenticated_objects",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.__init__",
+        autospec=True,
+    )
+    def test_plugins_download_aws_roles_filter(
+        self,
+        mock_aws_auth_init,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_flatten_top_directories,
+    ):
+        """AwsDownload.download() must only request the assets having the given roles."""
+        mock_aws_auth_init.return_value = None
+        plugin = self.get_download_plugin(self.product)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.s3_resource = mock.Mock()
+        self.product.downloader_auth = auth_plugin
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "data": {"href": "s3://example/path/data.tif", "roles": ["data"]},
+                "mask": {"href": "s3://example/path/mask.tif", "roles": ["data-mask"]},
+                "thumb": {
+                    "href": "s3://example/path/thumb.jpg",
+                    "roles": ["thumbnail"],
+                },
+            }
+        )
+        mock_get_authenticated_objects.return_value.keys.return_value = ["example"]
+        mock_get_authenticated_objects.return_value.filter.side_effect = (
+            lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
+        )
+        mock_get_chunk_dest_path.side_effect = lambda *x, **y: x[2].key
+        plugin.config.products[self.product.collection]["build_safe"] = True
+
+        plugin.download(
+            self.product, output_dir=self.output_dir, roles=["data", "data-mask"]
+        )
+
+        # SAFE build is skipped and only the assets having one of the roles are requested
+        requested_keys = {
+            c.args[2].key for c in mock_get_chunk_dest_path.call_args_list
+        }
+        self.assertEqual(requested_keys, {"path/data.tif", "path/mask.tif"})
+        for call in mock_get_chunk_dest_path.call_args_list:
+            self.assertFalse(call.kwargs["build_safe"])
+        # a partial download is not recorded
+        self.assertEqual(os.listdir(os.path.join(self.output_dir, ".downloaded")), [])
 
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth._get_authenticated_objects",

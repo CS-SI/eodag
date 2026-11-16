@@ -23,7 +23,7 @@ import threading
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
@@ -53,13 +53,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.auth.sas_auth")
 
 # Tokens are shared by all RequestsSASAuth instances to avoid one token request per asset/product.
-_SAS_TOKENS: dict[str, tuple[str, Optional[datetime]]] = {}
+_SAS_TOKENS: dict[str, tuple[str, datetime | None]] = {}
 _SAS_TOKENS_LOCK = threading.Lock()
 _SAS_FETCH_LOCKS: dict[str, threading.Lock] = {}
 _SAS_EXPIRY_MARGIN = timedelta(seconds=60)
 
 
-def _parse_expiry(value: object) -> Optional[datetime]:
+def _parse_expiry(value: object) -> datetime | None:
     """Parse a token expiry date, return ``None`` if missing or invalid"""
     try:
         expiry = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
@@ -68,7 +68,7 @@ def _parse_expiry(value: object) -> Optional[datetime]:
     return expiry if expiry.tzinfo else expiry.replace(tzinfo=timezone.utc)
 
 
-def _get_cached_token(keys: list[str]) -> Optional[str]:
+def _get_cached_token(keys: list[str]) -> str | None:
     """Return the first non-expired cached token found for the given keys"""
     now = datetime.now(timezone.utc)
     with _SAS_TOKENS_LOCK:
@@ -86,13 +86,13 @@ class RequestsSASAuth(AuthBase):
         self,
         auth_uri: str,
         signed_url_key: str,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
         ssl_verify: bool = True,
-        matching_url: Optional[Pattern[str]] = None,
-        provider_collection: Optional[str] = None,
+        matching_url: Pattern[str] | None = None,
+        provider_collection: str | None = None,
         retry_total: int = REQ_RETRY_TOTAL,
         retry_backoff_factor: int = REQ_RETRY_BACKOFF_FACTOR,
-        retry_status_forcelist: Optional[list[int]] = None,
+        retry_status_forcelist: list[int] | None = None,
     ) -> None:
         self.auth_uri = auth_uri
         self.signed_url_key = signed_url_key
@@ -109,7 +109,7 @@ class RequestsSASAuth(AuthBase):
         )
 
     @staticmethod
-    def _get_container_url(url: str) -> Optional[str]:
+    def _get_container_url(url: str) -> str | None:
         """Return the Azure blob container URL, or None for other URLs."""
         parsed_url = urlsplit(url)
         path_parts = parsed_url.path.strip("/").split("/", 1)
@@ -122,7 +122,7 @@ class RequestsSASAuth(AuthBase):
         return None
 
     @staticmethod
-    def _apply_sas_token(url: str, signed_url: str) -> Optional[str]:
+    def _apply_sas_token(url: str, signed_url: str) -> str | None:
         """Apply a cached SAS token to another blob URL in the same container."""
         parsed_url = urlsplit(url)
         parsed_signed_url = urlsplit(signed_url)
@@ -199,7 +199,7 @@ class RequestsSASAuth(AuthBase):
         return self._apply_sas_token(url, signed_url) or signed_url
 
     def _fetch_signed_url(
-        self, url: str, req_signed_url: str, container_key: Optional[str]
+        self, url: str, req_signed_url: str, container_key: str | None
     ) -> str:
         """Request a signed url / token and store it in the shared cache"""
         logger.debug(f"Signed URL request: {req_signed_url}")
@@ -260,7 +260,7 @@ class SASAuth(Authentication):
 
     """
 
-    provider_collection: Optional[str] = None
+    provider_collection: str | None = None
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""

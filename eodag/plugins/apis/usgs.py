@@ -22,7 +22,7 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -88,7 +88,7 @@ class UsgsApi(Api):
           file should be extracted; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to
           be ordered to download it; default: ``False``
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Union[str, list]]``): how
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, str | list]``): how
           parameters should be mapped between the provider and eodag; If a string is given, this is
           the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
           is given, the first one is the mapping eodag parameter -> provider query parameters
@@ -138,10 +138,13 @@ class UsgsApi(Api):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Search for data on USGS catalogues"""
+        if prep is None:
+            prep = PreparedSearch()
+
         token = (
             int(prep.next_page_token)
             if prep.next_page_token is not None
@@ -286,16 +289,16 @@ class UsgsApi(Api):
         )
         return formated_result
 
-    def download(
+    def download(  # noqa: C901
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
+        auth: AuthBase | S3ServiceResource | None = None,
+        progress_callback: ProgressCallback | None = None,
+        executor: ThreadPoolExecutor | None = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> str | None:
         """Download data from USGS catalogues"""
 
         if progress_callback is None:
@@ -357,7 +360,7 @@ class UsgsApi(Api):
         except KeyError as e:
             raise NotAvailableError(
                 f"{e} not found in {product.properties['id']} download_request"
-            )
+            ) from e
 
         if len(req_urls) > 1:
             logger.warning(
@@ -397,7 +400,7 @@ class UsgsApi(Api):
                             )
                         else:
                             error_message = str(e)
-                        raise NotAvailableError(error_message)
+                        raise NotAvailableError(error_message) from e
                     else:
                         stream_size = (
                             int(stream.headers.get("Content-Length", 0)) or None
@@ -413,7 +416,7 @@ class UsgsApi(Api):
                     error_message = f"{e.response.content.decode('utf-8')} - {e}"
                 else:
                     error_message = str(e)
-                raise NotAvailableError(error_message)
+                raise NotAvailableError(error_message) from e
 
         download_request(product, fs_path, progress_callback, **kwargs)
 

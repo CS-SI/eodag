@@ -19,8 +19,8 @@
 
 import datetime as dt
 import logging
-from collections.abc import Callable
-from typing import Annotated, Any, ClassVar, Optional, Type, TypeVar, Union, cast
+from collections.abc import Sequence
+from typing import Annotated, Any, ClassVar, Type, TypeVar, cast
 
 from pydantic import (
     AliasChoices,
@@ -36,7 +36,7 @@ from pydantic import (
 from pydantic.fields import FieldInfo
 from stac_pydantic.item import ItemProperties
 from stac_pydantic.shared import Provider
-from typing_extensions import Self
+from typing_extensions import Self, TypeForm
 
 from eodag.types.stac_extensions import STAC_EXTENSIONS, BaseStacExtension
 from eodag.utils.dates import to_iso_utc_string
@@ -71,7 +71,10 @@ class CommonStacMetadata(ItemProperties):
     keywords: Annotated[list[str], Field(None)]
 
     _conformance_classes: ClassVar[dict[str, str]]
-    get_conformance_classes: ClassVar[Callable[[Any], list[str]]]
+
+    def get_conformance_classes(self) -> list[str]:
+        """Extract the conformance classes for the set fields."""
+        return _get_conformance_classes(self)
 
     @field_serializer(
         "datetime", "start_datetime", "end_datetime", "created", "updated"
@@ -95,7 +98,9 @@ class CommonStacMetadata(ItemProperties):
                 else instrument
             )
             if None in values["instruments"]:
-                values["instruments"].remove(None)
+                values["instruments"] = [
+                    item for item in values["instruments"] if item is not None
+                ]
         return values
 
     @model_validator(mode="before")
@@ -148,7 +153,7 @@ class CommonStacMetadata(ItemProperties):
     @classmethod
     def _create_from_stac_map(
         cls,
-    ) -> dict[str, Optional[Union[str, AliasChoices, AliasPath]]]:
+    ) -> dict[str, str | AliasChoices | AliasPath | None]:
         """Create mapping to convert fields from STAC to python-style"""
         return {
             v.serialization_alias or k: v.validation_alias
@@ -199,7 +204,7 @@ class CommonStacMetadata(ItemProperties):
         :param field_name: STAC field name
         :returns: EODAG field name
         """
-        field_dict: dict[str, Optional[Union[str, AliasChoices, AliasPath]]] = {
+        field_dict: dict[str, str | AliasChoices | AliasPath | None] = {
             stac_name: py_name
             for stac_name, py_name in cls._create_from_stac_map().items()
             if field_name == stac_name
@@ -222,7 +227,7 @@ class CommonStacMetadata(ItemProperties):
         :param field_name: python-style field name
         :returns: STAC field name
         """
-        field_dict: dict[str, Optional[Union[str, AliasChoices, AliasPath]]] = {
+        field_dict: dict[str, str | AliasChoices | AliasPath | None] = {
             stac_name: py_name
             for stac_name, py_name in cls._create_from_stac_map().items()
             if field_name == py_name
@@ -274,11 +279,12 @@ class CommonStacMetadata(ItemProperties):
             if value is None:
                 continue
             try:
-                annotated_type = (
-                    Annotated[tuple([field.annotation] + field.metadata)]
-                    if field.metadata
-                    else field.annotation
-                )
+                annotated_type = field.annotation
+                if field.metadata:
+                    annotated_type = cast(Any, Annotated)[
+                        (field.annotation, *field.metadata)
+                    ]
+                annotated_type = cast(TypeForm[Any], annotated_type)
                 TypeAdapter(annotated_type).validate_python(value)
                 valid[matched_key] = value
             except ValidationError as e:
@@ -293,8 +299,8 @@ class CommonStacMetadata(ItemProperties):
 
 
 def create_stac_metadata_model(
-    extensions: list[BaseStacExtension] = STAC_EXTENSIONS,
-    base_models: list[type[BaseModel]] = [CommonStacMetadata],
+    extensions: Sequence[BaseStacExtension] | None = None,
+    base_models: list[type[BaseModel]] | None = None,
     class_name: str = "StacMetadata",
 ) -> type[BaseModel]:
     """Create a pydantic model to validate item properties.
@@ -304,6 +310,9 @@ def create_stac_metadata_model(
     :param class_name: name of the created model
     :returns: pydantic model class
     """
+    extensions = STAC_EXTENSIONS if extensions is None else extensions
+    base_models = [CommonStacMetadata] if base_models is None else base_models
+
     extension_models: list[type[BaseModel]] = []
 
     # Check extensions for additional parameters to include
@@ -326,23 +335,19 @@ def create_stac_metadata_model(
             elif field.alias:
                 alias_strings.add(field.alias)
 
-    model = create_model(
+    model = cast(Any, create_model)(
         class_name,
         __base__=tuple(models),
-        _conformance_classes=(
-            ClassVar[dict[str, str]],
-            {e.__class__.__name__: getattr(e, "schema_href", "") for e in extensions},
-        ),
-        get_conformance_classes=(
-            ClassVar[Callable[[Any], list[str]]],
-            _get_conformance_classes,
-        ),
     )
+    model._conformance_classes = {
+        extension.__class__.__name__: getattr(extension, "schema_href", "")
+        for extension in extensions
+    }
 
     for key in duplicates:
         model.model_fields.pop(key)
 
-    return model
+    return cast(type[BaseModel], model)
 
 
 def _get_conformance_classes(self) -> list[str]:

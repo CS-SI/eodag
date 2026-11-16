@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any
 
 from eodag.utils import GENERIC_STAC_PROVIDER
 from eodag.utils.exceptions import MisconfiguredError
@@ -33,7 +33,7 @@ logger = logging.getLogger("eodag.utils.deserialize")
 
 def unregistered_product_from_item(
     feature: dict[str, Any], provider: str, plugins_manager: "PluginManager"
-) -> Optional[EOProduct]:
+) -> EOProduct | None:
     """Create an EOProduct from a STAC item, map its metadata, but without registering its plugins.
 
     :param feature: The STAC item to convert into an EOProduct.
@@ -57,7 +57,7 @@ def unregistered_product_from_item(
 
 def _import_stac_item_from_eodag_server(
     feature: dict[str, Any], plugins_manager: PluginManager
-) -> Optional[EOProduct]:
+) -> EOProduct | None:
     """Import a STAC item from EODAG Server.
 
     :param feature: A STAC item as a dictionary
@@ -117,8 +117,8 @@ def _import_stac_item_from_eodag_server(
 def _import_stac_item_from_known_provider(
     feature: dict[str, Any],
     plugins_manager: PluginManager,
-    provider: Optional[str] = None,
-) -> Optional[EOProduct]:
+    provider: str | None = None,
+) -> EOProduct | None:
     """Import a STAC item from an already-configured STAC provider.
 
     :param feature: A STAC item as a dictionary
@@ -127,6 +127,7 @@ def _import_stac_item_from_known_provider(
     :returns: An EOProduct created from the STAC item
     """
     # Delayed import to avoid import cycle with eodag.api.product.
+    from eodag.api.search_result import RawSearchResult
     from eodag.plugins.search.qssearch import StacSearch
 
     item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
@@ -143,7 +144,7 @@ def _import_stac_item_from_known_provider(
             )
             # compare the item href with the provider base URL
             if item_href and item_href.startswith(provider_base_url):
-                products = search_plugin.normalize_results(cast(Any, [feature]))
+                products = search_plugin.normalize_results(RawSearchResult([feature]))
                 if len(products) == 0 or len(products[0].assets) == 0:
                     continue
                 logger.debug(
@@ -169,7 +170,7 @@ def _import_stac_item_from_known_provider(
 
 def _import_stac_item_from_unknown_provider(
     feature: dict[str, Any], plugins_manager: PluginManager
-) -> Optional[EOProduct]:
+) -> EOProduct | None:
     """Import a STAC item from an unknown STAC provider.
 
     :param feature: A STAC item as a dictionary

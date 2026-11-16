@@ -25,6 +25,9 @@ Then you can start playing with it:
         eodag -vv list
         eodag -vvv list
 
+* When a command fails, eodag prints a one-line error message and exits with a non-zero status. Use the maximum
+  verbosity level (``-vvv``) to also print the full Python traceback.
+
 Search
 ------
 
@@ -107,6 +110,24 @@ Download
 .. code-block:: console
 
         eodag download --stac-item https://foo/collections/bar/items/item-1-id --stac-item /path/to/item2.json
+
+* To download only the assets of the products whose asset key matches a regular expression, instead of the full
+  products:
+
+.. code-block:: console
+
+        eodag download --search-results my_search.geojson --asset ".*B04.*"
+
+If the pattern does not match any asset of a product, ``download`` stops with an error instead of downloading the full
+product.
+
+* To download only the assets having at least one of the given roles, repeat ``--roles``:
+
+.. code-block:: console
+
+        eodag download --search-results my_search.geojson --roles data --roles data-mask
+
+When combined with ``--asset``, only the assets matching both the pattern and one of the roles are downloaded.
 
 * Using commands chaining, ``download`` can also directly be executed after a ``search`` in a single command:
 

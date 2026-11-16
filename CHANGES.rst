@@ -3,6 +3,90 @@ Release history
 ===============
 
 
+v4.11.0 (2026-11-16)
+====================
+
+Features
+--------
+
+* **cli**: Download single asset through CLI (`#2368`_, `14bf40d`_)
+
+* **core**: Download only assets matching given roles (`#2442`_, `0a39671`_)
+
+Bug Fixes
+---------
+
+* **cli**: Show a one-line message instead of a traceback on errors (`#2449`_, `f24eca2`_)
+
+* **core**: Validate start and end dates before search (`#2435`_, `f58105f`_)
+
+* **crunch**: Use datetime when products have no start or end datetime (`#2441`_, `83b2d46`_)
+
+* **deps**: Raise minimum versions for vulnerable packages (`#2417`_, `8420c52`_)
+
+* **download**: Allow asset downloads without product URL (`#2438`_, `efaeebe`_)
+
+* **download**: Allow AWS asset downloads without product URL (`#2439`_, `516327c`_)
+
+* **mapping**: Update wekeo_main COP-DEM collections metadata mapping (`#2448`_, `5d07b7a`_)
+
+* **streamresponse**: Preserve existing signal handlers (`#2452`_, `eef5373`_)
+
+Build System
+------------
+
+* Drop python 3.9 support (`#2432`_, `5eb75fc`_)
+
+Chores
+------
+
+* **lint**: Migrate linting and formatting to ruff (`#2436`_, `d739e14`_)
+
+Refactoring
+-----------
+
+* Modernize typing and stdlib usage for python 3.10 (`#2434`_, `17ae0b6`_)
+
+* **collections**: Updated licenses and providers (`#2433`_, `c0e9dba`_)
+
+* **queryables**: Remove dead condition and fix get_search_param typing (`#2444`_, `8efc426`_)
+
+* **typing**: Migrate from mypy to Pyrefly (`#2453`_, `4afbaf7`_)
+
+.. _#2368: https://github.com/CS-SI/eodag/pull/2368
+.. _#2417: https://github.com/CS-SI/eodag/pull/2417
+.. _#2432: https://github.com/CS-SI/eodag/pull/2432
+.. _#2433: https://github.com/CS-SI/eodag/pull/2433
+.. _#2434: https://github.com/CS-SI/eodag/pull/2434
+.. _#2435: https://github.com/CS-SI/eodag/pull/2435
+.. _#2436: https://github.com/CS-SI/eodag/pull/2436
+.. _#2438: https://github.com/CS-SI/eodag/pull/2438
+.. _#2439: https://github.com/CS-SI/eodag/pull/2439
+.. _#2441: https://github.com/CS-SI/eodag/pull/2441
+.. _#2442: https://github.com/CS-SI/eodag/pull/2442
+.. _#2444: https://github.com/CS-SI/eodag/pull/2444
+.. _#2448: https://github.com/CS-SI/eodag/pull/2448
+.. _#2449: https://github.com/CS-SI/eodag/pull/2449
+.. _#2452: https://github.com/CS-SI/eodag/pull/2452
+.. _#2453: https://github.com/CS-SI/eodag/pull/2453
+.. _0a39671: https://github.com/CS-SI/eodag/commit/0a39671ea4248cd89f4db41ebbea91005d8be855
+.. _14bf40d: https://github.com/CS-SI/eodag/commit/14bf40de3d0fa34bb2aa54fcdd68933288ff6865
+.. _17ae0b6: https://github.com/CS-SI/eodag/commit/17ae0b6cccccd6b833d3b251ce7a35115ddecfeb
+.. _4afbaf7: https://github.com/CS-SI/eodag/commit/4afbaf774bb7acfa6b8b0cdc36888d2bba1a929b
+.. _516327c: https://github.com/CS-SI/eodag/commit/516327c60292ce9ec99e6f10e0bf61fb76d46373
+.. _5d07b7a: https://github.com/CS-SI/eodag/commit/5d07b7a97519fc5a860f67b71cc060baf9d67c51
+.. _5eb75fc: https://github.com/CS-SI/eodag/commit/5eb75fc605a04c941f024f4f3f0a955cc372ec75
+.. _83b2d46: https://github.com/CS-SI/eodag/commit/83b2d4655f61ea2695c19fc3eb3f40bd7220d1c0
+.. _8420c52: https://github.com/CS-SI/eodag/commit/8420c526cedbfc1b26f30fda2fdee5d7ee02c66c
+.. _8efc426: https://github.com/CS-SI/eodag/commit/8efc4265294d83de1c5176e09220f167d47329c3
+.. _c0e9dba: https://github.com/CS-SI/eodag/commit/c0e9dba529814536c249d4ed015afa20109d5ad8
+.. _d739e14: https://github.com/CS-SI/eodag/commit/d739e148272d3779e3ba7c93e8241f66d9813053
+.. _eef5373: https://github.com/CS-SI/eodag/commit/eef5373ed3325c053ab775f158ad4517218a50a3
+.. _efaeebe: https://github.com/CS-SI/eodag/commit/efaeebeec0c8b287172545510dfc3a369f7bf269
+.. _f24eca2: https://github.com/CS-SI/eodag/commit/f24eca2551a793aa6ce35dbe1a776436a54437fb
+.. _f58105f: https://github.com/CS-SI/eodag/commit/f58105fb798780f9a7cc10bf188658a79122bc05
+
+
 v4.10.4 (2026-11-03)
 ====================
 

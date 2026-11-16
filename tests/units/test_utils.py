@@ -110,11 +110,10 @@ class TestUtils(unittest.TestCase):
         """Test __getattr__ lazily creates and caches FloatRange."""
         previous_float_range = utils.__dict__.pop("FloatRange", None)
         try:
-            float_range = getattr(utils, "FloatRange")
-            self.assertIs(getattr(utils, "FloatRange"), float_range)
+            float_range = utils.FloatRange
+            self.assertIs(utils.FloatRange, float_range)
             self.assertEqual(float_range(0, 1).convert("0.5", None, None), 0.5)
-            with self.assertRaises(AttributeError):
-                getattr(utils, "missing_attribute")
+            self.assertRaises(AttributeError, lambda: utils.missing_attribute)
         finally:
             utils.__dict__.pop("FloatRange", None)
             if previous_float_range is not None:

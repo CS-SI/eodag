@@ -17,7 +17,7 @@
 # limitations under the License.
 import datetime as dt
 import re
-from typing import Annotated, Any, Optional, Union, cast
+from typing import Annotated, Any, cast
 
 from annotated_types import MinLen
 from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
@@ -30,8 +30,8 @@ from eodag.types.bbox import BBox
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE, _deprecated_class
 from eodag.utils.exceptions import ValidationError
 
-NumType = Union[float, int]
-GeomArgs = Union[list[NumType], tuple[NumType], dict[str, NumType], str, BaseGeometry]
+NumType = float | int
+GeomArgs = list[NumType] | tuple[NumType] | dict[str, NumType] | str | BaseGeometry
 
 PositiveInt = conint(gt=0)
 SortByList = Annotated[list[tuple[str, str]], MinLen(1)]
@@ -49,16 +49,16 @@ class SearchArgs(BaseModel):
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
-    provider: Optional[str] = Field(None)
+    provider: str | None = Field(None)
     collection: str = Field()
-    id: Optional[str] = Field(None)
-    start: Optional[str] = Field(None)
-    end: Optional[str] = Field(None)
-    geom: Optional[BaseGeometry] = Field(None)
-    locations: Optional[dict[str, str]] = Field(None)
-    page: Optional[int] = Field(DEFAULT_PAGE, gt=0)  # type: ignore
-    limit: Optional[PositiveInt] = Field(DEFAULT_LIMIT)  # type: ignore
-    sort_by: Optional[SortByList] = Field(None)  # type: ignore
+    id: str | None = Field(None)
+    start: str | None = Field(None)
+    end: str | None = Field(None)
+    geom: BaseGeometry | None = Field(None)
+    locations: dict[str, str] | None = Field(None)
+    page: int | None = Field(DEFAULT_PAGE, gt=0)  # type: ignore
+    limit: PositiveInt | None = Field(DEFAULT_LIMIT)  # type: ignore
+    sort_by: SortByList | None = Field(None)  # type: ignore
 
     @field_validator("start", "end", mode="before")
     @classmethod
@@ -76,7 +76,7 @@ class SearchArgs(BaseModel):
         """Validate geom"""
         # GeoJSON geometry
         if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES:  # type: ignore
-            return cast(BaseGeometry, shape(v))
+            return shape(v)
 
         # Bounding Box
         if isinstance(v, (list, tuple, dict)):
@@ -98,8 +98,8 @@ class SearchArgs(BaseModel):
     @classmethod
     def check_sort_by_arg(
         cls,
-        sort_by_arg: Optional[SortByList],  # type: ignore
-    ) -> Optional[SortByList]:  # type: ignore
+        sort_by_arg: SortByList | None,  # type: ignore
+    ) -> SortByList | None:  # type: ignore
         """Check if the sort_by argument is correct
 
         :param sort_by_arg: The sort_by argument
@@ -109,14 +109,14 @@ class SearchArgs(BaseModel):
         if sort_by_arg is None:
             return None
 
-        assert isinstance(
-            sort_by_arg, list
-        ), f"Sort argument must be a list of tuple(s), got a '{type(sort_by_arg)}' instead"
+        assert isinstance(sort_by_arg, list), (
+            f"Sort argument must be a list of tuple(s), got a '{type(sort_by_arg)}' instead"
+        )
         sort_order_pattern = r"^(ASC|DES)[a-zA-Z]*$"
         for i, sort_by_tuple in enumerate(sort_by_arg):
-            assert isinstance(
-                sort_by_tuple, tuple
-            ), f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_tuple)}' instead"
+            assert isinstance(sort_by_tuple, tuple), (
+                f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_tuple)}' instead"
+            )
             # get sorting elements by removing leading and trailing whitespace(s) if exist
             sort_param = sort_by_tuple[0].strip()
             sort_order = sort_by_tuple[1].strip().upper()

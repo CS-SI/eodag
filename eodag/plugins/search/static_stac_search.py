@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any
 from unittest import mock
 
 import geojson
@@ -91,7 +91,7 @@ class StaticStacSearch(StacSearch):
         ):
             self.config.discover_collections = {}
 
-    def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+    def discover_collections(self, **kwargs: Any) -> dict[str, Any] | None:
         """Fetch collections list from a static STAC Catalog provider using `discover_collections` conf
 
         :returns: configuration dict containing fetched collections information
@@ -156,10 +156,12 @@ class StaticStacSearch(StacSearch):
 
     def query(
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Perform a search on a static STAC Catalog"""
+        if prep is None:
+            prep = PreparedSearch()
 
         # only return 1 page if pagination is disabled
         if prep.page and prep.page > 1 and prep.limit is not None and prep.limit <= 0:

@@ -40,7 +40,6 @@ def make_mock_fileinfo(
 ):
     fi = S3FileInfo(key=key, size=size, data_type=data_type, bucket_name="mybucket")
     fi.rel_path = key
-    fi.futures = {}
     fi.file_start_offset = file_start_offset
     fi.data_start_offset = data_start_offset
     return fi

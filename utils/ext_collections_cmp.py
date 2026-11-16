@@ -87,7 +87,7 @@ def format_diff(obj1, obj2, indent=4):
     return "".join(diff)
 
 
-def compare_collections(
+def compare_collections(  # noqa: C901
     file1_path: str, file2_path: str, include_details: bool = True, job_url: str = ""
 ):
     """Compare two ext_collections.json files.

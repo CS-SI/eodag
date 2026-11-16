@@ -19,7 +19,8 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from annotated_types import Lt
 from pydantic import (
@@ -90,7 +91,7 @@ class CommonQueryables(BaseModelCustomJsonSchema):
 
     @classmethod
     def get_with_default(
-        cls, field: str, default: Optional[Any]
+        cls, field: str, default: Any | None
     ) -> Annotated[Any, FieldInfo]:
         """Get field and set default value."""
         annotated_fields = model_fields_to_annotated(cls.model_fields)
@@ -103,7 +104,7 @@ class CommonQueryables(BaseModelCustomJsonSchema):
     @classmethod
     def from_stac_models(
         cls,
-        extensions: list[BaseStacExtension] = STAC_EXTENSIONS,
+        extensions: Sequence[BaseStacExtension] = STAC_EXTENSIONS,
         base_model: type[BaseModel] = CommonStacMetadata,
     ) -> type[Queryables]:
         """Creates Queryables from STAC models.
@@ -147,7 +148,7 @@ class Queryables(CommonQueryables):
         ),
     ]
     geom: Annotated[
-        Union[str, dict[str, float], BaseGeometry],
+        str | dict[str, float] | BaseGeometry,
         Field(
             None,
             alias=AliasChoices("geometry", "intersects"),
@@ -269,10 +270,15 @@ class QueryablesDict(UserDict[str, Any]):
             if self.additional_information
             else ""
         )
-        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
-                {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={
-                self.additional_properties}
-            """ + add_info + "</td></tr></thead>" if not embedded else ""
+        thead = (
+            f"""<thead><tr><td style='text-align: left; color: grey;'>
+                {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={self.additional_properties}
+            """
+            + add_info
+            + "</td></tr></thead>"
+            if not embedded
+            else ""
+        )
         tr_style = "style='background-color: transparent;'" if embedded else ""
         table = f"<table>{thead}<tbody>"
         table_rows = []
@@ -303,14 +309,25 @@ class QueryablesDict(UserDict[str, Any]):
                         <details><summary style='color: grey;'>
                         <span style='color: black'>'{k}'</span>:&ensp;
                         typing.Annotated[{
-                        "<span style='color: black'>" + shorter_type_repr(v.__args__[0]) + "</span>,&ensp;"}
-                        FieldInfo({"'default': '<span style='color: black'>"
-                                   + str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
-                                   if v.__metadata__[0].get_default()
-                                   and v.__metadata__[0].get_default() != PydanticUndefined else ""}
-                                  {"'required': <span style='color: black'>"
-                                   + str(v.__metadata__[0].is_required()) + "</span>,"
-                                   if v.__metadata__[0].is_required() else ""}
+                "<span style='color: black'>"
+                + shorter_type_repr(v.__args__[0])
+                + "</span>,&ensp;"
+            }
+                        FieldInfo({
+                "'default': '<span style='color: black'>"
+                + str(v.__metadata__[0].get_default())
+                + "</span>',&ensp;"
+                if v.__metadata__[0].get_default()
+                and v.__metadata__[0].get_default() != PydanticUndefined
+                else ""
+            }
+                                  {
+                "'required': <span style='color: black'>"
+                + str(v.__metadata__[0].is_required())
+                + "</span>,"
+                if v.__metadata__[0].is_required()
+                else ""
+            }
                                   {alias_str}
                                   ...
                                  )]
@@ -333,7 +350,7 @@ class QueryablesDict(UserDict[str, Any]):
         return table
 
     def get_model(
-        self, model_name: str = "Queryables", model_config: Optional[ConfigDict] = None
+        self, model_name: str = "Queryables", model_config: ConfigDict | None = None
     ) -> BaseModel:
         """
         Convert object from :class:`eodag.types.queryables.QueryablesDict` to :class:`pydantic.BaseModel`
@@ -410,7 +427,7 @@ class QueryablesDict(UserDict[str, Any]):
         self,
         by_alias: bool = False,
         include_aliases: bool = True,
-        model_config: Optional[ConfigDict] = None,
+        model_config: ConfigDict | None = None,
     ) -> dict[str, Any]:
         """Convert object from :class:`eodag.types.queryables.QueryablesDict` to JSON schema of
         :class:`pydantic.BaseModel`.

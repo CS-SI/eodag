@@ -17,16 +17,17 @@
 # limitations under the License.
 import functools
 import logging
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Concatenate, ParamSpec, TypeVar
 
 logger = logging.getLogger("eodag.cache")
 
+P = ParamSpec("P")
 R = TypeVar("R")
 
 
 def instance_cached_method(
     maxsize: int = 128,
-) -> Callable[[Callable[..., R]], Callable[..., R]]:
+) -> Callable[[Callable[Concatenate[Any, P], R]], Callable[Concatenate[Any, P], R]]:
     """
     Decorator to cache an instance method using functools.lru_cache on a per-instance basis.
 
@@ -42,9 +43,11 @@ def instance_cached_method(
     :return: Decorated method with per-instance caching enabled.
     """
 
-    def decorator(method: Callable[..., R]) -> Callable[..., R]:
+    def decorator(
+        method: Callable[Concatenate[Any, P], R],
+    ) -> Callable[Concatenate[Any, P], R]:
         @functools.wraps(method)
-        def wrapper(self: Any, *args: Any, **kwargs: Any) -> R:
+        def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> R:
             cache_name = f"_cached_{method.__name__}"
             if not hasattr(self, cache_name):
                 cached = functools.lru_cache(maxsize=maxsize)(

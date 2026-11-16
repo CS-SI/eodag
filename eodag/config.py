@@ -23,7 +23,7 @@ import tempfile
 import warnings
 from importlib.resources import files as res_files
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Generator, Literal, cast
 
 import orjson
 import requests
@@ -106,17 +106,16 @@ class EODAGSettings(BaseSettings):
     cfg_dir: Path = Field(
         default_factory=default_config_dir,
         description=(
-            "Base EODAG configuration directory. "
-            "Created automatically if it does not exist."
+            "Base EODAG configuration directory. Created automatically if it does not exist."
         ),
     )
 
-    cfg_file: Optional[Path] = Field(
+    cfg_file: Path | None = Field(
         default=None,
         description="Path to the main EODAG user configuration file. If not set, defaults to ``<cfg_dir>/eodag.yml``.",
     )
 
-    locations_cfg_file: Optional[Path] = Field(
+    locations_cfg_file: Path | None = Field(
         default=None,
         validation_alias="EODAG_LOCS_CFG_FILE",
         description="Path to the locations configuration file. If not set, defaults to ``<cfg_dir>/locations.yml``.",
@@ -125,12 +124,11 @@ class EODAGSettings(BaseSettings):
     collections_cfg_file: Path = Field(
         default=DEFAULT_COLLECTIONS_FILE,
         description=(
-            "Path to the collections configuration file. "
-            "Defaults to the bundled EODAG collections definition."
+            "Path to the collections configuration file. Defaults to the bundled EODAG collections definition."
         ),
     )
 
-    providers_cfg_file: Optional[Path] = Field(
+    providers_cfg_file: Path | None = Field(
         default=None,
         description=(
             "Legacy single provider configuration file. Deprecated since ``v4.5.0``; "
@@ -169,8 +167,7 @@ class EODAGSettings(BaseSettings):
     ] = Field(
         default_factory=list,
         description=(
-            "List of provider names to whitelist. "
-            "Can be set as a comma-separated string."
+            "List of provider names to whitelist. Can be set as a comma-separated string."
         ),
     )
 
@@ -200,15 +197,13 @@ class EODAGSettings(BaseSettings):
         """Warn about deprecated settings."""
         if "providers_cfg_file" in self.model_fields_set:
             warnings.warn(
-                "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. "
-                "Use EODAG_PROVIDERS_CFG_DIR instead.",
+                "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. Use EODAG_PROVIDERS_CFG_DIR instead.",
                 DeprecationWarning,
                 stacklevel=5,
             )
         if "EODAG_EXT_COLLECTIONS_CFG_FILE" in os.environ:
             warnings.warn(
-                "EODAG_EXT_COLLECTIONS_CFG_FILE is deprecated. "
-                "Use EODAG_EXT_COLLECTIONS_CFG_URI instead.",
+                "EODAG_EXT_COLLECTIONS_CFG_FILE is deprecated. Use EODAG_EXT_COLLECTIONS_CFG_URI instead.",
                 DeprecationWarning,
                 stacklevel=5,
             )
@@ -227,8 +222,7 @@ def ensure_user_config_exists(config_file: Path) -> None:
 
     if not USER_CONFIG_TEMPLATE_FILE.is_file():
         raise FileNotFoundError(
-            f"Missing bundled resource {USER_CONFIG_TEMPLATE_FILE} "
-            "to create user configuration file"
+            f"Missing bundled resource {USER_CONFIG_TEMPLATE_FILE} to create user configuration file"
         )
 
     config_file.parent.mkdir(
@@ -257,8 +251,7 @@ def ensure_cfg_dir_exists(config_dir: Path) -> Path:
         fallback_dir = Path(tempfile.gettempdir()) / ".config" / "eodag"
 
         logger.warning(
-            "Cannot create configuration directory %s. "
-            "Falling back to temporary directory %s.",
+            "Cannot create configuration directory %s. Falling back to temporary directory %s.",
             requested_dir,
             fallback_dir,
         )
@@ -327,7 +320,7 @@ class SimpleYamlProxyConfig:
         try:
             self.source: dict[str, Any] = cached_yaml_load(conf_file_path)
         except yaml.parser.ParserError:
-            print("Unable to load user configuration file")
+            logger.error("Unable to load user configuration file")
             raise
 
     def __getitem__(self, item: Any) -> Any:
@@ -370,13 +363,13 @@ class PluginConfig(yaml.YAMLObject):
         #: The maximum number of items per page that the provider can handle
         max_limit: int
         #: Key path for the number of total items in the provider result
-        total_items_nb_key_path: Union[str, JSONPath]
+        total_items_nb_key_path: str | JSONPath
         #: Key path for the next page URL
-        next_page_url_key_path: Union[str, JSONPath]
+        next_page_url_key_path: str | JSONPath
         #: Key path for the next page POST request query-object (body)
-        next_page_query_obj_key_path: Union[str, JSONPath]
+        next_page_query_obj_key_path: str | JSONPath
         # TODO: change this typing to bool and adapt code to it
-        next_page_merge_key_path: Union[str, JSONPath]
+        next_page_merge_key_path: str | JSONPath
         #: Template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to enable count in
         #: search request
         count_tpl: str
@@ -417,7 +410,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Metadata regex pattern used for discovery in search result properties
         metadata_pattern: str
         #: Configuration/template that will be used to query for a discovered parameter
-        search_param: Union[str, dict[str, Any]]
+        search_param: str | dict[str, Any]
         #: list search parameters to send as is to the provider
         search_param_unparsed: list[str]
         #: Path to the metadata in search result
@@ -431,7 +424,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for collections discovery"""
 
         #: URL from which the collections can be fetched
-        fetch_url: Optional[str]
+        fetch_url: str | None
         #: HTTP method used to fetch collections
         fetch_method: str
         #: Request body to fetch collections using POST method
@@ -445,7 +438,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Type of the provider result
         result_type: str
         #: JsonPath to the list of collections
-        results_entry: Union[str, JSONPath]
+        results_entry: str | JSONPath
         #: Mapping for the collection id
         generic_collection_id: str
         #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
@@ -467,9 +460,9 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for queryables discovery"""
 
         #: URL to fetch the queryables valid for all collections
-        fetch_url: Optional[str]
+        fetch_url: str | None
         #: URL to fetch the queryables for a specific collection
-        collection_fetch_url: Optional[str]
+        collection_fetch_url: str | None
         #: Type of the result
         result_type: str
         #: JsonPath to retrieve the queryables from the provider result
@@ -508,7 +501,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for order on-response during download"""
 
         #: Parameters metadata-mapping to apply to the order response
-        metadata_mapping: dict[str, Union[str, list[str]]]
+        metadata_mapping: dict[str, str | list[str]]
 
     class OrderStatusSuccess(TypedDict):
         """
@@ -553,7 +546,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Key in the success response that gives access to the result
         results_entry: str
         #: Metadata-mapping to apply to the success status result
-        metadata_mapping: dict[str, Union[str, list[str]]]
+        metadata_mapping: dict[str, str | list[str]]
 
     class OrderStatus(TypedDict, total=False):
         """Configuration for order status during download"""
@@ -561,7 +554,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Order status request configuration
         request: PluginConfig.OrderStatusRequest
         #: Metadata-mapping used to parse order status response
-        metadata_mapping: dict[str, Union[str, list[str]]]
+        metadata_mapping: dict[str, str | list[str]]
         #: Configuration to identify order status success during download
         success: PluginConfig.OrderStatusSuccess
         #: Part of the order status response that tells there is an error
@@ -590,7 +583,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.base.PluginTopic` Default s3 bucket
     s3_bucket: str
     #: :class:`~eodag.plugins.base.PluginTopic` Authentication error codes
-    auth_error_code: Union[int, list[int]]
+    auth_error_code: int | list[int]
     #: :class:`~eodag.plugins.base.PluginTopic` Time to wait until request timeout in seconds
     timeout: float
     #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``total`` parameter,
@@ -629,7 +622,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
-    metadata_mapping: dict[str, Union[str, list[Optional[str]]]]
+    metadata_mapping: dict[str, str | list[str | None]]
     #: :class:`~eodag.plugins.search.base.Search` :attr:`~eodag.config.PluginConfig.metadata_mapping` got from the given
     #: collection
     metadata_mapping_from_product: str
@@ -686,6 +679,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.base.Download`
     #: Whether the content of the downloaded file should be extracted or not
     extract: bool
+    #: :class:`~eodag.plugins.download.base.Download` Whether to delete downloaded archives
+    delete_archive: bool
     #: :class:`~eodag.plugins.download.base.Download` Which extension should be used for the downloaded file
     output_extension: str
     #: :class:`~eodag.plugins.download.base.Download` Whether the directory structure should be flattened or not
@@ -843,13 +838,13 @@ class PluginConfig(yaml.YAMLObject):
     #: which authentication method should be used
     method: str
 
-    def __or__(self, other: Union[Self, dict[str, Any]]) -> Self:
+    def __or__(self, other: Self | dict[str, Any]) -> Self:
         """Return a new PluginConfig with merged values."""
         new_config = self.__class__.from_mapping(self.__dict__)
         new_config.update(other)
         return new_config
 
-    def __ior__(self, other: Union[Self, dict[str, Any]]) -> Self:
+    def __ior__(self, other: Self | dict[str, Any]) -> Self:
         """In-place update of the PluginConfig."""
         self.update(other)
         return self
@@ -859,7 +854,7 @@ class PluginConfig(yaml.YAMLObject):
         return item in self.__dict__
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Generator[Self, None, None]:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
         cls.validate(
             tuple(node_key.value for node_key, _ in node.value), check_type=False
@@ -892,7 +887,7 @@ class PluginConfig(yaml.YAMLObject):
                 "A Plugin config must specify the type of Plugin it configures"
             )
 
-    def update(self, config: Optional[Union[Self, dict[Any, Any]]]) -> None:
+    def update(self, config: Self | dict[Any, Any] | None) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
@@ -993,7 +988,7 @@ def load_locations_config(location_cfg_file: str) -> list[dict[str, Any]]:
 
 
 def load_provider_configs(
-    providers_cfg_file: Optional[Path] = None,
+    providers_cfg_file: Path | None = None,
     providers_cfg_dir: Path = DEFAULT_PROVIDERS_DIR,
 ) -> dict[str, ProviderConfig]:
     """Load provider configurations.
@@ -1030,9 +1025,9 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it as plain YAML dictionaries
-        providers_configs_dicts: list[
-            Optional[Union[dict[str, Any], ProviderConfig]]
-        ] = cached_yaml_load_all(config_path)
+        providers_configs_dicts: list[dict[str, Any] | ProviderConfig | None] = (
+            cached_yaml_load_all(config_path)
+        )
     except yaml.parser.ParserError as e:
         logger.error("Unable to load configuration")
         raise e

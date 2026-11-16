@@ -46,7 +46,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Iterable, Iterator, Literal, Optional
+    from typing import Any, Iterable, Iterator, Literal
     from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
@@ -78,7 +78,7 @@ class S3SeekableFile(io.RawIOBase):
         bucket_name: str,
         key_name: str,
         s3_client: S3Client,
-        size: Optional[int] = None,
+        size: int | None = None,
     ) -> None:
         super().__init__()
         self._bucket = bucket_name
@@ -86,7 +86,7 @@ class S3SeekableFile(io.RawIOBase):
         self._client = s3_client
         if size is None:
             resp = s3_client.head_object(Bucket=bucket_name, Key=key_name)
-            size = int(resp["ContentLength"])
+            size = resp["ContentLength"]
         self._size = size
         self._pos = 0
 
@@ -178,7 +178,7 @@ def fetch_range(
     return response["Body"].read()
 
 
-@dataclass
+@dataclass(slots=True)
 class S3FileInfo:
     """
     Describe a S3 object with basic f_info and its download state.
@@ -188,14 +188,14 @@ class S3FileInfo:
     key: str
     bucket_name: str
     #: Path inside the ZIP archive if the file is stored inside a ZIP.
-    zip_filepath: Optional[str] = None
+    zip_filepath: str | None = None
     #: Offset in the ZIP archive where the file data starts.
     data_start_offset: int = 0
     #: MIME type of the file, defaulting to application/octet-stream.
     #: It can be updated based on the file extension or content type.
     data_type: str = DEFAULT_MIME
     #: Relative path of the file, if applicable (e.g., inside a ZIP archive).
-    rel_path: Optional[str] = None
+    rel_path: str | None = None
 
     # These fields hold the state for downloading
     #: Offset in the logical (global) file stream where this file starts.
@@ -232,9 +232,9 @@ def _prepare_file_in_zip(f_info: S3FileInfo, s3_client: S3Client):
 
 def _compute_file_ranges(
     file_info: S3FileInfo,
-    byte_range: tuple[Optional[int], Optional[int]],
+    byte_range: tuple[int | None, int | None],
     range_size: int,
-) -> Optional[list[tuple[int, int]]]:
+) -> list[tuple[int, int]] | None:
     """
     Compute the byte ranges to download for a single file, considering the overall requested range.
 
@@ -285,7 +285,7 @@ def _compute_file_ranges(
 def _chunks_from_s3_objects(
     s3_client: S3Client,
     files_info: list[S3FileInfo],
-    byte_range: tuple[Optional[int], Optional[int]],
+    byte_range: tuple[int | None, int | None],
     range_size: int,
     executor: ThreadPoolExecutor,
 ) -> Iterator[tuple[int, Iterator[bytes]]]:
@@ -435,8 +435,8 @@ def _build_stream_response(
     def _build_response(
         content_gen: Iterable[bytes],
         media_type: str,
-        filename: Optional[str] = None,
-        size: Optional[int] = None,
+        filename: str | None = None,
+        size: int | None = None,
     ) -> StreamResponse:
         return StreamResponse(
             content=content_gen,
@@ -503,11 +503,11 @@ def _build_stream_response(
 def stream_download_from_s3(
     s3_client: S3Client,
     files_info: list[S3FileInfo],
-    byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+    byte_range: tuple[int | None, int | None] = (None, None),
     compress: Literal["zip", "raw", "auto"] = "auto",
     zip_filename: str = "archive",
     range_size: int = 1024**2 * 8,
-    provider_max_workers: Optional[int] = None,
+    provider_max_workers: int | None = None,
 ) -> StreamResponse:
     """
     Stream data from one or more S3 objects in chunks, with support for global byte ranges.
@@ -664,8 +664,8 @@ def list_files_in_s3_prefix(
 def update_assets_from_s3(
     product: EOProduct,
     auth: AwsAuth,
-    s3_endpoint: Optional[str] = None,
-    content_url: Optional[str] = None,
+    s3_endpoint: str | None = None,
+    content_url: str | None = None,
 ) -> None:
     """Update ``EOProduct.assets`` using content listed in its ``remote_location`` or given
     ``content_url``.
@@ -689,7 +689,6 @@ def update_assets_from_s3(
         return None
 
     try:
-
         logger.debug("Listing assets in %s", prefix)
 
         s3_client = auth.get_s3_client()
@@ -715,7 +714,6 @@ def update_assets_from_s3(
             # List files in prefix
             bucket_objects = auth.get_bucket_objects(bucket)
             for item_s3 in list_files_in_s3_prefix(prefix, bucket_objects):
-
                 url = "s3://{bucket}/{key}".format(bucket=bucket, key=item_s3.key)
                 key, roles = product.driver.guess_asset_key_and_roles(url, product)
                 if key is not None:
@@ -765,7 +763,7 @@ def open_s3_zipped_object(
     bucket_name: str,
     key_name: str,
     s3_client: S3Client,
-    zip_size: Optional[int] = None,
+    zip_size: int | None = None,
     partial: bool = True,
 ) -> ZipFile:
     """
@@ -794,7 +792,7 @@ def open_s3_zipped_object(
         else:
             if zip_size is None:
                 response = s3_client.head_object(Bucket=bucket_name, Key=key_name)
-                zip_size = int(response["ContentLength"])
+                zip_size = response["ContentLength"]
             data = fetch_range(bucket_name, key_name, 0, zip_size - 1, s3_client)
             return ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile as e:
@@ -827,8 +825,10 @@ def file_position_from_s3_zip(
     with open_s3_zipped_object(s3_bucket, object_key, s3_client) as zipf:
         try:
             target_info = zipf.getinfo(target_filepath)
-        except KeyError:
-            raise FileNotFoundError(f"File {target_filepath} not found in ZIP archive")
+        except KeyError as e:
+            raise FileNotFoundError(
+                f"File {target_filepath} not found in ZIP archive"
+            ) from e
 
         if target_info.compress_type != ZIP_STORED:
             raise NotImplementedError(

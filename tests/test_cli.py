@@ -25,11 +25,10 @@ from collections import defaultdict
 from contextlib import contextmanager
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
-from typing import Annotated, Literal, Optional, Tuple
+from typing import Annotated, Literal, Tuple
 
 import click
 import responses
-import shapely
 import yaml
 from click.testing import CliRunner
 from packaging import version
@@ -44,9 +43,10 @@ from eodag.utils.exceptions import UnsupportedProvider
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_LIMIT,
-    AuthenticationError,
-    MisconfiguredError,
+    EODataAccessGateway,
+    EOProduct,
     NoMatchingCollection,
+    NotAvailableError,
     download,
     eodag_cli,
     mock,
@@ -98,8 +98,8 @@ class TestEodagCli(unittest.TestCase):
         logger.level = 0
 
     def eodag_command(
-        self, command_list: list = [], env: dict = {}
-    ) -> Tuple[int, str, Optional[Exception]]:
+        self, command_list: list | None = None, env: dict | None = None
+    ) -> Tuple[int, str, Exception | None]:
         """Eodag command line
 
         :param command_list: command line
@@ -108,8 +108,8 @@ class TestEodagCli(unittest.TestCase):
         """
 
         # Force str parameters
-        str_command_list = list(map(lambda x: "{}".format(x), command_list))
-        result = self.runner.invoke(eodag_cli, str_command_list, env=env)
+        str_command_list = list(map(lambda x: "{}".format(x), command_list or []))
+        result = self.runner.invoke(eodag_cli, str_command_list, env=env or {})
 
         exit_code = 1
         output = ""
@@ -148,6 +148,48 @@ class TestEodagCli(unittest.TestCase):
         version_str = re.search(r"eodag .* version (.+)\s*$", output).group(1)
         self.assertIsNone(error)
         self.assertGreater(version.parse(version_str), version.parse("2.0.0"))
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_error_without_traceback(self, dag):
+        """A command error should be printed as a one-line message, without traceback"""
+        for verbosity, side_effect, expected_output in (
+            (
+                [],
+                UnsupportedProvider("foo: provider is not recognised by eodag"),
+                "Error: foo: provider is not recognised by eodag\n",
+            ),
+            (
+                ["-vv"],
+                UnsupportedProvider("foo: provider is not recognised by eodag"),
+                "Error: foo: provider is not recognised by eodag\n",
+            ),
+            (
+                [],
+                KeyError("bar"),
+                "Error: KeyError: 'bar'\n",
+            ),
+        ):
+            with self.subTest(verbosity=verbosity, side_effect=side_effect):
+                dag.return_value.search.side_effect = side_effect
+                exit_code, output, error = self.eodag_command(
+                    verbosity + ["search", "-p", "foo", "-c", "bar"]
+                )
+                self.assertEqual(exit_code, 1)
+                self.assertIsInstance(error, SystemExit)
+                self.assertEqual(output, expected_output)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_error_with_traceback_max_verbosity(self, dag):
+        """A command error should be raised with its traceback at maximum verbosity"""
+        dag.return_value.search.side_effect = UnsupportedProvider(
+            "foo: provider is not recognised by eodag"
+        )
+        exit_code, output, error = self.eodag_command(
+            ["-vvv", "search", "-p", "foo", "-c", "bar"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, UnsupportedProvider)
+        self.assertNotIn("Error: foo", output)
 
     def test_eodag_search_without_args(self):
         """Calling eodag search subcommand without arguments should print help message and return error code"""  # noqa
@@ -211,14 +253,16 @@ class TestEodagCli(unittest.TestCase):
                     ["search", "--conf", conf_file, "-p", "whatever", "-c", max_cloud],
                 )
                 expect_output = (
-                    "Error: Invalid value for '-c' / '--cloudCover': {} is not in the"
-                    " valid range of 0 to 100."
+                    "Error: Invalid value for '-c' / '--cloudCover': {} is not in the valid range of 0 to 100."
                 ).format(max_cloud)
                 self.assertTrue(
                     expect_output in output or expect_output.replace("'", '"')
                 )
                 self.assertNotEqual(exit_code, 0)
-                self.assertIsInstance(error, UnsupportedProvider)
+                self.assertIsInstance(error, SystemExit)
+                self.assertIn(
+                    "Error: whatever: provider is not recognised by eodag", output
+                )
 
     def test_eodag_search_bbox_invalid(self):
         """Calling eodag search with -b | --bbox set with less than 4 params should print error message"""  # noqa
@@ -268,12 +312,13 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_geom_wkt_invalid(self):
         """Calling eodag search with -g | --geom set with invalit WKT geometry string"""  # noqa
         with self.user_conf() as conf_file:
-            exit_code, _, error = self.eodag_command(
+            exit_code, output, error = self.eodag_command(
                 ["search", "--conf", conf_file, "-c", "whatever", "-g", "not a wkt"]
             )
             self.assertNotEqual(exit_code, 0)
+            self.assertIsInstance(error, SystemExit)
             # GEOSException for shapely >= 2.0
-            self.assertTrue(isinstance(error, shapely.errors.GEOSException))
+            self.assertIn("Error: GEOSException: ", output)
 
     @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_geom_wkt_valid(self, dag):
@@ -983,9 +1028,7 @@ class TestEodagCli(unittest.TestCase):
                 Literal["SENTINEL-1A", "SENTINEL-1B"],
                 Field(None, description="Satellite platform"),
             ],
-            eo_cloud_cover=Annotated[
-                Optional[float], Field(None, alias="eo:cloud_cover")
-            ],
+            eo_cloud_cover=Annotated[float | None, Field(None, alias="eo:cloud_cover")],
         )
         mock_list_queryables.return_value = queryables
 
@@ -1247,6 +1290,266 @@ class TestEodagCli(unittest.TestCase):
         )
 
     @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_asset(self, dag):
+        """Calling eodag download with --asset must forward the filter to download_all"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult([])
+        dag.return_value.download_all.return_value = ["/fake_path"]
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--asset",
+                "foo",
+            ],
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertEqual("Downloaded /fake_path\n", output)
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY, output_dir=None, executor=mock.ANY, asset="foo"
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_asset_not_found(self, dag):
+        """Calling eodag download with an --asset filter matching nothing must fail clearly"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult([])
+        dag.return_value.download_all.side_effect = NotAvailableError("asset not found")
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--asset",
+                "nomatch",
+            ],
+        )
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, SystemExit)
+        self.assertEqual("Error: asset not found\n", output)
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY, output_dir=None, executor=mock.ANY, asset="nomatch"
+        )
+
+    def test_eodag_download_asset_selection(self):
+        """The CLI must download only assets matching --asset."""
+        dag = EODataAccessGateway()
+        product = EOProduct(
+            "sara",
+            dict(geometry="POINT (0 0)", title="dummy_product", id="dummy"),
+        )
+        selected_href = "http://foo/x"
+        unselected_href = "http://bar/y"
+        product.assets.update(
+            {
+                "foo": {"href": selected_href},
+                "bar": {"href": unselected_href},
+            }
+        )
+        product.register_downloader(
+            dag._plugins_manager.get_download_plugin(product), None
+        )
+        product.location = product.remote_location = "http://somewhere"
+        search_result = SearchResult([product], 1)
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
+
+        with (
+            mock.patch.object(
+                EODataAccessGateway,
+                "deserialize_and_register",
+                return_value=search_result,
+            ),
+            mock.patch(
+                "eodag.plugins.download.http.requests.get", autospec=True
+            ) as mock_get,
+            mock.patch(
+                "eodag.plugins.download.http.requests.head", autospec=True
+            ) as mock_head,
+        ):
+            mock_get.return_value.__enter__.return_value.iter_content.return_value = (
+                iter([b"data"])
+            )
+            mock_get.return_value.__enter__.return_value.headers = {}
+            mock_head.return_value.headers = {"Content-Length": "4"}
+
+            exit_code, output, error = self.eodag_command(
+                [
+                    "download",
+                    "--search-results",
+                    search_results_path,
+                    "--asset",
+                    "foo",
+                    "--output-dir",
+                    output_dir,
+                ],
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertTrue(os.path.isfile(os.path.join(output_dir, "dummy_product", "x")))
+        self.assertFalse(os.path.exists(os.path.join(output_dir, "dummy_product", "y")))
+        self.assertTrue(mock_get.call_args_list)
+        self.assertTrue(
+            all(call.args[0] == selected_href for call in mock_get.call_args_list)
+        )
+        self.assertTrue(mock_head.call_args_list)
+        self.assertTrue(
+            all(call.args[0] == selected_href for call in mock_head.call_args_list)
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_roles(self, dag):
+        """Calling eodag download with repeated --roles must forward them to download_all"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult([])
+        dag.return_value.download_all.return_value = ["/fake_path"]
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--roles",
+                "data",
+                "--roles",
+                "data-mask",
+            ],
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertEqual("Downloaded /fake_path\n", output)
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY,
+            output_dir=None,
+            executor=mock.ANY,
+            roles=["data", "data-mask"],
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_download_asset_and_roles(self, dag):
+        """Calling eodag download with --asset and --roles must forward both to download_all"""
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
+        dag.return_value.deserialize_and_register.return_value = SearchResult([])
+        dag.return_value.download_all.return_value = ["/fake_path"]
+
+        exit_code, output, error = self.eodag_command(
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--asset",
+                "foo",
+                "--roles",
+                "data",
+            ],
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        dag.return_value.download_all.assert_called_once_with(
+            mock.ANY,
+            output_dir=None,
+            executor=mock.ANY,
+            asset="foo",
+            roles=["data"],
+        )
+
+    def test_eodag_download_roles_selection(self):
+        """The CLI must download only assets having the roles given with --roles."""
+        dag = EODataAccessGateway()
+        product = EOProduct(
+            "sara",
+            dict(geometry="POINT (0 0)", title="dummy_product", id="dummy"),
+        )
+        selected_href = "http://foo/x"
+        unselected_href = "http://bar/y"
+        product.assets.update(
+            {
+                "foo": {"href": selected_href, "roles": ["data"]},
+                "bar": {"href": unselected_href, "roles": ["thumbnail"]},
+            }
+        )
+        product.register_downloader(
+            dag._plugins_manager.get_download_plugin(product), None
+        )
+        product.location = product.remote_location = "http://somewhere"
+        search_result = SearchResult([product], 1)
+        search_results_path = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result.geojson"
+        )
+        output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
+
+        with (
+            mock.patch.object(
+                EODataAccessGateway,
+                "deserialize_and_register",
+                return_value=search_result,
+            ),
+            mock.patch(
+                "eodag.plugins.download.http.requests.get", autospec=True
+            ) as mock_get,
+            mock.patch(
+                "eodag.plugins.download.http.requests.head", autospec=True
+            ) as mock_head,
+        ):
+            mock_get.return_value.__enter__.return_value.iter_content.return_value = (
+                iter([b"data"])
+            )
+            mock_get.return_value.__enter__.return_value.headers = {}
+            mock_head.return_value.headers = {"Content-Length": "4"}
+
+            exit_code, output, error = self.eodag_command(
+                [
+                    "download",
+                    "--search-results",
+                    search_results_path,
+                    "--roles",
+                    "data",
+                    "--output-dir",
+                    output_dir,
+                ],
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertTrue(os.path.isfile(os.path.join(output_dir, "dummy_product", "x")))
+        self.assertFalse(os.path.exists(os.path.join(output_dir, "dummy_product", "y")))
+        self.assertTrue(mock_get.call_args_list)
+        self.assertTrue(
+            all(call.args[0] == selected_href for call in mock_get.call_args_list)
+        )
+        self.assertTrue(mock_head.call_args_list)
+        self.assertTrue(
+            all(call.args[0] == selected_href for call in mock_head.call_args_list)
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_download_stac_items(self, dag):
         """Calling eodag download with --stac-item argument"""
         fake_result = SearchResult([mock.MagicMock() * 2], 2)
@@ -1296,7 +1599,7 @@ class TestEodagCli(unittest.TestCase):
         default_conf_file = str(
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
-        exit_code, _, error = self.eodag_command(
+        exit_code, output, error = self.eodag_command(
             [
                 "download",
                 "--search-results",
@@ -1306,7 +1609,11 @@ class TestEodagCli(unittest.TestCase):
             ]
         )
         self.assertEqual(exit_code, 1)
-        self.assertIsInstance(error, MisconfiguredError)
+        self.assertIsInstance(error, SystemExit)
+        self.assertIn(
+            "Error: The following credentials are missing for provider cop_dataspace",
+            output,
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase._get_oidc_endpoints",
@@ -1329,7 +1636,7 @@ class TestEodagCli(unittest.TestCase):
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
-        exit_code, _, error = self.eodag_command(
+        exit_code, output, error = self.eodag_command(
             ["download", "--search-results", search_results_path],
             # We override the default (empty) credentials with dummy values not
             # to raise a MisconfiguredError.
@@ -1339,7 +1646,10 @@ class TestEodagCli(unittest.TestCase):
             },
         )
         self.assertEqual(exit_code, 1)
-        self.assertIsInstance(error, AuthenticationError)
+        self.assertIsInstance(error, SystemExit)
+        self.assertIn(
+            "Error: Something went wrong while trying to get access token", output
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.get", autospec=True

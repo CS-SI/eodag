@@ -20,14 +20,18 @@ from __future__ import annotations
 import os
 import signal
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, Optional, Union
+from functools import partial
+from typing import TYPE_CHECKING, ClassVar, Iterable, Iterator, Mapping
 
 if TYPE_CHECKING:
+    from types import FrameType
+
     from requests.structures import CaseInsensitiveDict
 
 
-def _new_case_insensitive_dict(headers: Optional[Mapping[str, str]] = None):
+def _new_case_insensitive_dict(headers: Mapping[str, str] | None = None):
     """Create headers mapping with a local import to avoid import-time overhead."""
     from requests.structures import CaseInsensitiveDict
 
@@ -40,7 +44,7 @@ class StreamResponseContent(Iterable[bytes]):
     usually expect BytesIO object, not Iterable[bytes]
     """
 
-    __initialized: bool = False
+    __signal_handlers: ClassVar[dict[int, Callable[[int, FrameType | None], None]]] = {}
     __instances: list["StreamResponseContent"] = []
 
     @staticmethod
@@ -49,29 +53,52 @@ class StreamResponseContent(Iterable[bytes]):
 
         This must be called explicitly from the main thread (typically during a
         server's startup) because :func:`signal.signal` only works there. It is
-        a no-op if the handlers are already installed or if it is called outside
-        of the main thread.
+        a no-op if the handlers are still installed or if it is called outside
+        of the main thread. Existing handlers are called after stream interruption
+        so server shutdown and default signal behavior are preserved. Call this
+        after the server registers its handlers, including on subsequent startups.
 
-        :returns: ``True`` if the handlers were installed, ``False`` otherwise.
+        :returns: ``True`` if any handler was installed, ``False`` otherwise.
         """
-        if StreamResponseContent.__initialized:
-            return False
         if threading.current_thread() is not threading.main_thread():
             return False
 
-        StreamResponseContent.__initialized = True
+        installed = False
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            previous_handler = signal.getsignal(sig)
+            if (
+                sig in StreamResponseContent.__signal_handlers
+                and previous_handler is StreamResponseContent.__signal_handlers[sig]
+            ):
+                continue
+            handler = partial(StreamResponseContent.__handle_signal, previous_handler)
+            signal.signal(sig, handler)
+            StreamResponseContent.__signal_handlers[sig] = handler
+            installed = True
+        return installed
 
-        # Catch end of main process to internal status
-        def signal_handler(sig, frame):
-            for stream in StreamResponseContent.__instances:
+    @staticmethod
+    def __handle_signal(
+        previous_handler: Callable[[int, FrameType | None], object] | int | None,
+        sig: int,
+        frame: FrameType | None,
+    ) -> None:
+        streams, StreamResponseContent.__instances = (
+            StreamResponseContent.__instances,
+            [],
+        )
+        try:
+            for stream in streams:
                 stream.interrupt()
-            StreamResponseContent.__instances = []
+        finally:
+            # A failed interruption must not prevent the server from shutting down.
+            if callable(previous_handler):
+                previous_handler(sig, frame)
+            elif previous_handler is None or previous_handler == signal.SIG_DFL:
+                signal.signal(sig, signal.SIG_DFL)
+                os.kill(os.getpid(), sig)
 
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-        return True
-
-    def __init__(self, content: Union[Iterable[bytes], bytes]):
+    def __init__(self, content: Iterable[bytes] | bytes):
         self.buffer: bytes = b""
         self.interrupted: bool = False
         StreamResponseContent.__instances.append(self)
@@ -87,12 +114,11 @@ class StreamResponseContent(Iterable[bytes]):
             self.interrupted = True
 
     def read(self, size=-1) -> bytes:
-
         # Fill the buffer with enough bytes to fulfil the request.
         while not self.interrupted and (size < 0 or len(self.buffer) < size):
             try:
                 chunk = next(self.iterator)
-                self.buffer = self.buffer + bytes(chunk)
+                self.buffer = self.buffer + chunk
             except StopIteration:
                 break
 
@@ -105,7 +131,7 @@ class StreamResponseContent(Iterable[bytes]):
         else:
             result, self.buffer = self.buffer[:size], self.buffer[size:]
 
-        return bytes(result)
+        return result
 
 
 @dataclass
@@ -113,24 +139,24 @@ class StreamResponse:
     """Represents a streaming response"""
 
     content: StreamResponseContent
-    _filename: Optional[str] = field(default=None, repr=False, init=False)
-    _size: Optional[int] = field(default=None, repr=False, init=False)
+    _filename: str | None = field(default=None, repr=False, init=False)
+    _size: int | None = field(default=None, repr=False, init=False)
     headers: CaseInsensitiveDict[str] = field(
         default_factory=_new_case_insensitive_dict
     )
-    media_type: Optional[str] = None
-    status_code: Optional[int] = None
-    arcname: Optional[str] = None
+    media_type: str | None = None
+    status_code: int | None = None
+    arcname: str | None = None
 
     def __init__(
         self,
-        content: Union[Iterable[bytes], bytes],
-        filename: Optional[str] = None,
-        size: Optional[int] = None,
-        headers: Optional[Mapping[str, str]] = None,
-        media_type: Optional[str] = None,
-        status_code: Optional[int] = None,
-        arcname: Optional[str] = None,
+        content: Iterable[bytes] | bytes,
+        filename: str | None = None,
+        size: int | None = None,
+        headers: Mapping[str, str] | None = None,
+        media_type: str | None = None,
+        status_code: int | None = None,
+        arcname: str | None = None,
     ):
         self.content = StreamResponseContent(content)
         self.headers = _new_case_insensitive_dict(headers)
@@ -143,7 +169,7 @@ class StreamResponse:
 
     # filename handling
     @property
-    def filename(self) -> Optional[str]:
+    def filename(self) -> str | None:
         """Get the filename for the streaming response.
 
         :returns: The filename, or None if not set
@@ -151,7 +177,7 @@ class StreamResponse:
         return self._filename
 
     @filename.setter
-    def filename(self, value: Optional[str]) -> None:
+    def filename(self, value: str | None) -> None:
         """Set the filename and update the Content-Disposition header accordingly.
 
         :param value: The filename to set, or None to clear it
@@ -167,7 +193,7 @@ class StreamResponse:
 
     # size handling
     @property
-    def size(self) -> Optional[int]:
+    def size(self) -> int | None:
         """Get the content size for the streaming response.
 
         :returns: The content size in bytes, or None if not set
@@ -175,7 +201,7 @@ class StreamResponse:
         return self._size
 
     @size.setter
-    def size(self, value: Optional[int]) -> None:
+    def size(self, value: int | None) -> None:
         """Set the content size and update the Content-Length header accordingly.
 
         :param value: The content size in bytes, or None to clear it

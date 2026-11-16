@@ -17,14 +17,13 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 def check_ipython() -> bool:
     """Check if called from ipython"""
     try:
-        __IPYTHON__  # type: ignore[name-defined]
-        return True
+        return __IPYTHON__ is not None  # type: ignore[name-defined]
     except NameError:
         return False
 
@@ -47,7 +46,7 @@ class NotebookWidgets:
     """Display / handle ipython widgets"""
 
     is_notebook: bool = False
-    html_box: Optional[Any] = None
+    html_box: Any | None = None
     html_box_shown: bool = False
     display: Any = None
 
@@ -66,10 +65,10 @@ class NotebookWidgets:
     def display_html(self, html_value: str) -> None:
         """Display HTML message"""
 
-        if not self.is_notebook:
+        if not self.is_notebook or self.html_box is None:
             return None
 
-        setattr(self.html_box, "data", html_value)
+        self.html_box.data = html_value
 
         if not self.html_box_shown:
             self._html_handle = self.display(self.html_box, display_id=True)
@@ -80,8 +79,8 @@ class NotebookWidgets:
     def clear_html(self) -> None:
         """Clear HTML message"""
 
-        if not self.is_notebook:
+        if not self.is_notebook or self.html_box is None:
             return None
 
-        setattr(self.html_box, "data", "")
+        self.html_box.data = ""
         self._update_display(self.html_box, display_id=self._html_handle.display_id)

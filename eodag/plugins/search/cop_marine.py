@@ -22,12 +22,13 @@ import datetime as dt
 import logging
 import os
 import re
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlsplit
 
 import boto3
 import botocore
 import requests
+from botocore.config import Config
 from dateutil.tz import tzutc
 from dateutil.utils import today
 
@@ -47,7 +48,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.search.cop_marine")
 
 
-def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[dt.datetime]:
+def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> dt.datetime | None:
     year = date_str[:4]
     month = date_str[4:6]
     if len(date_str) > 6:
@@ -70,7 +71,7 @@ def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[dt.datetim
 
 def _get_dates_from_dataset_data(
     dataset_item: dict[str, Any],
-) -> Optional[dict[str, str]]:
+) -> dict[str, str] | None:
     dates = {}
     if "start_datetime" in dataset_item["properties"]:
         dates["start"] = dataset_item["properties"]["start_datetime"]
@@ -87,7 +88,7 @@ def _get_s3_client(endpoint_url: str) -> S3Client:
     s3_session = boto3.Session()
     return s3_session.client(
         "s3",
-        config=botocore.config.Config(
+        config=Config(
             # Configures to use subdomain/virtual calling format.
             s3={"addressing_style": "virtual"},
             signature_version=botocore.UNSIGNED,
@@ -156,7 +157,7 @@ class CopMarineSearch(StaticStacSearch):
         except requests.RequestException as exc:
             if exc.errno == 404:
                 logger.error("product %s not found", collection)
-                raise UnsupportedCollection(collection)
+                raise UnsupportedCollection(collection) from exc
             logger.error("data for product %s could not be fetched", collection)
             raise RequestError.from_error(
                 exc, f"data for product {collection} could not be fetched"
@@ -185,9 +186,11 @@ class CopMarineSearch(StaticStacSearch):
         dataset_item: dict[str, Any],
         collection_dict: dict[str, Any],
         use_dataset_dates: bool = False,
-        product_id: Optional[str] = None,
-        asset_properties: dict = {},
-    ) -> Optional[EOProduct]:
+        product_id: str | None = None,
+        asset_properties: dict | None = None,
+    ) -> EOProduct | None:
+        if asset_properties is None:
+            asset_properties = {}
 
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
         if product_id and product_id != item_id:
@@ -275,9 +278,9 @@ class CopMarineSearch(StaticStacSearch):
         product._normalize_bands()
         return product
 
-    def query(
+    def query(  # noqa: C901
         self,
-        prep: PreparedSearch = PreparedSearch(),
+        prep: PreparedSearch | None = None,
         **kwargs: Any,
     ) -> SearchResult:
         """
@@ -286,8 +289,11 @@ class CopMarineSearch(StaticStacSearch):
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
+        if prep is None:
+            prep = PreparedSearch()
+
         limit = prep.limit
-        token_value = getattr(prep, "next_page_token") or prep.page
+        token_value = prep.next_page_token or prep.page
 
         # only return 1 page if pagination is disabled
         if token_value is None or limit is None or int(token_value) > 1 and limit <= 0:
@@ -493,7 +499,6 @@ class CopMarineSearch(StaticStacSearch):
                             continue
 
                         if len(products) < limit or limit < 0:
-
                             # Asset properties
                             asset_properties = {}
 
@@ -509,7 +514,7 @@ class CopMarineSearch(StaticStacSearch):
 
                             size = obj.get("Size")
                             if size is not None:
-                                asset_properties["file:size"] = int(size)
+                                asset_properties["file:size"] = size
 
                             owner_id = obj.get("Owner", {}).get("ID")
                             if owner_id is not None:
