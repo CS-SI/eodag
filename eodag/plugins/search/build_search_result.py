@@ -810,7 +810,7 @@ class ECMWFSearch(PostJsonSearch):
             )
             if is_date:
                 sep = re.compile(r"/to/|/")
-                filter_v = [i for v in filter_v for i in sep.split(str(v))]
+                filter_v = [i for v in filter_v for i in sep.split(v)]
 
             # special handling for time 0000 converted to 0 by pre-formating with metadata_mapping
             if keyword.split(":")[-1] == "time":
@@ -1033,7 +1033,7 @@ class ECMWFSearch(PostJsonSearch):
             queryables[formatted_param] = json_field_definition_to_python(
                 {"type": "string", "title": name, "enum": values},
                 default_value=defaults.get(name),
-                required=bool(formatted_alias in required),
+                required=formatted_alias in required,
                 validation_alias=AliasChoices(formatted_alias, name),
                 serialization_alias=formatted_alias,
             )

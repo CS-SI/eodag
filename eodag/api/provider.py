@@ -34,6 +34,7 @@ from typing import (
 )
 
 import yaml
+from yaml.parser import ParserError
 
 from eodag.api.collection import Collection
 from eodag.api.product.metadata_mapping import (
@@ -1010,7 +1011,7 @@ class ProvidersDict(UserDict[str, Provider]):
                 config_in_file = yaml.safe_load(fh)
                 if config_in_file is None:
                     return
-            except yaml.parser.ParserError as e:
+            except ParserError as e:
                 logger.error("Unable to load configuration file %s", file_path)
                 raise e
 

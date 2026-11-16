@@ -86,7 +86,7 @@ class S3SeekableFile(io.RawIOBase):
         self._client = s3_client
         if size is None:
             resp = s3_client.head_object(Bucket=bucket_name, Key=key_name)
-            size = int(resp["ContentLength"])
+            size = resp["ContentLength"]
         self._size = size
         self._pos = 0
 
@@ -792,7 +792,7 @@ def open_s3_zipped_object(
         else:
             if zip_size is None:
                 response = s3_client.head_object(Bucket=bucket_name, Key=key_name)
-                zip_size = int(response["ContentLength"])
+                zip_size = response["ContentLength"]
             data = fetch_range(bucket_name, key_name, 0, zip_size - 1, s3_client)
             return ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile as e:

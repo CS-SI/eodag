@@ -917,9 +917,7 @@ class QueryStringSearch(Search):
         token = getattr(prep, "next_page_token", None)
         limit = prep.limit
         count = prep.count
-        next_page_token_key = str(
-            self.config.pagination.get("next_page_token_key", "page")
-        )
+        next_page_token_key = self.config.pagination.get("next_page_token_key", "page")
 
         urls = []
         total_results = 0 if count else None
@@ -1289,7 +1287,7 @@ class QueryStringSearch(Search):
             # skip as next_page_token_key
             elif next_page_token is not None and next_page_token_key == "skip":
                 raw_search_results.next_page_token = str(
-                    int(next_page_token) + int(prep.limit or DEFAULT_LIMIT)
+                    int(next_page_token) + (prep.limit or DEFAULT_LIMIT)
                 )
             else:
                 raw_search_results.next_page_token = None
@@ -1514,9 +1512,7 @@ class QueryStringSearch(Search):
                 urllib_response = urlopen(urllib_req, timeout=timeout, context=ssl_ctx)
                 # build Response
                 adapter = HTTPAdapter()
-                response = cast(
-                    Response, adapter.build_response(req_prep, urllib_response)
-                )
+                response = adapter.build_response(req_prep, urllib_response)
             else:
                 if info_message:
                     logger.info(info_message)

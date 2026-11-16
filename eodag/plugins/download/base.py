@@ -591,7 +591,8 @@ class Download(PluginTopic):
         )
 
         with progress_callback as bar:
-            while "Loop until all products are download or timeout is reached":
+            # Loop until all products are download or timeout is reached
+            while True:
                 # try downloading each product in parallel before retry
 
                 # Download products in batches to handle nested tasks to download assets in parallel.
@@ -713,7 +714,8 @@ class Download(PluginTopic):
                 # another output for notebooks
                 nb_info = NotebookWidgets()
 
-                while "Loop until products download succeeds or timeout is reached":
+                # Loop until all products are download or timeout is reached
+                while True:
                     datetime_now = dt.datetime.now()
 
                     if datetime_now >= product.next_try:

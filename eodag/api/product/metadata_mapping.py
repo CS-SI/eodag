@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, cast
 import geojson
 import orjson
 import pyproj
-import shapely
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzutc
 from jsonpath_ng.jsonpath import Child, JSONPath
@@ -183,7 +182,7 @@ def get_metadata_path(
             if converters:
                 return path[1 + len(field) + len(SEP) : -1], field
     except TypeError as e:
-        logger.error("Could not match regex on metadata path '%s'" % str(path))
+        logger.error("Could not match regex on metadata path '%s'" % path)
         raise e
     return None, path
 
@@ -431,9 +430,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noq
 
         @staticmethod
         def convert_to_rounded_wkt(value: BaseGeometry) -> str:
-            wkt_value = cast(
-                str, wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
-            )
+            wkt_value = wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
             # If needed, simplify WKT to prevent too long request failure
             tolerance = 0.1
             while len(wkt_value) > WKT_MAX_LEN and tolerance <= 1:
@@ -442,12 +439,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noq
                     len(wkt_value),
                     tolerance,
                 )
-                wkt_value = cast(
-                    str,
-                    wkt.dumps(
-                        value.simplify(tolerance),
-                        rounding_precision=COORDS_ROUNDING_PRECISION,
-                    ),
+                wkt_value = wkt.dumps(
+                    value.simplify(tolerance),
+                    rounding_precision=COORDS_ROUNDING_PRECISION,
                 )
                 tolerance += 0.1
             if len(wkt_value) > WKT_MAX_LEN and tolerance > 1:
@@ -494,7 +488,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noq
         @staticmethod
         def convert_to_nwse_bounds(input_geom: BaseGeometry) -> list[float]:
             if isinstance(input_geom, str):
-                input_geom = shapely.wkt.loads(input_geom)
+                input_geom = wkt.loads(input_geom)
             return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
 
         @staticmethod
@@ -645,7 +639,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noq
             return ""
 
         @staticmethod
-        def convert_get_group_name(string: str, pattern: str) -> str:
+        def convert_get_group_name(string: Any, pattern: str) -> str:
             sanitized_pattern = pattern.replace(" ", "_SPACE_")
             try:
                 match = re.search(sanitized_pattern, str(string))

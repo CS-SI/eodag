@@ -76,7 +76,7 @@ class SearchArgs(BaseModel):
         """Validate geom"""
         # GeoJSON geometry
         if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES:  # type: ignore
-            return cast(BaseGeometry, shape(v))
+            return shape(v)
 
         # Bounding Box
         if isinstance(v, (list, tuple, dict)):

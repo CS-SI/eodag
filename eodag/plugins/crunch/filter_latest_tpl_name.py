@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import ValidationError
@@ -69,10 +69,7 @@ class FilterLatestByName(Crunch):
         processed: list[str] = []
         filtered: list[EOProduct] = []
         for product in products:
-            match = cast(
-                re.Match[Any] | None,
-                self.name_pattern.match(product.properties["title"]),
-            )
+            match = self.name_pattern.match(product.properties["title"])
             if match:
                 tileid: str = match.group("tileid")
                 if tileid not in processed:

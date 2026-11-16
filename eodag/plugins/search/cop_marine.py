@@ -28,6 +28,7 @@ from urllib.parse import urlsplit
 import boto3
 import botocore
 import requests
+from botocore.config import Config
 from dateutil.tz import tzutc
 from dateutil.utils import today
 
@@ -87,7 +88,7 @@ def _get_s3_client(endpoint_url: str) -> S3Client:
     s3_session = boto3.Session()
     return s3_session.client(
         "s3",
-        config=botocore.config.Config(
+        config=Config(
             # Configures to use subdomain/virtual calling format.
             s3={"addressing_style": "virtual"},
             signature_version=botocore.UNSIGNED,
@@ -513,7 +514,7 @@ class CopMarineSearch(StaticStacSearch):
 
                             size = obj.get("Size")
                             if size is not None:
-                                asset_properties["file:size"] = int(size)
+                                asset_properties["file:size"] = size
 
                             owner_id = obj.get("Owner", {}).get("ID")
                             if owner_id is not None:

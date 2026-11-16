@@ -118,7 +118,7 @@ class StreamResponseContent(Iterable[bytes]):
         while not self.interrupted and (size < 0 or len(self.buffer) < size):
             try:
                 chunk = next(self.iterator)
-                self.buffer = self.buffer + bytes(chunk)
+                self.buffer = self.buffer + chunk
             except StopIteration:
                 break
 
@@ -131,7 +131,7 @@ class StreamResponseContent(Iterable[bytes]):
         else:
             result, self.buffer = self.buffer[:size], self.buffer[size:]
 
-        return bytes(result)
+        return result
 
 
 @dataclass

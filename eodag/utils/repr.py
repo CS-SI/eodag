@@ -157,7 +157,7 @@ def remove_class_repr(type_repr: str) -> str:
     return re.sub(r"<class '([\w.]+)'>", r"\1", type_repr)
 
 
-def shorter_type_repr(long_type: str) -> str:
+def shorter_type_repr(long_type: object) -> str:
     """Shorten long type representation.
 
     :param long_type: long type representation
@@ -168,7 +168,7 @@ def shorter_type_repr(long_type: str) -> str:
     "Literal['foo', ...]"
     """
     # shorten lists
-    shorter = re.sub(r",[^\[^\]]+\]", ", ...]", str(long_type))
+    shorter = re.sub(r",[^\[ ^\]]+\]", ", ...]", str(long_type))
     # remove class prefix
     shorter = remove_class_repr(shorter)
     # remove parent objects
