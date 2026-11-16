@@ -6,6 +6,13 @@ Release history
 v4.11.0 (2026-11-16)
 ====================
 
+Features
+--------
+
+* **cli**: Download single asset through CLI (`#2368`_, `14bf40d`_)
+
+* **core**: Download only assets matching given roles (`#2442`_, `0a39671`_)
+
 Bug Fixes
 ---------
 
@@ -34,13 +41,6 @@ Chores
 ------
 
 * **lint**: Migrate linting and formatting to ruff (`#2436`_, `d739e14`_)
-
-Features
---------
-
-* **cli**: Download single asset through CLI (`#2368`_, `14bf40d`_)
-
-* **core**: Download only assets matching given roles (`#2442`_, `0a39671`_)
 
 Refactoring
 -----------
