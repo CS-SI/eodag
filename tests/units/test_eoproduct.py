@@ -43,6 +43,7 @@ from tests.context import (
     EOProduct,
     HTTPHeaderAuth,
     HttpQueryStringAuth,
+    NotAvailableError,
     PluginConfig,
     ProgressCallback,
     mock,
@@ -765,6 +766,42 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(product.assets.get_values("foo")[0]["href"], "foo.href")
         self.assertEqual(len(product.assets.get_values("foo?o,o")), 1)
         self.assertEqual(product.assets.get_values("foo?o,o")[0]["href"], "foooo.href")
+
+    def test_eoproduct_assets_get_values_roles(self):
+        """eoproduct.assets.get_values must filter assets on their roles"""
+        product = self._dummy_product()
+        product.assets.update(
+            {
+                "data_a": {"href": "a.href", "roles": ["data"]},
+                "data_b": {"href": "b.href", "roles": ["data", "visual"]},
+                "mask": {"href": "mask.href", "roles": ["data-mask"]},
+                "thumb": {"href": "thumb.href", "roles": ["thumbnail"]},
+                "no_roles": {"href": "no_roles.href"},
+                "empty_roles": {"href": "empty_roles.href", "roles": []},
+            }
+        )
+
+        def hrefs(**kwargs):
+            return sorted(a["href"] for a in product.assets.get_values(**kwargs))
+
+        # an asset is kept as soon as it has one of the given roles
+        self.assertEqual(hrefs(roles=["data"]), ["a.href", "b.href"])
+        self.assertEqual(hrefs(roles=["visual", "data-mask"]), ["b.href", "mask.href"])
+        # assets without roles are never selected by a roles filter
+        self.assertEqual(hrefs(roles=["thumbnail"]), ["thumb.href"])
+        # the roles filter is combined with the key filter: intersection
+        self.assertEqual(hrefs(asset_filter="data_.*", roles=["visual"]), ["b.href"])
+        self.assertEqual(hrefs(asset_filter="mask", roles=["data-mask"]), ["mask.href"])
+        # roles=None keeps the former behaviour
+        self.assertEqual(len(product.assets.get_values(roles=None)), 6)
+        self.assertEqual(len(product.assets.get_values("data_.*", roles=None)), 2)
+
+        # nothing matches
+        with self.assertRaisesRegex(NotAvailableError, "unknown"):
+            product.assets.get_values(roles=["unknown"])
+        # nothing matches both filters
+        with self.assertRaisesRegex(NotAvailableError, "visual"):
+            product.assets.get_values(asset_filter="mask", roles=["visual"])
 
     def test_eoproduct_sorted_properties(self):
         """eoproduct.properties must be sorted"""

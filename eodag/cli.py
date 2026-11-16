@@ -675,6 +675,12 @@ Examples:
     help="Regex filter to identify assets to download instead of the full product",
 )
 @click.option(
+    "--roles",
+    multiple=True,
+    help="Only download the assets having at least one of these roles, combined with --asset if given "
+    "(multiple values accepted)",
+)
+@click.option(
     "--output-dir",
     type=click.Path(dir_okay=True, file_okay=False),
     help="Products or quicklooks download directory [default: local temporary directory]",
@@ -718,6 +724,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     output_dir = kwargs.pop("output_dir")
     asset = kwargs.pop("asset")
+    roles = kwargs.pop("roles")
     get_quicklooks = kwargs.pop("quicklooks")
 
     if get_quicklooks:
@@ -739,7 +746,9 @@ def download(ctx: Context, **kwargs: Any) -> None:
     else:
         # Download products
         executor = ThreadPoolExecutor(max_workers=kwargs.pop("max_workers"))
-        download_kwargs = {"asset": asset} if asset is not None else {}
+        download_kwargs: dict[str, Any] = {"asset": asset} if asset is not None else {}
+        if roles:
+            download_kwargs["roles"] = list(roles)
         try:
             downloaded_files = satim_api.download_all(
                 search_results,
@@ -748,7 +757,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
                 **download_kwargs,
             )
         except NotAvailableError as e:
-            # download_all checks the asset filter before attempting any download
+            # download_all checks the asset and roles filters before attempting any download
             click.echo(f"Error: {e}")
             sys.exit(1)
         if downloaded_files and len(downloaded_files) > 0:
