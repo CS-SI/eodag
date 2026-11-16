@@ -349,7 +349,7 @@ wekeo_main:
           eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:HRL:TCF"}}'
     COP_DEM_GLO30_DGED:
       _collection: EO:ESA:DAT:COP-DEM
-      product:type: DGE_30
+      product:type: COP-DEM_GLO-30-DGED
       metadata_mapping:
         id:
           - |
@@ -358,21 +358,24 @@ wekeo_main:
               "enddate": "{id#replace_str(r'^.*_(\d\d\d\d)(\d\d)(\d\d)T\d\d\d\d\d\d_.*$',r'\1-\2-\3T23%3A59%3A59Z')}"
             }}
           - '{$.id#remove_extension}'
-        gsd:
-          - '{{"spatialResolution": "{gsd}"}}'
-          - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
+        grid:code:
+          - '{{"gridId": "{grid:code#replace_str(r"^CDEM-([NS]\d\d)([WE]\d\d\d)$", r"\1_\2")}"}}'
+          - '{$.properties.metadata.gridId#replace_str(r"^([NS]\d\d)_([WE]\d\d\d)$", r"CDEM-\1\2")}'
+        product:type:
+          - '{{"datasetFull": "{product:type}"}}'
+          - '$.properties.metadata.datasetFull'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.DEM", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO30_DTED:
       _collection: EO:ESA:DAT:COP-DEM
-      product:type: DTE_30
+      product:type: COP-DEM_GLO-30-DTED
       metadata_mapping_from_product: COP_DEM_GLO30_DGED
     COP_DEM_GLO90_DGED:
       _collection: EO:ESA:DAT:COP-DEM
-      product:type: DGE_90
+      product:type: COP-DEM_GLO-90-DGED
       metadata_mapping_from_product: COP_DEM_GLO30_DGED
     COP_DEM_GLO90_DTED:
       _collection: EO:ESA:DAT:COP-DEM
-      product:type: DTE_90
+      product:type: COP-DEM_GLO-90-DTED
       metadata_mapping_from_product: COP_DEM_GLO30_DGED
     CLMS_GLO_NDVI_333M:
       _collection: EO:JRC:DAT:CLMS
