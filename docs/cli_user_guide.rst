@@ -25,6 +25,9 @@ Then you can start playing with it:
         eodag -vv list
         eodag -vvv list
 
+* When a command fails, eodag prints a one-line error message and exits with a non-zero status. Use the maximum
+  verbosity level (``-vvv``) to also print the full Python traceback.
+
 Search
 ------
 

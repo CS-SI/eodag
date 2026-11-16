@@ -29,7 +29,6 @@ from typing import Annotated, Literal, Tuple
 
 import click
 import responses
-import shapely
 import yaml
 from click.testing import CliRunner
 from packaging import version
@@ -44,10 +43,8 @@ from eodag.utils.exceptions import UnsupportedProvider
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_LIMIT,
-    AuthenticationError,
     EODataAccessGateway,
     EOProduct,
-    MisconfiguredError,
     NoMatchingCollection,
     NotAvailableError,
     download,
@@ -152,6 +149,48 @@ class TestEodagCli(unittest.TestCase):
         self.assertIsNone(error)
         self.assertGreater(version.parse(version_str), version.parse("2.0.0"))
 
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_error_without_traceback(self, dag):
+        """A command error should be printed as a one-line message, without traceback"""
+        for verbosity, side_effect, expected_output in (
+            (
+                [],
+                UnsupportedProvider("foo: provider is not recognised by eodag"),
+                "Error: foo: provider is not recognised by eodag\n",
+            ),
+            (
+                ["-vv"],
+                UnsupportedProvider("foo: provider is not recognised by eodag"),
+                "Error: foo: provider is not recognised by eodag\n",
+            ),
+            (
+                [],
+                KeyError("bar"),
+                "Error: KeyError: 'bar'\n",
+            ),
+        ):
+            with self.subTest(verbosity=verbosity, side_effect=side_effect):
+                dag.return_value.search.side_effect = side_effect
+                exit_code, output, error = self.eodag_command(
+                    verbosity + ["search", "-p", "foo", "-c", "bar"]
+                )
+                self.assertEqual(exit_code, 1)
+                self.assertIsInstance(error, SystemExit)
+                self.assertEqual(output, expected_output)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_error_with_traceback_max_verbosity(self, dag):
+        """A command error should be raised with its traceback at maximum verbosity"""
+        dag.return_value.search.side_effect = UnsupportedProvider(
+            "foo: provider is not recognised by eodag"
+        )
+        exit_code, output, error = self.eodag_command(
+            ["-vvv", "search", "-p", "foo", "-c", "bar"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, UnsupportedProvider)
+        self.assertNotIn("Error: foo", output)
+
     def test_eodag_search_without_args(self):
         """Calling eodag search subcommand without arguments should print help message and return error code"""  # noqa
         exit_code, output, error = self.eodag_command(["search"])
@@ -221,7 +260,10 @@ class TestEodagCli(unittest.TestCase):
                     expect_output in output or expect_output.replace("'", '"')
                 )
                 self.assertNotEqual(exit_code, 0)
-                self.assertIsInstance(error, UnsupportedProvider)
+                self.assertIsInstance(error, SystemExit)
+                self.assertIn(
+                    "Error: whatever: provider is not recognised by eodag", output
+                )
 
     def test_eodag_search_bbox_invalid(self):
         """Calling eodag search with -b | --bbox set with less than 4 params should print error message"""  # noqa
@@ -271,12 +313,13 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_geom_wkt_invalid(self):
         """Calling eodag search with -g | --geom set with invalit WKT geometry string"""  # noqa
         with self.user_conf() as conf_file:
-            exit_code, _, error = self.eodag_command(
+            exit_code, output, error = self.eodag_command(
                 ["search", "--conf", conf_file, "-c", "whatever", "-g", "not a wkt"]
             )
             self.assertNotEqual(exit_code, 0)
+            self.assertIsInstance(error, SystemExit)
             # GEOSException for shapely >= 2.0
-            self.assertTrue(isinstance(error, shapely.errors.GEOSException))
+            self.assertIn("Error: GEOSException: ", output)
 
     @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_geom_wkt_valid(self, dag):
@@ -1422,7 +1465,7 @@ class TestEodagCli(unittest.TestCase):
         default_conf_file = str(
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
-        exit_code, _, error = self.eodag_command(
+        exit_code, output, error = self.eodag_command(
             [
                 "download",
                 "--search-results",
@@ -1432,7 +1475,11 @@ class TestEodagCli(unittest.TestCase):
             ]
         )
         self.assertEqual(exit_code, 1)
-        self.assertIsInstance(error, MisconfiguredError)
+        self.assertIsInstance(error, SystemExit)
+        self.assertIn(
+            "Error: The following credentials are missing for provider cop_dataspace",
+            output,
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase._get_oidc_endpoints",
@@ -1455,7 +1502,7 @@ class TestEodagCli(unittest.TestCase):
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
-        exit_code, _, error = self.eodag_command(
+        exit_code, output, error = self.eodag_command(
             ["download", "--search-results", search_results_path],
             # We override the default (empty) credentials with dummy values not
             # to raise a MisconfiguredError.
@@ -1465,7 +1512,10 @@ class TestEodagCli(unittest.TestCase):
             },
         )
         self.assertEqual(exit_code, 1)
-        self.assertIsInstance(error, AuthenticationError)
+        self.assertIsInstance(error, SystemExit)
+        self.assertIn(
+            "Error: Something went wrong while trying to get access token", output
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
