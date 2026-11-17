@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -42,12 +41,12 @@ from eodag.utils.recording.errors import (
 from eodag.utils.recording.recorder import EodagRecorder, RecordMode
 
 __all__ = [
-    "RecordMode",
-    "EodagRecorder",
-    "EodagRecordingError",
-    "NoMatchingRecordError",
-    "DuplicateKeyError",
     "CassetteFormatError",
+    "DuplicateKeyError",
+    "EodagRecorder",
     "EodagRecordingConfigError",
+    "EodagRecordingError",
     "EodagRecordingWarning",
+    "NoMatchingRecordError",
+    "RecordMode",
 ]

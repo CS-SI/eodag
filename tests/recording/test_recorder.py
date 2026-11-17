@@ -89,7 +89,7 @@ def test_search_roundtrip(gateway, cassette, tmp_path):
 
     assert len(replayed) == len(real) == 3
     assert replayed.number_matched == 6
-    for a, b in zip(real, replayed):
+    for a, b in zip(real, replayed, strict=False):
         assert a.properties["id"] == b.properties["id"]
         assert a.provider == b.provider == "fake_provider"
         assert a.collection == b.collection == "C"
@@ -440,10 +440,12 @@ def test_cannot_patch_twice(tmp_path, cassette):
         recorder("none", cassette, tmp_path),
         recorder("none", cassette, tmp_path),
     )
-    with rec1.patched():
-        with pytest.raises(EodagRecordingError, match="already been patched"):
-            with rec2.patched():
-                pass
+    with (
+        rec1.patched(),
+        pytest.raises(EodagRecordingError, match="already been patched"),
+        rec2.patched(),
+    ):
+        pass
 
 
 @requires_symlinks

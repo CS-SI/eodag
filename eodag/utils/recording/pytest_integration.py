@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -68,8 +67,9 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
-from typing import Any, Callable, Iterator, Sequence
+from typing import Any
 
 import pytest
 

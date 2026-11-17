@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project

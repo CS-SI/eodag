@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -48,10 +47,11 @@ import os
 import tempfile
 import threading
 import warnings
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Callable, Iterator, Sequence
+from typing import Any
 from unittest import mock
 
 from eodag.api.core import EODataAccessGateway
@@ -595,10 +595,13 @@ class EodagRecorder:
             return
         with self._lock:
             entry = self._write_cassette.entries["search"].get(canonical_key(params))
-            if entry is not None and "result" in entry:
-                if not entry["result"].get("last_page"):
-                    entry["result"]["last_page"] = True
-                    self._dirty = True
+            if (
+                (entry is not None)
+                and ("result" in entry)
+                and (not entry["result"].get("last_page"))
+            ):
+                entry["result"]["last_page"] = True
+                self._dirty = True
 
     def _empty_page_after_last(
         self, gateway: EODataAccessGateway, params: dict[str, Any]
@@ -752,7 +755,7 @@ class EodagRecorder:
 
     # ---- patch ------------------------------------------------------------- #
     @contextmanager
-    def patched(self) -> Iterator["EodagRecorder"]:
+    def patched(self) -> Iterator[EodagRecorder]:
         """Context manager that patches ``search``, ``search_all`` and ``download`` on
         :class:`~eodag.api.core.EODataAccessGateway`, and ``next_page`` on
         :class:`~eodag.api.search_result.SearchResult` (class level, so every instance

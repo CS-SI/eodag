@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -56,9 +55,10 @@ import inspect
 import json
 import logging
 import os
+from collections.abc import Callable
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 from shapely import wkt as shapely_wkt
@@ -195,7 +195,7 @@ def decode_exception(encoded: dict[str, Any]) -> Exception:
         )
     exc = cls(encoded.get("message", ""))
     if "status_code" in encoded:
-        setattr(exc, "status_code", encoded["status_code"])
+        exc.status_code = encoded["status_code"]
     return exc
 
 
@@ -310,7 +310,7 @@ class Cassette:
         return f"Cassette({self.path})"
 
     @classmethod
-    def load(cls, path: str | Path) -> "Cassette":
+    def load(cls, path: str | Path) -> Cassette:
         """
         :class:`Cassette` factory.
 
