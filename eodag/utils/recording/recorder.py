@@ -51,7 +51,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Generator
 from unittest import mock
 
 from eodag.api.core import EODataAccessGateway
@@ -579,7 +579,8 @@ class EodagRecorder:
                 warnings.filterwarnings(
                     "ignore", message=".*'page'.*", category=DeprecationWarning
                 )
-                new_results = context.gateway.search(**{**context.params, "page": page})
+                search_params: dict[str, Any] = {**context.params, "page": page}
+                new_results = context.gateway.search(**search_params)
             if not new_results.data:
                 return
             last = getattr(new_results, _CTX_ATTR).last
@@ -755,7 +756,7 @@ class EodagRecorder:
 
     # ---- patch ------------------------------------------------------------- #
     @contextmanager
-    def patched(self) -> Iterator[EodagRecorder]:
+    def patched(self) -> Generator[EodagRecorder]:
         """Context manager that patches ``search``, ``search_all`` and ``download`` on
         :class:`~eodag.api.core.EODataAccessGateway`, and ``next_page`` on
         :class:`~eodag.api.search_result.SearchResult` (class level, so every instance

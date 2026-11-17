@@ -195,7 +195,7 @@ def decode_exception(encoded: dict[str, Any]) -> Exception:
         )
     exc = cls(encoded.get("message", ""))
     if "status_code" in encoded:
-        exc.status_code = encoded["status_code"]
+        setattr(exc, "status_code", encoded["status_code"])  # noqa: B010
     return exc
 
 
