@@ -32,7 +32,12 @@ under test), the plugin intercepts the following methods of
 * ``search()``: ``search`` section of the cassette;
 * ``search_all()``: ``search_all`` section. The aggregated result of all pages is
   recorded, so no pagination token is needed;
-* ``download()``: ``download`` section.
+* ``download()``: ``download`` section;
+* ``SearchResult.next_page()`` (on :class:`~eodag.api.search_result.SearchResult`): the
+  pages it yields are recorded in the ``search`` section, as if they had been
+  requested with the deprecated ``page`` parameter (the parameters of the ``search()``
+  call that produced the first page, plus ``page=2``, ``page=3``...). A cassette can
+  thus be replayed either with ``next_page()`` or with ``search(page=...)``.
 
 Each call is treated as a pure function: the answer of the provider is stored under a
 key made of the parameters actually passed, and the same call replayed later returns

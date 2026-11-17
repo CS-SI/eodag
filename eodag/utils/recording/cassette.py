@@ -36,10 +36,16 @@ readable diffs:
               geometry: <WKT>
               search_intersection: <WKT or null>
               properties: {...}
+          last_page: true   # optional, see below
         # or, if the call raised: raises: {type: RequestError, message: ...}
     download:
       - params: {provider: ..., id: ...}
         result: {path: <relative to the archive directory>}
+
+The pages obtained with ``SearchResult.next_page()`` are stored as ``search`` entries
+whose ``params`` are the ones of the first ``search()`` call plus ``page: 2``,
+``page: 3``... When such an iteration ran to its natural end, the entry of the last
+page gets ``last_page: true``, so that replaying knows where to stop.
 """
 
 from __future__ import annotations
@@ -138,7 +144,7 @@ def canonical_key(params: dict[str, Any]) -> str:
 def bind_passed_params(func: Callable, *args: Any, **kwargs: Any) -> dict[str, Any]:
     """Binds arguments *actually passed* to names from the signature.
 
-    Default values are not applied: ``search(a=1)`` and ``search(a=1, page=1)`` give
+    Default values are not applied: ``search(a=1)`` and ``search(a=1, b=1)`` give
     different keys, while ``search(1)`` and ``search(page=1)`` give the exact same key.
     ``**kwargs`` are flattened.  ``self`` is ignored.
     """
@@ -203,9 +209,9 @@ def _encode_product(product: EOProduct) -> dict[str, Any]:
 
     .. note::
 
-        :func:`SearchResult.from_dict` and :func:`EOProduct.from_dict` exist, but they
-        go through a STAC validation that transforms properties. A dedicated and
-        minimalist serialization is used instead.
+        ``SearchResult.from_dict()`` and ``EOProduct.from_dict()`` exist, but they go
+        through a STAC validation that transforms properties. A dedicated and minimalist
+        serialization is used instead.
     """
     intersection = getattr(product, "search_intersection", None)
     properties = {

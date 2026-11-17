@@ -1,4 +1,4 @@
-"""Tests d'intégration pytest de ``eodag.utils.recording.pytest_integration``."""
+"""Pytest integration tests of ``eodag.utils.recording.pytest_integration``."""
 
 import os
 import tempfile
@@ -122,7 +122,7 @@ def cassettes(project):
 
 @requires_symlinks
 def test_record_all_then_replay_none(project):
-    # tout réenregistrer (CLI), hors test_fixture_only et test_default qui n'écrivent qu'en all
+    # Re-record everything (CLI), except test_fixture_only, and test_default, that write only in all
     result = run(project, "--eodag-record-mode=all")
     result.assert_outcomes(passed=7)
     names = cassettes(project)
@@ -132,35 +132,35 @@ def test_record_all_then_replay_none(project):
         and "test_mod/test_param[D].yaml" in names
     )
     assert "test_mod/test_fixture_only.yaml" in names
-    # seule la cassette d'écriture (shared_b) est écrite
+    # Only the write cassette (shared_b) is written to
     assert "shared_b.yaml" in names and "shared_a.yaml" not in names
     assert "custom_test_callable_name.yaml" in names
     assert (project.path / "cassettes" / "_downloads" / "C_p1_0" / "data.txt").exists()
 
-    # rejeu strict : plus aucun appel réel autorisé
-    # (shared_b seule contient la recherche ; shared_a absente est tolérée)
+    # strict replay: no real call is accepted anymore
+    # (only shared_b contains search result ; missing shared_a is tolerated)
     result = run(project, "--eodag-record-mode=none", forbid=True)
     result.assert_outcomes(passed=7)
 
 
 @requires_symlinks
 def test_once_via_marker_and_default_none(project):
-    # Sans CLI : défaut « none » pour test_default / test_fixture_only (échec, cassette
-    # absente), mais le marqueur « once » enregistre les 5 autres.
+    # Without CLI: default « none » for test_default / test_fixture_only (fail, missing cassette),
+    # but « once » marker records the 5 others.
     result = run(project)
     result.assert_outcomes(passed=5, failed=2)
     result.stdout.fnmatch_lines(["*No recording matches*"])
     assert "test_mod/test_marker_once.yaml" in cassettes(project)
     assert "test_mod/test_default.yaml" not in cassettes(project)
 
-    # 2e exécution : les cassettes existent -> rejeu, sans aucun appel réel
+    # 2nd execution: cassettes exist -> replay, with no real call
     result = run(project, forbid=True)
     result.assert_outcomes(passed=5, failed=2)
 
 
 @requires_symlinks
 def test_cli_overrides_marker(project):
-    # le marqueur dit « once » (enregistrerait), la CLI dit « none » et l'emporte
+    # marker says « once » (to record), but CLI says « none » and wins
     result = run(project, "--eodag-record-mode=none", "-k", "test_marker_once")
     result.assert_outcomes(failed=1)
     assert "test_mod/test_marker_once.yaml" not in cassettes(project)
@@ -180,7 +180,7 @@ def test_new_episodes_via_cli(project):
     path = project.path / "cassettes" / "test_mod" / "test_default.yaml"
     before = yaml.safe_load(path.read_text())
     assert len(before["search"]) == 1
-    # nouveau mode : l'existant est rejoué (FAKE_FORBID n'empêche pas les appels inconnus)
+    # new mode: existing is replayed (FAKE_FORBID doesn't prevent unknown calls)
     run(
         project, "--eodag-record-mode=new_episodes", "-k", "test_default"
     ).assert_outcomes(passed=1)

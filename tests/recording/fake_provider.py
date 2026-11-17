@@ -8,6 +8,7 @@ check that a replay does not hit the provider).
 
 import os
 import tempfile
+from collections import deque
 from types import SimpleNamespace
 
 from shapely import wkt
@@ -16,7 +17,7 @@ from eodag import EODataAccessGateway, SearchResult
 from eodag.api.product import EOProduct
 from eodag.utils.exceptions import NotAvailableError, RequestError, TimeOutError
 
-CALLS = {"search": [], "search_all": [], "download": []}
+CALLS = {"search": [], "search_all": [], "download": [], "do_search": []}
 POLY = "POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))"
 INTERSECTION = "POLYGON ((0 0, 0.5 0, 0.5 0.5, 0 0.5, 0 0))"
 
@@ -47,6 +48,42 @@ def make_products(collection, page, n):
     return products
 
 
+#: Number of products of the ``PAGED`` collection, spread over the pages.
+TOTAL_PAGED = 5
+
+
+def _paged_result(gateway, page, limit, count=False):
+    """Page ``page`` of the ``PAGED`` collection, like eodag would build it.
+
+    The result has a ``next_page_token`` unless the page is shorter than ``limit``
+    (as in ``EODataAccessGateway._do_search``), so the real
+    ``SearchResult.next_page()`` runs on top of the fake ``_prepare_search`` and
+    ``_do_search``.
+    """
+    start = (page - 1) * limit
+    size = max(0, min(limit, TOTAL_PAGED - start))
+    result = SearchResult(
+        make_products("PAGED", page, size),
+        number_matched=TOTAL_PAGED if count else None,
+        search_params={"collection": "PAGED", "limit": limit},
+        next_page_token=str(page + 1) if size == limit else None,
+        next_page_token_key="page",
+    )
+    result._dag = gateway
+    return result
+
+
+def fake_prepare_search(self, **params):
+    return [SimpleNamespace(provider="fake_provider")], dict(params)
+
+
+def fake_do_search(self, search_plugin, raise_errors=False, **kwargs):
+    _forbid("_do_search")
+    page = int(kwargs["next_page_token"])
+    CALLS["do_search"].append(page)
+    return _paged_result(self, page, kwargs["limit"])
+
+
 def fake_search(
     self,
     page=1,
@@ -65,6 +102,8 @@ def fake_search(
     _forbid("search")
     CALLS["search"].append((page, kwargs))
     collection = kwargs.get("collection", "C")
+    if collection == "PAGED":
+        return _paged_result(self, page, limit or 20, count)
     if collection == "BOOM":
         raise RequestError(
             "boom",
@@ -100,6 +139,13 @@ def fake_search_all(
 ):
     _forbid("search_all")
     CALLS["search_all"].append(kwargs)
+    if kwargs.get("collection") == "PAGED":
+        # like eodag: the first page goes through self.search(), the others go
+        # through SearchResult.next_page()
+        first = self.search(limit=limit, **kwargs)
+        deque(first.next_page(update=True))
+        first.number_matched = len(first)
+        return first
     # like eodag: the first page goes through self.search(), the others do not
     first = self.search(
         page=1,
@@ -139,6 +185,8 @@ def install(monkeypatch=None):
         "search": fake_search,
         "search_all": fake_search_all,
         "download": fake_download,
+        "_prepare_search": fake_prepare_search,
+        "_do_search": fake_do_search,
     }
     for name, func in patches.items():
         if monkeypatch is not None:

@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -216,6 +217,30 @@ def test_search_all_single_entry(gateway, cassette, tmp_path):
 
 
 # ---------------------------------------------------------------- download --
+def _clean_windows_symlink_pathnames(pathname: str) -> str:
+    """
+    Workaround symlink pathname under windows.
+    See: https://github.com/python/cpython/issues/87123
+    """
+    _PREFIX = "\\\\?\\"
+    if pathname.startswith(_PREFIX):
+        return pathname[len(_PREFIX) :]
+    return pathname
+
+
+def test_clean_windows_symlink_pathnames():
+    """
+    Workaround we cannot test the function from from its docstring with doctest :(
+    """
+    assert _clean_windows_symlink_pathnames("") == ""
+
+    path = "D:\\a\\eodag\\eodag"
+    assert _clean_windows_symlink_pathnames(path) == path
+
+    winsympath = "\\\\?\\D:\\a\\eodag\\eodag"
+    assert _clean_windows_symlink_pathnames(winsympath) == path
+
+
 @requires_symlinks
 def test_download_symlink_roundtrip(gateway, cassette, tmp_path):
     def flow():
@@ -486,3 +511,166 @@ def test_download_on_another_drive_is_not_recorded(
     with pytest.warns(EodagRecordingWarning, match="outside of the archive directory"):
         record("all", cassette, tmp_path, lambda: gateway.download(product))
     assert not cassette.exists()
+
+
+# -------------------------------------------------------------- pagination --
+@contextmanager
+def real_calls_forbidden():
+    """Any actual call to the fake provider fails: proves a replay is self-sufficient."""
+    os.environ["FAKE_FORBID"] = "1"
+    try:
+        yield
+    finally:
+        del os.environ["FAKE_FORBID"]
+
+
+def ids(result):
+    return [p.properties["id"] for p in result]
+
+
+def paged_flow(gateway, limit=2):
+    """First page, then every other page through ``next_page()``."""
+    first = gateway.search(collection="PAGED", limit=limit)
+    pages = list(first.next_page())
+    return first, pages
+
+
+def page_loop(gateway, limit=2):
+    """Same pages, requested one by one with the deprecated ``page`` parameter."""
+    pages = [gateway.search(collection="PAGED", limit=limit)]
+    page = 2
+    while True:
+        result = gateway.search(collection="PAGED", limit=limit, page=page)
+        if not result:
+            return pages
+        pages.append(result)
+        page += 1
+
+
+def entries_by_page(cassette):
+    data = yaml.safe_load(cassette.read_text())
+    return {e["params"].get("page", 1): e for e in data["search"]}
+
+
+def test_next_page_roundtrip(gateway, cassette, tmp_path):
+    first, pages = record("all", cassette, tmp_path, lambda: paged_flow(gateway))
+    assert [len(p) for p in pages] == [2, 1]
+    assert len(first) == 5  # update=True accumulates
+    assert len(fake.CALLS["search"]) == 1 and fake.CALLS["do_search"] == [2, 3]
+
+    entries = entries_by_page(cassette)
+    assert sorted(entries) == [1, 2, 3]
+    assert entries[2]["params"] == {"collection": "PAGED", "limit": 2, "page": 2}
+    # the iteration ended by itself: only the last page is flagged
+    assert [n for n, e in entries.items() if e["result"].get("last_page")] == [3]
+
+    with real_calls_forbidden():
+        first2, pages2 = replay(cassette, tmp_path, lambda: paged_flow(gateway))
+    assert ids(first2) == ids(first)
+    assert [ids(p) for p in pages2] == [ids(p) for p in pages]
+
+
+def test_next_page_recorded_replayed_with_page_parameter(gateway, cassette, tmp_path):
+    first, _ = record("all", cassette, tmp_path, lambda: paged_flow(gateway))
+
+    with real_calls_forbidden():
+        replayed = replay(cassette, tmp_path, lambda: page_loop(gateway))
+    # page 4 was never requested at recording time: an empty page is synthesized
+    assert [len(p) for p in replayed] == [2, 2, 1]
+    assert sum((ids(p) for p in replayed), []) == ids(first)
+
+
+def test_page_parameter_recorded_replayed_with_next_page(gateway, cassette, tmp_path):
+    looped = record("all", cassette, tmp_path, lambda: page_loop(gateway))
+    assert fake.CALLS["do_search"] == []  # no next_page() involved at recording time
+
+    with real_calls_forbidden():
+        first, pages = replay(cassette, tmp_path, lambda: paged_flow(gateway))
+    assert ids(first) == sum((ids(p) for p in looped), [])
+    assert [len(p) for p in pages] == [2, 1]  # stops on the recorded empty page 4
+
+
+def test_next_page_without_update_and_chaining(gateway, cassette, tmp_path):
+    def flow():
+        first = gateway.search(collection="PAGED", limit=2)
+        pages = first.next_page(update=False)
+        second = next(pages)
+        pages.close()  # stops early: nothing is flagged for this iteration
+        rest = list(second.next_page())  # chained on a page, not on the first result
+        return len(first), ids(second), [ids(p) for p in rest]
+
+    recorded = record("all", cassette, tmp_path, flow)
+    assert recorded[0] == 2  # the first result is left untouched
+    assert recorded[2] == [["PAGED_p3_0"]]
+    with real_calls_forbidden():
+        assert replay(cassette, tmp_path, flow) == recorded
+
+
+def test_next_page_abandoned_iteration_fails_loudly_in_replay(
+    gateway, cassette, tmp_path
+):
+    def stop_after_one_page():
+        first = gateway.search(collection="PAGED", limit=2)
+        pages = first.next_page()
+        next(pages)
+        pages.close()
+        return first
+
+    record("all", cassette, tmp_path, stop_after_one_page)
+    entries = entries_by_page(cassette)
+    assert not any(e["result"].get("last_page") for e in entries.values())
+
+    with real_calls_forbidden():
+        replay(cassette, tmp_path, stop_after_one_page)  # same consumption: fine
+        # consuming more cannot be silently truncated
+        with pytest.raises(NoMatchingRecordError, match='"page": 3'):
+            replay(cassette, tmp_path, lambda: paged_flow(gateway))
+
+
+@pytest.mark.parametrize("limit, requested", [(10, []), (5, [2])])
+def test_next_page_when_there_is_no_further_page(
+    gateway, cassette, tmp_path, limit, requested
+):
+    """``limit=10``: no token. ``limit=5``: a token, but the next page is empty."""
+    first, pages = record("all", cassette, tmp_path, lambda: paged_flow(gateway, limit))
+    assert pages == [] and fake.CALLS["do_search"] == requested
+    assert entries_by_page(cassette)[1]["result"]["last_page"] is True  # first flagged
+
+    with real_calls_forbidden():
+        first, pages = replay(cassette, tmp_path, lambda: paged_flow(gateway, limit))
+    assert pages == [] and len(first) == 5
+
+
+def test_next_page_inside_search_all_is_not_recorded_separately(
+    gateway, cassette, tmp_path
+):
+    def flow():
+        return gateway.search_all(collection="PAGED", limit=2)
+
+    result = record("all", cassette, tmp_path, flow)
+    assert len(result) == 5
+    assert list(yaml.safe_load(cassette.read_text())) == ["version", "search_all"]
+    with real_calls_forbidden():
+        assert ids(replay(cassette, tmp_path, flow)) == ids(result)
+
+
+def test_new_episodes_continues_pagination_of_a_replayed_result(
+    gateway, cassette, tmp_path
+):
+    record(
+        "all", cassette, tmp_path, lambda: gateway.search(collection="PAGED", limit=2)
+    )
+    searches = len(fake.CALLS["search"])
+
+    first, pages = record(
+        "new_episodes", cassette, tmp_path, lambda: paged_flow(gateway)
+    )
+    assert [len(p) for p in pages] == [2, 1] and len(first) == 5
+    # the first page is replayed, so the missing ones are requested with ``page=``
+    assert len(fake.CALLS["search"]) == searches + 3  # pages 2, 3 and the empty 4
+    assert fake.CALLS["do_search"] == []
+    assert sorted(entries_by_page(cassette)) == [1, 2, 3, 4]
+
+    with real_calls_forbidden():
+        first2, _ = replay(cassette, tmp_path, lambda: paged_flow(gateway))
+    assert ids(first2) == ids(first)

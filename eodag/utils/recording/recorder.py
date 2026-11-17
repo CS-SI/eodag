@@ -27,6 +27,14 @@ method returns ``<output_dir>/<name>``, a symbolic link to ``<archive_dir>/<name
 created on the fly. ``output_dir`` is the one the caller would have got without the
 plugin (the ``output_dir`` keyword, otherwise the downloader configuration). Recorded
 and replayed runs are thus indistinguishable for the caller.
+
+Pagination: :meth:`SearchResult.next_page() <eodag.api.search_result.SearchResult.next_page>`
+is patched too. The pages it yields are recorded as ``search`` entries, as if they had
+been requested with the (deprecated) ``page`` parameter: the parameters of the
+``search()`` call that produced the first page, plus ``page=2``, ``page=3``... A
+cassette can thus be replayed either with ``next_page()`` or with ``search(page=...)``,
+whichever was used to record it. When an iteration runs to its natural end, the last
+page is flagged ``last_page`` in the cassette, so that replaying knows where to stop.
 """
 
 from __future__ import annotations
@@ -41,6 +49,7 @@ import tempfile
 import threading
 import warnings
 from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterator, Sequence
 from unittest import mock
@@ -48,6 +57,7 @@ from unittest import mock
 from eodag.api.core import EODataAccessGateway
 from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
+from eodag.utils import DEFAULT_PAGE
 from eodag.utils.recording.cassette import (
     SECTIONS,
     Cassette,
@@ -102,6 +112,45 @@ class RecordMode(str, enum.Enum):
 _PASSTHROUGH: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "eodag_recording_passthrough", default=False
 )
+
+
+#: Name of the attribute holding the :class:`_PageContext` of a ``SearchResult``.
+_CTX_ATTR = "_eodag_recording_page"
+
+
+@dataclass
+class _PageContext:
+    """Position of a ``SearchResult`` in a paginated search.
+
+    Attached to the results returned by the patched ``search()`` and to the pages
+    yielded by the patched ``next_page()``, so that ``next_page()`` knows which
+    cassette entries to record or replay. It lives on the result object: no state is
+    shared between results.
+    """
+
+    #: Gateway that produced the result.
+    gateway: EODataAccessGateway
+    #: Parameters of the ``search()`` call that produced the first page, as passed.
+    params: dict[str, Any]
+    #: Number of the page this result is.
+    page: int
+    #: ``True`` if the result was built from a cassette.
+    replayed: bool
+    #: ``True`` if the recorded iteration ended after this page.
+    last: bool = False
+
+
+def _page_of(params: dict[str, Any]) -> int:
+    """Page number requested by the ``search()`` parameters."""
+    return params.get("page", DEFAULT_PAGE)
+
+
+def _entry_params(params: dict[str, Any], page: int) -> dict[str, Any]:
+    """Parameters under which ``page`` is recorded: the ones of the ``search()`` call
+    for the page it produced, the same with ``page`` overridden for the other pages."""
+    if page == _page_of(params):
+        return params
+    return {**params, "page": page}
 
 
 def _first_component(rel: str) -> str:
@@ -286,6 +335,8 @@ class EodagRecorder:
     ) -> None:
         assert self._write_cassette is not None
         with self._lock:
+            if self._lookup(section, canonical_key(params)) is not None:
+                return  # already known (the first entry wins)
             if self._write_cassette.add(section, params, payload):
                 self._dirty = True
 
@@ -377,8 +428,12 @@ class EodagRecorder:
         :func:`eodag.api.core.EODataAccessGateway.search()` or
         :func:`eodag.api.core.EODataAccessGateway.search_all()`, depending on
         ``original``.
+
+        The results of ``search()`` get a :class:`_PageContext`, which lets
+        ``next_page()`` continue the pagination.
         """
         recorder = self
+        paginated = section == "search"
 
         def wrapper(
             gateway: EODataAccessGateway, *args: Any, **kwargs: Any
@@ -392,6 +447,11 @@ class EodagRecorder:
                 return original(gateway, *args, **kwargs)
             params = bind_passed_params(original, gateway, *args, **kwargs)
 
+            if paginated:
+                empty = recorder._empty_page_after_last(gateway, params)
+                if empty is not None:
+                    return empty
+
             def real_call() -> SearchResult:
                 """Actual call to the original method (``search()`` or ``search_all()``)."""
                 logger.debug(
@@ -403,17 +463,175 @@ class EodagRecorder:
                 finally:
                     _PASSTHROUGH.reset(token)
 
-            return recorder.handle(
+            def replay(data: dict[str, Any]) -> SearchResult:
+                """Builds the result from the cassette, with its page context."""
+                result = decode_search_result(data)
+                if paginated:
+                    context = _PageContext(
+                        gateway,
+                        params,
+                        _page_of(params),
+                        replayed=True,
+                        last=bool(data.get("last_page")),
+                    )
+                    setattr(result, _CTX_ATTR, context)
+                return result
+
+            result = recorder.handle(
                 section,
                 params,
                 real_call,
                 encode=encode_search_result,
-                replay=decode_search_result,
+                replay=replay,
             )
+            if paginated and getattr(result, _CTX_ATTR, None) is None:
+                context = _PageContext(
+                    gateway, params, _page_of(params), replayed=False
+                )
+                setattr(result, _CTX_ATTR, context)
+            return result
 
         wrapper.__name__ = original.__name__
         wrapper.__doc__ = original.__doc__
         return wrapper
+
+    # ---- pagination --------------------------------------------------------- #
+    def _make_next_page_wrapper(self, original: Callable) -> Callable:
+        """
+        Creates the mock wrapper of
+        :meth:`eodag.api.search_result.SearchResult.next_page()`.
+
+        Results with no page context (e.g. the ones built by ``search_all()``), and
+        calls made while ``search_all()`` is really executing, are left untouched.
+        """
+        recorder = self
+
+        def next_page(result: SearchResult, update: bool = True) -> Iterator[Any]:
+            """Replacement for ``SearchResult.next_page()``."""
+            context = getattr(result, _CTX_ATTR, None)
+            if context is None or _PASSTHROUGH.get():
+                yield from original(result, update)
+            elif context.replayed:
+                yield from recorder._replay_pages(result, context, update)
+            else:
+                yield from recorder._record_pages(original, result, context, update)
+
+        next_page.__name__ = original.__name__
+        next_page.__doc__ = original.__doc__
+        return next_page
+
+    def _record_pages(
+        self,
+        original: Callable,
+        result: SearchResult,
+        context: _PageContext,
+        update: bool,
+    ) -> Iterator[Any]:
+        """Runs the actual ``next_page()`` and records each page it yields as
+        ``search(<params of the first page>, page=<n>)``.
+
+        If the iteration runs to its natural end, the last page is flagged. If the
+        consumer stops early, nothing is flagged: replaying further then fails loudly
+        instead of silently stopping.
+        """
+        page = context.page
+        finished = False
+        try:
+            for new_results in original(result, update):
+                page += 1
+                self._record(
+                    "search",
+                    _entry_params(context.params, page),
+                    {"result": encode_search_result(new_results)},
+                )
+                setattr(
+                    new_results,
+                    _CTX_ATTR,
+                    _PageContext(context.gateway, context.params, page, replayed=False),
+                )
+                if update:
+                    context.page = page
+                yield new_results
+            finished = True
+        finally:
+            if finished:
+                self._mark_last_page(_entry_params(context.params, page))
+
+    def _replay_pages(
+        self, result: SearchResult, context: _PageContext, update: bool
+    ) -> Iterator[Any]:
+        """Replays ``next_page()`` by requesting the following pages through the
+        patched ``search(page=...)``: recorded pages are replayed, and, in
+        ``new_episodes`` mode, missing ones are actually requested and recorded.
+
+        Mirrors the real method: stops on an empty page, and updates ``result`` if
+        ``update`` is ``True``.
+
+        :raises NoMatchingRecordError: in ``none`` mode, if a page was not recorded and
+            the recorded iteration did not run to its end.
+        """
+        page, last = context.page, context.last
+        while not last:
+            page += 1
+            with warnings.catch_warnings():
+                # In new_episodes mode, a missing page is actually requested with the
+                # deprecated ``page`` parameter: the caller did not do it.
+                warnings.filterwarnings(
+                    "ignore", message=".*'page'.*", category=DeprecationWarning
+                )
+                new_results = context.gateway.search(**{**context.params, "page": page})
+            if not new_results.data:
+                return
+            last = getattr(new_results, _CTX_ATTR).last
+            if update:
+                result.data += new_results.data
+                context.page, context.last = page, last
+            yield new_results
+
+    def _mark_last_page(self, params: dict[str, Any]) -> None:
+        """Flags as ``last_page`` the entry recorded under ``params``, if it is in the
+        cassette to write to."""
+        if self._write_cassette is None:
+            return
+        with self._lock:
+            entry = self._write_cassette.entries["search"].get(canonical_key(params))
+            if entry is not None and "result" in entry:
+                if not entry["result"].get("last_page"):
+                    entry["result"]["last_page"] = True
+                    self._dirty = True
+
+    def _empty_page_after_last(
+        self, gateway: EODataAccessGateway, params: dict[str, Any]
+    ) -> SearchResult | None:
+        """Empty result for a ``search(page=n)`` that was not recorded because page
+        ``n - 1`` was the last one of a completed ``next_page()`` iteration.
+
+        A provider answers an empty page there, and ``next_page()`` does not request
+        it, so a page loop stopping on an empty page can replay such a cassette.
+        """
+        page = params.get("page")
+        if (
+            self.effective_mode is RecordMode.ALL
+            or not isinstance(page, int)
+            or page <= DEFAULT_PAGE
+            or self._lookup("search", canonical_key(params)) is not None
+        ):
+            return None
+        previous = [{**params, "page": page - 1}]
+        if (
+            page - 1 == DEFAULT_PAGE
+        ):  # the first page may have been requested without it
+            previous.append({k: v for k, v in params.items() if k != "page"})
+        for candidate in previous:
+            entry = self._lookup("search", canonical_key(candidate))
+            if entry is not None and entry.get("result", {}).get("last_page"):
+                empty = SearchResult(
+                    [], number_matched=entry["result"].get("number_matched")
+                )
+                context = _PageContext(gateway, params, page, replayed=True, last=True)
+                setattr(empty, _CTX_ATTR, context)
+                return empty
+        return None
 
     # ---- download ---------------------------------------------------------- #
     def _make_download_wrapper(self, original: Callable) -> Callable:
@@ -536,8 +754,9 @@ class EodagRecorder:
     @contextmanager
     def patched(self) -> Iterator["EodagRecorder"]:
         """Context manager that patches ``search``, ``search_all`` and ``download`` on
-        :class:`~eodag.api.core.EODataAccessGateway` (class level, so every instance is
-        affected), and restores them on exit.
+        :class:`~eodag.api.core.EODataAccessGateway`, and ``next_page`` on
+        :class:`~eodag.api.search_result.SearchResult` (class level, so every instance
+        is affected), and restores them on exit.
 
         :raises EodagRecordingError: if the class is already patched.
         """
@@ -546,14 +765,23 @@ class EodagRecorder:
         ):
             raise EodagRecordingError("EODataAccessGateway has already been patched.")
         cls = EODataAccessGateway
-        wrappers = {
-            "search": self._make_search_wrapper("search", cls.search),
-            "search_all": self._make_search_wrapper("search_all", cls.search_all),
-            "download": self._make_download_wrapper(cls.download),
-        }
+        patches: list[tuple[Any, str, Callable]] = [
+            (cls, "search", self._make_search_wrapper("search", cls.search)),
+            (
+                cls,
+                "search_all",
+                self._make_search_wrapper("search_all", cls.search_all),
+            ),
+            (cls, "download", self._make_download_wrapper(cls.download)),
+            (
+                SearchResult,
+                "next_page",
+                self._make_next_page_wrapper(SearchResult.next_page),
+            ),
+        ]
         with ExitStack() as stack:
-            for name, wrapper in wrappers.items():
-                stack.enter_context(mock.patch.object(cls, name, new=wrapper))
+            for target, name, wrapper in patches:
+                stack.enter_context(mock.patch.object(target, name, new=wrapper))
             cls._eodag_recording_active = True  # type: ignore[attr-defined]
             self._patched = True
             try:

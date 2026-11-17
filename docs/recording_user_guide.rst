@@ -207,13 +207,13 @@ Design Choices & Limitations
 
   - By the exact parameters passed to :func:`search()
     <eodag.api.core.EODataAccessGateway.search()>` methods. Meaning, that ``search(a=1,
-    page=1)`` and ``search(a=1)`` requests will be identified by two distinct keys.
+    b=1)`` and ``search(a=1)`` requests will be identified by two distinct keys.
     To ensure reproducibility, the parameters will be sorted in the YAML cassettes.
 
     .. note::
 
-        The page number is considered like any other search criteria.
-        Recording searches with multiple pages of 10 items par page, and replaying with
+        The page number, even if implicit, is considered like any other search criteria.
+        Recording searches with multiple pages of 10 items per page, and replaying with
         42 items per page is not supported.
 
   - By the pair `{product-id, provider}` in the case of :func:`download()
