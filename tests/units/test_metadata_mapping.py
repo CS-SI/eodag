@@ -242,6 +242,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_format_query_params_free_text_search_operations(self):
+        """test formatting of query parameters using free-text operations"""
         config = PluginConfig.from_mapping(
             {
                 "type": "QueryStringSearch",
