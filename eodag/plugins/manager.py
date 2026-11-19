@@ -112,6 +112,9 @@ class PluginManager:
                 )
                 if plugin_config_paths:
                     plugin_configs: dict[str, ProviderConfig] = {}
+                    logger.debug(
+                        "Loading provider configurations from %s", plugin_config_paths
+                    )
                     for path in plugin_config_paths:
                         plugin_configs.update(load_config(path.as_posix()))
                     self.providers.update_from_configs(plugin_configs)
