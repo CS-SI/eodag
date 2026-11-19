@@ -3,6 +3,33 @@ Release history
 ===============
 
 
+v4.11.0 (2026-11-19)
+====================
+
+Continuous Integration
+----------------------
+
+* Remove incompatible tox-gh-actions plugin (`#2458`_, `d1964ad`_)
+
+Refactoring
+-----------
+
+* Reduce provider configuration debug logs (`#2460`_, `0a9fee4`_)
+
+* **collections**: Update sentinel-5 metadata_mapping for wekeo_main (`#2457`_, `2f58365`_)
+
+* **providers**: Update GHS_UCDB download links (`#2459`_, `4aeb1ce`_)
+
+.. _#2457: https://github.com/CS-SI/eodag/pull/2457
+.. _#2458: https://github.com/CS-SI/eodag/pull/2458
+.. _#2459: https://github.com/CS-SI/eodag/pull/2459
+.. _#2460: https://github.com/CS-SI/eodag/pull/2460
+.. _0a9fee4: https://github.com/CS-SI/eodag/commit/0a9fee428e10c60b5dd132a439df20bddffdd653
+.. _2f58365: https://github.com/CS-SI/eodag/commit/2f58365b6fddfd9564907367743108859789e335
+.. _4aeb1ce: https://github.com/CS-SI/eodag/commit/4aeb1ce2c8700d0635ec75af10ca3a4f48fc35f9
+.. _d1964ad: https://github.com/CS-SI/eodag/commit/d1964adef2885928dde72b1f55d173fb8a9ff050
+
+
 v4.11.0 (2026-11-16)
 ====================
 
