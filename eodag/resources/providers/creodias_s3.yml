@@ -81,7 +81,7 @@ creodias_s3:
             - "ContentDate/Start lt {end_datetime#to_iso_utc_datetime}"
             - "ContentDate/End gt {start_datetime#to_iso_utc_datetime}"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#csv_list(%26)}')"
-            - contains(Name,'{id}')
+            - "Name eq '{id}{_id_suffix}'"
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
@@ -101,6 +101,9 @@ creodias_s3:
       metadata_path_value: 'Value'
     metadata_mapping:
       _collection:
+        - null
+        - '$.null'
+      _id_suffix:
         - null
         - '$.null'
       # hide duplicated metadata
@@ -354,6 +357,7 @@ creodias_s3:
     S2_MSI_L1C:
       _collection: SENTINEL-2
       product:type: S2MSI1C
+      _id_suffix: .SAFE
       metadata_mapping:
         platform:
           - null

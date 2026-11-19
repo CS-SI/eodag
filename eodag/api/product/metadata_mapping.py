@@ -1818,7 +1818,7 @@ def _format_free_text_search(
             operator = " {} ".format(operator)
             # Build the operation string by joining the formatted operands together
             # using the operation string
-            operation_string = operator.join(
+            formatted_operands = [
                 format_metadata(operand, **kwargs)
                 for operand in operands
                 if any(
@@ -1827,6 +1827,10 @@ def _format_free_text_search(
                     and isinstance(metadata_mapping.get(kw, []), list)
                     for kw, val in kwargs.items()
                 )
+            ]
+            # only use operands which do not contain None (i.e. all parameters are given)
+            operation_string = operator.join(
+                [operand for operand in formatted_operands if "None" not in operand]
             )
             # Finally wrap the operation string as specified by the wrapper and add
             # it to the list of queries (only if the operation string is not empty)
