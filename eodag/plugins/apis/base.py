@@ -37,27 +37,11 @@ class Api(Search, Download):
     - ``download``: download a single :class:`~eodag.api.product._product.EOProduct`
     - ``download_all``: download multiple products from a :class:`~eodag.api.search_result.SearchResult`
 
-    The download methods must:
-
-    - download data in the ``output_dir`` folder defined in the plugin's
-      configuration or passed through kwargs
-    - extract products from their archive (if relevant) if ``extract`` is set to ``True``
-      (``True`` by default)
-    - save a product in an archive/directory (in ``output_dir``) whose name must be
-      the product's ``title`` property
-    - update the product's ``location`` attribute once its data is downloaded (and
-      eventually after it's extracted) to the product's location given as a file URI
-      (e.g. 'file:///tmp/product_folder' on Linux or
-      'file:///C:/Users/username/AppData/Local/Temp' on Windows)
-    - save a *record* file in the directory ``output_dir/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``collection`` and ``properties['id']``
-      attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
-      and whose content is the product's ``remote_location`` attribute itself.
-    - not try to download a product whose ``location`` attribute already points to an
-      existing file/directory
-    - not try to download a product if its *record* file exists as long as the expected
-      product's file/directory. If the *record* file only is found, it must be deleted
-      (it certainly indicates that the download didn't complete)
+    Download methods follow the asset selection, output layout and cache contract
+    of :class:`~eodag.plugins.download.base.Download`. Store remote URLs in asset
+    ``href`` fields and downloaded filesystem paths in ``file:local_path``. Persist
+    per-asset JSON statements through ``set_statements`` rather than writing legacy
+    product records or updating deprecated product location properties.
 
     :param provider: An EODAG provider name
     :type provider: str

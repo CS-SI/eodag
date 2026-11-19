@@ -72,29 +72,30 @@ cop_ewds:
     order_enabled: true
     order_method: POST
     order_on_response:
-      metadata_mapping:
-        eodag:order_id: $.json.jobID
-        eodag:status_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}?request=true
-        eodag:search_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}/results
+      asset_mapping:
+        order:id: $.json.jobID
+        eodag:status_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{order:id}?request=true
+        eodag:search_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{order:id}/results
     order_status:
       request:
         method: GET
-      metadata_mapping:
-        eodag:order_status: $.json.status
+      asset_mapping:
+        _order_status: $.json.status
         order:date: $.json.created
+      metadata_mapping:
         created: $.json.created
         published: $.json.finished
         updated: $.json.updated
         ecmwf:dataset: $.json.processID
         eodag:request_params: $.json.metadata.request.ids
       error:
-        eodag:order_status: failed
+        _order_status: failed
       success:
-        eodag:order_status: successful
+        _order_status: successful
       on_success:
         need_search: true
-        metadata_mapping:
-          eodag:download_link: $.json.asset.value.href
+        asset_mapping:
+          href: $.json.asset.value.href
   search:
     type: ECMWFSearch
     need_auth: true
@@ -119,7 +120,15 @@ cop_ewds:
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    assets_mapping:
+      download_link:
+        href: ''
+        title: "downloadlink"
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        _qs: $.qs
+        _dataset: $.dataset
+        eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{_dataset}/execution?{{"inputs": {_qs#to_geojson}}}'
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical

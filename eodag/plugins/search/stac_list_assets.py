@@ -17,7 +17,7 @@
 # limitations under the License.
 import logging
 from types import MethodType
-from typing import Any, List
+from typing import Any
 
 from botocore.exceptions import BotoCoreError
 
@@ -55,7 +55,7 @@ class StacListAssets(StacSearch):
     """``StacListAssets`` is an extension of :class:`~eodag.plugins.search.qssearch.StacSearch`.
 
     It executes a Search on given STAC API endpoint and updates assets with content listed by the plugin using
-    ``eodag:download_link`` :class:`~eodag.api.product._product.EOProduct` property.
+    the ``href`` of the ``download_link`` asset.
 
     :param provider: provider name
     :param config: It has the same Search plugin configuration as :class:`~eodag.plugins.search.qssearch.StacSearch` and
@@ -69,7 +69,7 @@ class StacListAssets(StacSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
 
         products = super(StacSearch, self).normalize_results(results, **kwargs)

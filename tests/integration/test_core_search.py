@@ -602,20 +602,13 @@ class TestCoreSearch(unittest.TestCase):
             "provider_matching_download_link",
             "https://foo.bar/baz/search",
         )
+        download_link_product = EOProduct(
+            "provider_matching_download_link",
+            dict(geometry="POINT (0 0)", id="a"),
+        )
+        download_link_product.remote_location = "https://somewhere/to/download"
         mock_query.side_effect = [
-            SearchResult(
-                [
-                    EOProduct(
-                        "provider_matching_download_link",
-                        dict(
-                            geometry="POINT (0 0)",
-                            id="a",
-                            **{"eodag:download_link": "https://somewhere/to/download"},
-                        ),
-                    )
-                ],
-                1,
-            ),
+            SearchResult([download_link_product], 1),
         ]
         results = self.dag.search(
             provider="provider_matching_download_link", validate=False
@@ -631,24 +624,20 @@ class TestCoreSearch(unittest.TestCase):
             "provider_matching_order_link",
             "https://foo.bar/baz/search",
         )
-        mock_query.side_effect = [
-            SearchResult(
-                [
-                    EOProduct(
-                        "provider_matching_download_link",
-                        dict(
-                            geometry="POINT (0 0)",
-                            id="a",
-                            **{
-                                "eodag:order_link": "https://somewhere/to/download",
-                                "order:status": "offline",
-                            },
-                        ),
-                    )
-                ],
-                1,
-            ),
-        ]
+        offline_product = EOProduct(
+            "provider_matching_download_link",
+            dict(geometry="POINT (0 0)", id="a"),
+        )
+        offline_product.assets.update(
+            {
+                "download_link": {
+                    "href": "",
+                    "eodag:order_link": "https://somewhere/to/download",
+                    "order:status": "orderable",
+                }
+            }
+        )
+        mock_query.side_effect = [SearchResult([offline_product], 1)]
         results = self.dag.search(
             provider="provider_matching_download_link", validate=False
         )
@@ -778,7 +767,10 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             "REANALYSIS-ERA5-SINGLE-LEVELS_123456", result[0].properties["title"]
         )
-        self.assertEqual("successful", result[0].properties["eodag:order_status"])
+        download_link = result[0].assets["download_link"]
+        self.assertNotIn("eodag:order_status", download_link)
+        self.assertNotIn("_order_status", download_link)
+        self.assertEqual("succeeded", download_link["order:status"])
         self.assertIn("eodag:request_params", result[0].properties)
         req_params = result[0].properties["eodag:request_params"]
         for k, v in status_response["metadata"]["request"]["ids"].items():
@@ -872,6 +864,8 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(product.properties["grid:code"], "MGRS-14ULD")
         self.assertIsNotNone(product.geometry)
         # download link from assets
-        self.assertIn("api/download", product.properties.get("eodag:download_link", ""))
+        self.assertIn("api/download", product.assets["download_link"]["href"])
         # quicklook from assets
-        self.assertIn("api/quicklook", product.properties.get("eodag:quicklook", ""))
+        self.assertIn(
+            "api/quicklook", product.assets.get("quicklook", {}).get("href", "")
+        )
