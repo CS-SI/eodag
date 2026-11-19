@@ -7066,8 +7066,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual("2030-12-31T00:00:00Z", properties["end_datetime"])
         self.assertEqual("EUROPE", properties["region"])
         self.assertEqual(
-            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A"
-            "/GHS_UCDB_REGION_EUROPE_R2024A/V1-1/GHS_UCDB_REGION_EUROPE_R2024A_V1_1.zip",
+            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_R2024A"
+            "/GHS_UCDB_REGION_EUROPE_R2024A/V1-2/GHS_UCDB_REGION_EUROPE_R2024A_V1_2.zip",
             properties["eodag:download_link"],
         )
 
