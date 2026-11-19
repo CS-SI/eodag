@@ -1001,10 +1001,11 @@ def load_provider_configs(
     """
 
     if providers_cfg_file is not None:
+        logger.debug("Loading provider configurations from file %s", providers_cfg_file)
         return load_config(str(providers_cfg_file))
 
     providers: dict[str, ProviderConfig] = {}
-
+    logger.debug("Loading provider configurations from directory %s", providers_cfg_dir)
     for config_file in providers_cfg_dir.glob("*.yml"):
         if config_file.is_file():
             providers.update(load_config(str(config_file)))
@@ -1020,7 +1021,6 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     :param config_path: The path to the provider config file
     :returns: The default provider's configuration
     """
-    logger.debug("Loading configuration from %s", config_path)
 
     try:
         # Providers configs are stored in this file as separated yaml documents
