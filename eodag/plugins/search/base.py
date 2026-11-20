@@ -180,13 +180,14 @@ class Search(PluginTopic):
                 "Getting generic provider collection definition parameters for %s",
                 collection,
             )
+            template = self.config.products[GENERIC_COLLECTION]
             return {
                 k: v
                 for k, v in format_dict_items(
-                    self.config.products[GENERIC_COLLECTION],
+                    template,
                     **({"collection": collection} | (format_variables or {})),
                 ).items()
-                if v
+                if v or template[k] == ""
             }
         else:
             return {}
