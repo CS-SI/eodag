@@ -134,9 +134,6 @@ class StreamResponseContent(Iterable[bytes]):
         return bytes(result)
 
 
-StreamResponseContent.init()
-
-
 @dataclass
 class StreamResponse:
     """Represents a streaming response"""
