@@ -306,6 +306,19 @@ class TestMetadataFormatter(unittest.TestCase):
             },
         )
 
+        for suffix_args, expected in (
+            ({"_id_suffix": ""}, {"$filter": ["Name eq 'foo_None_bar'"]}),
+            ({}, {}),
+            ({"_id_suffix": None}, {}),
+        ):
+            with self.subTest(suffix_args=suffix_args):
+                self.assertDictEqual(
+                    format_query_params(
+                        "TEST", config, {"id": "foo_None_bar", **suffix_args}
+                    ),
+                    expected,
+                )
+
     def test_converter_chain_ingestion(self):
         expression = r'{$.platform#to_lower#replace_str(r"^([a-c])$", r"sentinel-1\1")}'
         mapping = mtd_cfg_as_conversion_and_querypath({"platform": expression})
