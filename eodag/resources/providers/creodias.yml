@@ -699,23 +699,28 @@ creodias:
       _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        _provider: '$.Attributes.authority'
     COP_DEM_GLO30_DTED:
       product:type: DTE_30
       _collection: COP-DEM
       _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        _provider: '$.Attributes.authority'
     COP_DEM_GLO90_DGED:
       product:type: DGE_90
       _collection: COP-DEM
       _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        _provider: '$.Attributes.authority'
     COP_DEM_GLO90_DTED:
       product:type: DTE_90
       _collection: COP-DEM
       _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        _provider: '$.Attributes.authority'
     GENERIC_COLLECTION:
       _collection: '{collection}'
+      _id_suffix: ''
