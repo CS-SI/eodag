@@ -122,6 +122,42 @@ class BaseSearchPluginTest(unittest.TestCase):
     def get_auth_plugin(self, search_plugin):
         return self.plugins_manager.get_auth_plugin(search_plugin)
 
+    def test_creodias_generic_collection_empty_id_suffix(self):
+        search_plugin = self.get_search_plugin(provider="creodias")
+        search_plugin.config.products[GENERIC_COLLECTION].update(
+            {
+                "empty": "",
+                "unresolved": "{optional}",
+                "disabled": False,
+                "zero": 0,
+                "missing": None,
+                "empty_list": [],
+            }
+        )
+        generic_params = search_plugin.get_collection_def_params("SENTINEL-2")
+        self.assertEqual(generic_params["_id_suffix"], "")
+        self.assertEqual(generic_params["empty"], "")
+        for key in ("unresolved", "disabled", "zero", "missing", "empty_list"):
+            self.assertNotIn(key, generic_params)
+
+        product_id = "S2B_MSIL1C_20250725T141709_N0511_R010_T21PWT_20250725T155458"
+        for collection, search_id in (
+            ("S2_MSI_L1C", product_id),
+            ("SENTINEL-2", product_id + ".SAFE"),
+        ):
+            with self.subTest(collection=collection):
+                prep = PreparedSearch(count=False)
+                with mock.patch.object(
+                    search_plugin, "collect_search_urls", side_effect=RuntimeError
+                ):
+                    with self.assertRaises(RuntimeError):
+                        search_plugin.query(
+                            prep=prep, collection=collection, id=search_id
+                        )
+                self.assertIn(
+                    f"Name eq '{product_id}.SAFE'", prep.query_params["$filter"][0]
+                )
+
     def test_get_assets_from_mapping(self):
         search_plugin = self.get_search_plugin(provider="geodes")
         search_plugin.config.assets_mapping = {
