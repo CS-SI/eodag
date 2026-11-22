@@ -3498,6 +3498,45 @@ class TestCoreSearch(TestCoreBase):
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
         autospec=True,
     )
+    def test__prepare_search_sort_by(
+        self, mock_auth_session_request, mock_fetch_collections_list
+    ):
+        """_prepare_search must convert python-style sort_by parameters to STAC names"""
+        # python-style names
+        _, prepared_search = self.dag._prepare_search(
+            sort_by=[
+                ("eo_cloud_cover", "ASC"),
+                ("sat_absolute_orbit", "DESC"),
+                ("start", "DESC"),
+                ("end", "ASC"),
+            ]
+        )
+        self.assertListEqual(
+            [
+                ("eo:cloud_cover", "ASC"),
+                ("sat:absolute_orbit", "DESC"),
+                ("start_datetime", "DESC"),
+                ("end_datetime", "ASC"),
+            ],
+            prepared_search["sort_by"],
+        )
+        # STAC names and unknown parameters are left unchanged
+        sort_by = [
+            ("eo:cloud_cover", "ASC"),
+            ("start_datetime", "DESC"),
+            ("platform", "ASC"),
+            ("eodagSortParam", "DESC"),
+        ]
+        _, prepared_search = self.dag._prepare_search(sort_by=list(sort_by))
+        self.assertListEqual(sort_by, prepared_search["sort_by"])
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
     def test__prepare_search_geom(
         self, mock_auth_session_request, mock_fetch_collections_list
     ):
@@ -4637,6 +4676,7 @@ class TestCoreSearch(TestCoreBase):
                     sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
                     sort_param_mapping:
                         eodagSortParam: providerSortParam
+                        eo:cloud_cover: providerCloudCover
                     sort_order_mapping:
                         ascending: asc
                         descending: desc
@@ -4659,6 +4699,19 @@ class TestCoreSearch(TestCoreBase):
             "sortParam=providerSortParam&sortOrder=desc",
             mock_qssearch__request.call_args[0][1].url,
         )
+
+        # sorting parameters can be given with their STAC or python-style name
+        for sort_param in ("eo:cloud_cover", "eo_cloud_cover"):
+            dag.search(
+                provider="dummy_provider",
+                collection="S2_MSI_L1C",
+                sort_by=[(sort_param, "ASC")],
+                raise_errors=True,
+            )
+            self.assertIn(
+                "sortParam=providerCloudCover&sortOrder=asc",
+                mock_qssearch__request.call_args[0][1].url,
+            )
 
         # with a POST mode search
         dummy_provider_config = """
