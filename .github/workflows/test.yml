@@ -36,7 +36,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.10", "3.14"]
+        python-version: ["3.10", "3.15"]
         os: [ubuntu-latest, windows-latest]
         include:
           - python-version: "3.10"
@@ -130,7 +130,7 @@ jobs:
       continue-on-error: true
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.14-ubuntu-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.15-ubuntu-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.
@@ -165,7 +165,7 @@ jobs:
       continue-on-error: true
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.14-windows-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.15-windows-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.
@@ -208,7 +208,7 @@ jobs:
     - name: Download Ubuntu coverage artifact
       uses: actions/download-artifact@v4
       with:
-        name: unit-test-results-python3.14-ubuntu-latest
+        name: unit-test-results-python3.15-ubuntu-latest
         path: test-reports
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v7.1.0
@@ -218,7 +218,7 @@ jobs:
         args: >
           -Dsonar.projectKey=cs-si_eodag
           -Dsonar.organization=cs-si
-          -Dsonar.python.version=3.10,3.11,3.12,3.13,3.14
+          -Dsonar.python.version=3.10,3.11,3.12,3.13,3.14,3.15
           -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
           -Dsonar.sources=eodag/
           -Dsonar.tests=tests/
