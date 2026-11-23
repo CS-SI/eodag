@@ -158,6 +158,32 @@ class BaseSearchPluginTest(unittest.TestCase):
                     f"Name eq '{product_id}.SAFE'", prep.query_params["$filter"][0]
                 )
 
+    def test_cop_dataspace_search_by_id_suffix(self):
+        for provider in ("cop_dataspace", "cop_dataspace_s3"):
+            search_plugin = self.get_search_plugin(provider=provider)
+            for collection, search_id, expected_id in (
+                ("S2_MSI_L1C", "product", "product.SAFE"),
+                ("S1_SAR_GRD_COG", "product_COG", "product_COG.SAFE"),
+                ("S1_AUX_POEORB", "product", "product.EOF"),
+                ("S1_AUX_GNSSRD", "product", "product"),
+                ("S1_SAR_L3_IW_MCM", "product", "product"),
+                ("S3_EFR", "product", "product.SEN3"),
+                ("S5P_L2_NO2", "product", "product.nc"),
+                ("SENTINEL-2", "product.SAFE", "product.SAFE"),
+            ):
+                with self.subTest(provider=provider, collection=collection):
+                    prep = PreparedSearch(count=False)
+                    with mock.patch.object(
+                        search_plugin, "collect_search_urls", side_effect=RuntimeError
+                    ):
+                        with self.assertRaises(RuntimeError):
+                            search_plugin.query(
+                                prep=prep, collection=collection, id=search_id
+                            )
+                    self.assertIn(
+                        f"Name eq '{expected_id}'", prep.query_params["$filter"][0]
+                    )
+
     def test_get_assets_from_mapping(self):
         search_plugin = self.get_search_plugin(provider="geodes")
         search_plugin.config.assets_mapping = {

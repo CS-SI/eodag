@@ -81,7 +81,7 @@ cop_dataspace_s3:
             - "ContentDate/Start lt {end_datetime#to_iso_utc_datetime}"
             - "ContentDate/End gt {start_datetime#to_iso_utc_datetime}"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#csv_list(%26)}')"
-            - contains(Name,'{id}')
+            - "Name eq '{id}{_id_suffix}'"
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
@@ -99,6 +99,9 @@ cop_dataspace_s3:
       metadata_path_value: 'Value'
     metadata_mapping:
       _collection:
+        - null
+        - '$.null'
+      _id_suffix:
         - null
         - '$.null'
       # hide duplicated metadata
@@ -257,6 +260,7 @@ cop_dataspace_s3:
     S2_MSI_L1C:
       _collection: SENTINEL-2
       product:type: S2MSI1C
+      _id_suffix: .SAFE
       metadata_mapping:
         platform:
           - null
@@ -264,6 +268,7 @@ cop_dataspace_s3:
     S2_MSI_L2A:
       _collection: SENTINEL-2
       product:type: S2MSI2A
+      _id_suffix: .SAFE
       metadata_mapping:
         platform:
           - null
@@ -272,6 +277,7 @@ cop_dataspace_s3:
     S1_AUX_GNSSRD:
       product:type: AUX_GNSSRD
       _collection: SENTINEL-1
+      _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -280,6 +286,7 @@ cop_dataspace_s3:
     S1_AUX_MOEORB:
       product:type: AUX_MOEORB
       _collection: SENTINEL-1
+      _id_suffix: .EOF
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -288,6 +295,7 @@ cop_dataspace_s3:
     S1_AUX_POEORB:
       product:type: AUX_POEORB
       _collection: SENTINEL-1
+      _id_suffix: .EOF
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -296,6 +304,7 @@ cop_dataspace_s3:
     S1_AUX_PREORB:
       product:type: AUX_PREORB
       _collection: SENTINEL-1
+      _id_suffix: .EOF
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -304,6 +313,7 @@ cop_dataspace_s3:
     S1_AUX_PROQUA:
       product:type: AUX_PROQUA
       _collection: SENTINEL-1
+      _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -312,6 +322,7 @@ cop_dataspace_s3:
     S1_AUX_RESORB:
       product:type: AUX_RESORB
       _collection: SENTINEL-1
+      _id_suffix: .EOF
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -320,6 +331,7 @@ cop_dataspace_s3:
     S1_SAR_RAW:
       product:type: RAW
       _collection: SENTINEL-1
+      _id_suffix: .SAFE
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -328,6 +340,7 @@ cop_dataspace_s3:
     S1_SAR_GRD:
       product:type: GRD
       _collection: SENTINEL-1
+      _id_suffix: .SAFE
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -336,6 +349,7 @@ cop_dataspace_s3:
     S1_SAR_GRD_COG:
       product:type: GRD-COG
       _collection: SENTINEL-1
+      _id_suffix: .SAFE
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -344,6 +358,7 @@ cop_dataspace_s3:
     S1_SAR_SLC:
       product:type: SLC
       _collection: SENTINEL-1
+      _id_suffix: .SAFE
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -352,6 +367,7 @@ cop_dataspace_s3:
     S1_SAR_OCN:
       product:type: OCN
       _collection: SENTINEL-1
+      _id_suffix: .SAFE
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -360,6 +376,7 @@ cop_dataspace_s3:
     S1_SAR_L3_IW_MCM:
       product:type: S1SAR_L3_IW_MCM
       _collection: GLOBAL-MOSAICS
+      _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -368,6 +385,7 @@ cop_dataspace_s3:
     S1_SAR_L3_DH_MCM:
       product:type: S1SAR_L3_DH_MCM
       _collection: GLOBAL-MOSAICS
+      _id_suffix: ''
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -377,6 +395,7 @@ cop_dataspace_s3:
     S3_SRA:
       product:type: SR_1_SRA___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -385,6 +404,7 @@ cop_dataspace_s3:
     S3_SRA_A:
       product:type: SR_1_SRA_A_
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -393,6 +413,7 @@ cop_dataspace_s3:
     S3_SRA_BS:
       product:type: SR_1_SRA_BS
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -401,6 +422,7 @@ cop_dataspace_s3:
     S3_LAN:
       product:type: SR_2_LAN___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -409,6 +431,7 @@ cop_dataspace_s3:
     S3_LAN_HY:
       product:type: SR_2_LAN_HY
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -417,6 +440,7 @@ cop_dataspace_s3:
     S3_LAN_SI:
       product:type: SR_2_LAN_SI
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -425,6 +449,7 @@ cop_dataspace_s3:
     S3_LAN_LI:
       product:type: SR_2_LAN_LI
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -433,6 +458,7 @@ cop_dataspace_s3:
     S3_WAT:
       product:type: SR_2_WAT___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
@@ -442,6 +468,7 @@ cop_dataspace_s3:
     S3_EFR:
       product:type: OL_1_EFR___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -449,6 +476,7 @@ cop_dataspace_s3:
     S3_ERR:
       product:type: OL_1_ERR___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -456,6 +484,7 @@ cop_dataspace_s3:
     S3_OLCI_L2LRR:
       product:type: OL_2_LRR___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -463,6 +492,7 @@ cop_dataspace_s3:
     S3_OLCI_L2LFR:
       product:type: OL_2_LFR___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -470,6 +500,7 @@ cop_dataspace_s3:
     S3_OLCI_L2WRR:
       product:type: OL_2_WRR___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -477,6 +508,7 @@ cop_dataspace_s3:
     S3_OLCI_L2WFR:
       product:type: OL_2_WFR___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -485,6 +517,7 @@ cop_dataspace_s3:
     S3_SLSTR_L1RBT:
       product:type: SL_1_RBT___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -492,6 +525,7 @@ cop_dataspace_s3:
     S3_SLSTR_L2LST:
       product:type: SL_2_LST___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -499,6 +533,7 @@ cop_dataspace_s3:
     S3_SLSTR_L2WST:
       product:type: SL_2_WST___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -506,6 +541,7 @@ cop_dataspace_s3:
     S3_SLSTR_L2AOD:
       product:type: SL_2_AOD___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -513,6 +549,7 @@ cop_dataspace_s3:
     S3_SLSTR_L2FRP:
       product:type: SL_2_FRP___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -521,6 +558,7 @@ cop_dataspace_s3:
     S3_SY_AOD:
       product:type: SY_2_AOD___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -528,6 +566,7 @@ cop_dataspace_s3:
     S3_SY_SYN:
       product:type: SY_2_SYN___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -535,6 +574,7 @@ cop_dataspace_s3:
     S3_SY_V10:
       product:type: SY_2_V10___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -542,6 +582,7 @@ cop_dataspace_s3:
     S3_SY_VG1:
       product:type: SY_2_VG1___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -549,6 +590,7 @@ cop_dataspace_s3:
     S3_SY_VGP:
       product:type: SY_2_VGP___
       _collection: SENTINEL-3
+      _id_suffix: .SEN3
       metadata_mapping:
         platform:
           - null
@@ -557,75 +599,100 @@ cop_dataspace_s3:
     S5P_L1B_IR_SIR:
       product:type: L1B_IR_SIR
       _collection: Sentinel-5P
+      _id_suffix: .nc
     S5P_L1B_IR_UVN:
       product:type: L1B_IR_UVN
       _collection: Sentinel-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD1:
       product:type: L1B_RA_BD1
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD2:
       product:type: L1B_RA_BD2
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD3:
       product:type: L1B_RA_BD3
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD4:
       product:type: L1B_RA_BD4
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD5:
       product:type: L1B_RA_BD5
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD6:
       product:type: L1B_RA_BD6
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD7:
       product:type: L1B_RA_BD7
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L1B_RA_BD8:
       product:type: L1B_RA_BD8
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     # S5P L2
     S5P_L2_NO2:
       product:type: L2__NO2___
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_CLOUD:
       product:type: L2__CLOUD_
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_O3:
       product:type: L2__O3____
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_CO:
       product:type: L2__CO____
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_AER_AI:
       product:type: L2__AER_AI
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_O3_PR:
       product:type: L2__O3__PR
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_O3_TCL:
       product:type: L2__O3_TCL
       _collection: Sentinel-5P
+      _id_suffix: .nc
     S5P_L2_AER_LH:
       product:type: L2__AER_LH
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_HCHO:
       product:type: L2__HCHO__
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_CH4:
       product:type: L2__CH4___
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_NP_BD3:
       product:type: L2__NP_BD3
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_NP_BD6:
       product:type: L2__NP_BD6
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_NP_BD7:
       product:type: L2__NP_BD7
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     S5P_L2_SO2:
       product:type: L2__SO2___
       _collection: SENTINEL-5P
+      _id_suffix: .nc
     GENERIC_COLLECTION:
       _collection: '{collection}'
+      _id_suffix: ''
