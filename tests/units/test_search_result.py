@@ -18,12 +18,14 @@
 
 import unittest
 from collections import UserList
+from unittest import mock
 
 import geojson
 from lxml import html
 from pystac import ItemCollection
 from shapely.geometry.collection import GeometryCollection
 
+from eodag.utils.exceptions import RequestError
 from tests.context import EOProduct, SearchResult
 
 
@@ -31,6 +33,105 @@ class TestSearchResult(unittest.TestCase):
     def setUp(self):
         super(TestSearchResult, self).setUp()
         self.search_result = SearchResult([])
+
+    def test_fetch_next_page_retries_without_advancing(self):
+        """Failed page requests can be retried with the same token."""
+        gateway = mock.Mock()
+        plugin = mock.Mock()
+        gateway._prepare_search.side_effect = lambda **params: ([plugin], params)
+        first = SearchResult(
+            [EOProduct("provider", {"id": "first", "geometry": "POINT (0 0)"})],
+            search_params={"limit": 1},
+            next_page_token="token-2",
+            next_page_token_key="token",
+            raise_errors=True,
+        )
+        second = SearchResult(
+            [EOProduct("provider", {"id": "second", "geometry": "POINT (0 0)"})],
+            search_params={"limit": 1},
+            next_page_token="token-3",
+            next_page_token_key="token",
+        )
+        third = SearchResult(
+            [EOProduct("provider", {"id": "third", "geometry": "POINT (0 0)"})],
+            search_params={"limit": 1},
+        )
+        first._dag = second._dag = gateway
+        gateway._do_search.side_effect = [
+            RequestError("temporary"),
+            second,
+            RequestError("temporary"),
+            third,
+        ]
+
+        with self.assertRaises(RequestError):
+            first.fetch_next_page()
+        self.assertEqual(first.search_params, {"limit": 1})
+        self.assertEqual(first.next_page_token, "token-2")
+        self.assertIs(first.fetch_next_page(), second)
+        self.assertEqual(
+            gateway._do_search.call_args_list[0], gateway._do_search.call_args_list[1]
+        )
+        self.assertTrue(second.raise_errors)
+        with self.assertRaises(RequestError):
+            second.fetch_next_page()
+        self.assertIs(second.fetch_next_page(), third)
+        self.assertEqual(
+            gateway._do_search.call_args_list[2], gateway._do_search.call_args_list[3]
+        )
+        self.assertEqual(
+            gateway._do_search.call_args.kwargs["next_page_token"], "token-3"
+        )
+        self.assertTrue(gateway._do_search.call_args.kwargs["raise_errors"])
+        self.assertIsNone(third.fetch_next_page())
+
+    def test_fetch_next_page_empty_or_repeated(self):
+        """Empty or repeated pages stop pagination."""
+        gateway = mock.Mock()
+        gateway._prepare_search.return_value = ([mock.Mock()], {})
+        first = SearchResult(
+            [EOProduct("provider", {"id": "first", "geometry": "POINT (0 0)"})],
+            next_page_token="token",
+        )
+        first._dag = gateway
+        gateway._do_search.return_value = SearchResult([])
+        self.assertIsNone(first.fetch_next_page())
+        gateway._do_search.return_value = SearchResult(first.data)
+        with self.assertLogs("eodag.search_result", level="WARNING"):
+            self.assertIsNone(first.fetch_next_page())
+
+    def test_next_page_preserves_update_behavior(self):
+        """Page iteration respects both update modes."""
+        for update in (False, True):
+            with self.subTest(update=update):
+                gateway = mock.Mock()
+                gateway._prepare_search.side_effect = lambda **params: (
+                    [mock.Mock()],
+                    params,
+                )
+                first = SearchResult(
+                    [EOProduct("provider", {"id": "first", "geometry": "POINT (0 0)"})],
+                    search_params={"limit": 1},
+                    next_page_token="token",
+                    raise_errors=True,
+                )
+                second = SearchResult(
+                    [
+                        EOProduct(
+                            "provider", {"id": "second", "geometry": "POINT (0 0)"}
+                        )
+                    ],
+                    search_params={"limit": 1},
+                    next_page_token="token-3",
+                )
+                third = SearchResult(
+                    [EOProduct("provider", {"id": "third", "geometry": "POINT (0 0)"})]
+                )
+                first._dag = second._dag = gateway
+                gateway._do_search.side_effect = [second, third]
+                self.assertEqual(list(first.next_page(update=update)), [second, third])
+                self.assertEqual(len(first), 3 if update else 1)
+                self.assertEqual(first.next_page_token, None if update else "token")
 
     def test_search_result_init(self):
         """SearchResult.init must preserve search parameters independently of products"""
