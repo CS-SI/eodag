@@ -241,6 +241,84 @@ class TestMetadataFormatter(unittest.TestCase):
             {"startDate": "2021-01-01"},
         )
 
+    def test_format_query_params_free_text_search_operations(self):
+        """test formatting of query parameters using free-text operations"""
+        config = PluginConfig.from_mapping(
+            {
+                "type": "QueryStringSearch",
+                "products": {"TEST": {"_id_suffix": ".SAFE"}},
+                "metadata_mapping": mtd_cfg_as_conversion_and_querypath(
+                    {
+                        "start": ["startDate", "$.properties.start_datetime"],
+                        "id": [None, "{$.Name#remove_extension}"],
+                        "processing:level": [None, "$.properties.processingLevel"],
+                        "_id_suffix": [None, "$.null"],
+                    }
+                ),
+                "free_text_search_operations": {
+                    "$filter": {
+                        "union": " or ",
+                        "wrapper": "{}",
+                        "operations": {
+                            "and": [
+                                "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' "
+                                "and att/OData.CSC.StringAttribute/Value eq '{processing:level}')",
+                                "Name eq '{id}{_id_suffix}'",
+                            ]
+                        },
+                    }
+                },
+            }
+        )
+
+        # search by id
+        self.assertDictEqual(
+            format_query_params(
+                "TEST",
+                config,
+                {"processing:level": "L2", "id": "foo", "_id_suffix": ".SAFE"},
+            ),
+            {
+                "$filter": [
+                    "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and "
+                    "att/OData.CSC.StringAttribute/Value eq 'L2') and Name eq 'foo.SAFE'"
+                ]
+            },
+        )
+
+        # search with date and processing:level
+        self.assertDictEqual(
+            format_query_params(
+                "TEST",
+                config,
+                {
+                    "start": "2021-01-01",
+                    "processing:level": "L2",
+                    "_id_suffix": ".SAFE",
+                },
+            ),
+            {
+                "startDate": "2021-01-01",
+                "$filter": [
+                    "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and "
+                    "att/OData.CSC.StringAttribute/Value eq 'L2')"
+                ],
+            },
+        )
+
+        for suffix_args, expected in (
+            ({"_id_suffix": ""}, {"$filter": ["Name eq 'foo_None_bar'"]}),
+            ({}, {}),
+            ({"_id_suffix": None}, {}),
+        ):
+            with self.subTest(suffix_args=suffix_args):
+                self.assertDictEqual(
+                    format_query_params(
+                        "TEST", config, {"id": "foo_None_bar", **suffix_args}
+                    ),
+                    expected,
+                )
+
     def test_converter_chain_ingestion(self):
         expression = r'{$.platform#to_lower#replace_str(r"^([a-c])$", r"sentinel-1\1")}'
         mapping = mtd_cfg_as_conversion_and_querypath({"platform": expression})

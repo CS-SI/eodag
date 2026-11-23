@@ -215,7 +215,7 @@ def get_search_param(map_value: list[str | None]) -> str | None:
     return map_value[0]
 
 
-def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noqa: C901
+def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     """Format a string of form ``{<field_name>#<conversion_function>}``
 
     Converters can be chained with ``#`` and are applied from left to right.
@@ -282,7 +282,20 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noq
     >>> format_metadata('{platform#slice_str(-1, None, None)#to_upper}', platform="sentinel-1a")
     'A'
     """
+    return _format_metadata(search_param, args, kwargs)
 
+
+class _MissingMetadataValue(Exception):
+    """A required template input is missing or None."""
+
+
+def _format_metadata(  # noqa: C901
+    search_param: str,
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    *,
+    require_values: bool = False,
+) -> str:
     class MetadataFormatter(Formatter):
         def __init__(self) -> None:
             self.custom_converters: list[tuple[Callable, str | None]] = []
@@ -324,11 +337,13 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:  # noq
             if isinstance(key, str):
                 original_key = key.replace("__", ":")
                 result = kwargs.get(original_key)
-                if result is not None:
-                    return result
-                key_with_COLON = key.replace("__", "_COLON_")
-                return kwargs.get(key_with_COLON)
-            return super().get_value(key, args, kwargs)
+                if result is None:
+                    result = kwargs.get(key.replace("__", "_COLON_"))
+            else:
+                result = super().get_value(key, args, kwargs)
+            if require_values and result is None:
+                raise _MissingMetadataValue(key)
+            return result
 
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
             field_name, converters = _parse_converter_chain(field_name)
@@ -1818,16 +1833,22 @@ def _format_free_text_search(
             operator = " {} ".format(operator)
             # Build the operation string by joining the formatted operands together
             # using the operation string
-            operation_string = operator.join(
-                format_metadata(operand, **kwargs)
-                for operand in operands
-                if any(
+            formatted_operands = []
+            for operand in operands:
+                if not any(
                     re.search(rf"{{{kw}[}}#]", operand)
                     and val is not None
                     and isinstance(metadata_mapping.get(kw, []), list)
                     for kw, val in kwargs.items()
-                )
-            )
+                ):
+                    continue
+                try:
+                    formatted_operands.append(
+                        _format_metadata(operand, (), kwargs, require_values=True)
+                    )
+                except _MissingMetadataValue:
+                    continue
+            operation_string = operator.join(formatted_operands)
             # Finally wrap the operation string as specified by the wrapper and add
             # it to the list of queries (only if the operation string is not empty)
             if operation_string:
