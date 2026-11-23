@@ -56,6 +56,8 @@ from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 if TYPE_CHECKING:
     from click import Context
 
+    from eodag.api.search_result import SearchResult
+
 # A list of supported crunchers that the user can choose (see --cruncher option below)
 CRUNCHERS = [
     "FilterLatestByName",
@@ -146,6 +148,12 @@ class EodagGroup(click.Group):
             elif not isinstance(e, EodagError):
                 message = f"{type(e).__name__}: {message}"
             raise click.ClickException(message) from e
+
+
+def _raise_search_error(results: SearchResult) -> None:
+    """Raise a recorded error when the search returned no products."""
+    if not results and results.errors:
+        raise results.errors[0][1]
 
 
 @click.group(cls=EodagGroup, chain=True)
@@ -436,10 +444,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         # search should better take a value that is not None
         limit = DEFAULT_LIMIT if limit is None else limit
         results = gateway.search(count=count, page=page, limit=limit, **criteria)
-        if results.number_matched is not None:
-            click.echo(
-                "Found a total number of {} products".format(results.number_matched)
-            )
+    _raise_search_error(results)
+    if not get_all_products and results.number_matched is not None:
+        click.echo("Found a total number of {} products".format(results.number_matched))
     click.echo("Returned {} products".format(len(results)))
 
     # Crunch !
