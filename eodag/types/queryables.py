@@ -20,6 +20,7 @@ from __future__ import annotations
 import re
 from collections import UserDict
 from collections.abc import Sequence
+from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from annotated_types import Lt
@@ -158,6 +159,18 @@ class Queryables(CommonQueryables):
     id: Annotated[str, Field(None)]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+@lru_cache(maxsize=1)
+def _queryable_aliases() -> dict[str, str]:
+    aliases = {}
+    for name, field_info in Queryables.from_stac_models().model_fields.items():
+        alias = field_info.alias
+        if isinstance(alias, AliasChoices):
+            aliases[name] = str(alias.choices[0])
+        elif alias:
+            aliases[name] = alias
+    return aliases
 
 
 class QueryablesValidators(BaseModelCustomJsonSchema):

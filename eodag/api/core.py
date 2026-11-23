@@ -32,7 +32,6 @@ from typing import TYPE_CHECKING, Any, cast
 
 import geojson
 import yaml
-from pydantic import AliasChoices
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product import EOProduct
@@ -58,7 +57,12 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
+from eodag.types.queryables import (
+    CommonQueryables,
+    Queryables,
+    QueryablesDict,
+    _queryable_aliases,
+)
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -1685,20 +1689,12 @@ class EODataAccessGateway:
                 "start_datetime must be before or equal to end_datetime"
             )
         if "sort_by" in kwargs:
-            # accept python-style names (e.g. eo_cloud_cover) and convert them to STAC names
-            queryables_fields = Queryables.from_stac_models().model_fields
+            aliases = _queryable_aliases()
             new_sort_by = []
             for param_tuple in kwargs["sort_by"]:
-                field_info = queryables_fields.get(param_tuple[0])
-                if param_tuple[0] == "datetime":
-                    new_sort_by.append(("start_datetime", param_tuple[1]))
-                elif field_info is not None and field_info.alias:
-                    sort_alias = field_info.alias
-                    if isinstance(sort_alias, AliasChoices):
-                        sort_alias = str(sort_alias.choices[0])
-                    new_sort_by.append((sort_alias, param_tuple[1]))
-                else:
-                    new_sort_by.append(param_tuple)
+                name = param_tuple[0]
+                alias = "start_datetime" if name == "datetime" else aliases.get(name)
+                new_sort_by.append((alias, param_tuple[1]) if alias else param_tuple)
             kwargs["sort_by"] = new_sort_by
 
         if geom is not None:
@@ -2282,15 +2278,9 @@ class EODataAccessGateway:
 
             # use queryables aliases
             kwargs_alias = {**kwargs}
-            queryables_fields = Queryables.from_stac_models().model_fields
-            for search_param, field_info in queryables_fields.items():
-                if search_param in kwargs and field_info.alias:
-                    if isinstance(field_info.alias, AliasChoices):
-                        kwargs_alias[str(field_info.alias.choices[0])] = (
-                            kwargs_alias.pop(search_param)
-                        )
-                    else:
-                        kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
+            for search_param, alias in _queryable_aliases().items():
+                if search_param in kwargs:
+                    kwargs_alias[alias] = kwargs_alias.pop(search_param)
 
             plugin_queryables = plugin.list_queryables(
                 kwargs_alias,
