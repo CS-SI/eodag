@@ -1120,7 +1120,12 @@ class EODataAccessGateway:
         :param validate: (optional) Set to True to validate search parameters
                          before sending the query to the provider
         :param kwargs: Some other criteria that will be used to do the search,
-                       using paramaters compatibles with the provider
+                       using parameters compatible with the provider. The ``sort_by``
+                       argument accepts a list of (parameter, order) tuples, for example
+                       ``[("eo_cloud_cover", "ASC")]``. Parameters can use STAC names
+                       (e.g. ``eo:cloud_cover``) or Python-style names (e.g.
+                       ``eo_cloud_cover``). See :meth:`available_sortables` for the
+                       parameters supported by each provider.
         :returns: A set of EO products matching the criteria
 
         .. versionchanged:: v3.0.0b1
