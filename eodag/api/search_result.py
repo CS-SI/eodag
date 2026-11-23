@@ -381,6 +381,52 @@ class SearchResult(UserList[EOProduct]):
 
         return super().extend(other)
 
+    def fetch_next_page(self) -> SearchResult | None:
+        """Fetch the next page without accumulating products in this result.
+
+        Returns ``None`` if there is no next page, the provider repeats the previous
+        page, or a request fails with ``raise_errors=False``. With
+        ``raise_errors=True``, an error propagates and the same result can be used to
+        retry the request.
+
+        :returns: The next page, or ``None`` if pagination has stopped.
+        :raises ValueError: If pagination is available but no gateway is attached.
+        """
+        if self.next_page_token is None:
+            return None
+
+        if self._dag is None:
+            raise ValueError("A gateway is required to fetch the next page")
+
+        search_params = dict(self.search_params or {})
+        search_params["next_page_token"] = self.next_page_token
+        search_params["next_page_token_key"] = self.next_page_token_key
+        if "provider" not in search_params and self.data:
+            search_params["provider"] = self.data[-1].provider
+        search_plugins, search_kwargs = self._dag._prepare_search(**search_params)
+        if self.number_matched:
+            search_kwargs["number_matched"] = self.number_matched
+        for search_plugin in search_plugins:
+            search_kwargs["validate"] = False
+            result = self._dag._do_search(
+                search_plugin, raise_errors=bool(self.raise_errors), **search_kwargs
+            )
+            if not result:
+                return None
+            if (
+                self.data
+                and self.data[0].properties["id"] == result.data[0].properties["id"]
+            ):
+                logger.warning(
+                    "Iterate over pages: stop iterating since the next page "
+                    "appears to have the same products as in the previous one. "
+                    "This provider may not implement pagination."
+                )
+                return None
+            result.raise_errors = self.raise_errors
+            return result
+        return None
+
     def next_page(self, update: bool = True) -> Iterator[SearchResult]:
         """
         Retrieve and iterate over the next pages of search results, if available.
@@ -399,73 +445,22 @@ class SearchResult(UserList[EOProduct]):
         ...     continue  # do something with new_results
         """
 
-        def get_next_page(current):
-            if current.search_params is None:
-                current.search_params = {}
-            # Update the next_page_token in the search params
-            current.search_params["next_page_token"] = current.next_page_token
-            current.search_params["next_page_token_key"] = current.next_page_token_key
-            # Ensure the provider is in the search params
-            if "provider" in current.search_params:
-                current.search_params["provider"] = current.search_params.get(
-                    "provider", None
-                )
-            elif current.data and hasattr(current.data[-1], "provider"):
-                current.search_params["provider"] = current.data[-1].provider
-            search_plugins, search_kwargs = current._dag._prepare_search(
-                **current.search_params
-            )
-            # If number_matched was provided, ensure it is passed to the next search
-            if current.number_matched:
-                search_kwargs["number_matched"] = current.number_matched
-            for search_plugin in search_plugins:
-                # validate no needed for next pages
-                search_kwargs["validate"] = False
-                return current._dag._do_search(
-                    search_plugin,
-                    raise_errors=self.raise_errors,
-                    **search_kwargs,
-                )
-
-        # Do not iterate if there is no next page token
-        #  or if the current one returned less than the maximum number of items asked for.
-        if self.next_page_token is None:
-            return
-
-        new_results = get_next_page(self)
-        old_results = self
-
-        while new_results.data:
-            # The products between two iterations are compared. If they
-            # are actually the same product, it means the iteration failed at
-            # progressing for some reason.
-            if (
-                old_results.data[0].properties["id"]
-                == new_results.data[0].properties["id"]
-            ):
-                logger.warning(
-                    "Iterate over pages: stop iterating since the next page "
-                    "appears to have the same products as in the previous one. "
-                    "This provider may not implement pagination.",
-                )
-                break
+        current = self
+        while (new_results := current.fetch_next_page()) is not None:
             if update:
                 self.data += new_results.data
                 self.search_params = new_results.search_params
                 self.next_page_token = new_results.next_page_token
                 self.next_page_token_key = new_results.next_page_token_key
             yield new_results
+            if new_results.next_page_token is None:
+                break
+            assert new_results.search_params is not None
             # Stop iterating if there is no next page token
             #  or if the current one returned less than the maximum number of items asked for.
-            if (
-                new_results.next_page_token is None
-                or len(new_results) < new_results.search_params["limit"]
-            ):
+            if len(new_results) < new_results.search_params["limit"]:
                 break
-            old_results = new_results
-            new_results = get_next_page(new_results)
-            if not new_results:
-                break
+            current = new_results
         return
 
 

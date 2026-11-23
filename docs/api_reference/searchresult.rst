@@ -19,8 +19,13 @@ Constructor
 Pagination
 ----------
 
+Use ``fetch_next_page()`` to fetch one page at a time and retry a failed request
+on the same result. Set ``raise_errors=True`` on the initial search to propagate
+request errors. Without it, a failed request stops pagination.
+
 .. autosummary::
 
+   SearchResult.fetch_next_page
    SearchResult.next_page
 
 Crunch
@@ -63,4 +68,4 @@ Interface
 .. autoclass:: SearchResult
    :members: crunch, filter_date, filter_latest_intersect, filter_latest_by_name, filter_overlap, filter_property,
              filter_online, from_dict, from_pystac, as_dict, as_pystac_object, as_shapely_geometry_object,
-             as_wkt_object, next_page, __geo_interface__
+             as_wkt_object, fetch_next_page, next_page, __geo_interface__
