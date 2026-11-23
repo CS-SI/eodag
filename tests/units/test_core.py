@@ -3430,6 +3430,42 @@ class TestCoreSearch(TestCoreBase):
         expected = set(["geometry", "collection"])
         self.assertSetEqual(expected, set(prepared_search))
 
+    def test_search_handles_invalid_date(self):
+        """Search logs date errors by default and raises them with raise_errors=True."""
+        criteria = dict(
+            provider="cop_dataspace",
+            collection="S2_MSI_L1C",
+            start="malformed_start_date",
+            count=True,
+        )
+        message = "invalid input date: malformed_start_date"
+        with self.assertLogs("eodag.core", level="ERROR") as logs:
+            results = self.dag.search(**criteria)
+
+        self.assertIn(message, logs.output[0])
+        self.assertEqual(len(results), 0)
+        self.assertEqual(results.number_matched, 0)
+        [(provider, error)] = results.errors
+        self.assertEqual(provider, "cop_dataspace")
+        self.assertIsInstance(error, ValidationError)
+        with self.assertRaisesRegex(ValidationError, message):
+            self.dag.search(raise_errors=True, **criteria)
+
+    def test_search_handles_preparation_error_without_provider(self):
+        """Search records preparation errors under the preferred provider by default."""
+        error = RequestError("could not fetch collections")
+        preferred_provider, _ = self.dag.get_preferred_provider()
+        with mock.patch.object(self.dag, "_prepare_search", side_effect=error):
+            with self.assertLogs("eodag.core", level="ERROR") as logs:
+                results = self.dag.search()
+            with self.assertRaisesRegex(RequestError, "could not fetch collections"):
+                self.dag.search(raise_errors=True)
+
+        self.assertIn("could not fetch collections", logs.output[0])
+        self.assertEqual(len(results), 0)
+        self.assertIsNone(results.number_matched)
+        self.assertEqual(results.errors, [(preferred_provider, error)])
+
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )

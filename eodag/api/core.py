@@ -1146,14 +1146,22 @@ class EODataAccessGateway:
                 stacklevel=2,
             )
 
-        search_plugins, search_kwargs = self._prepare_search(
-            start=start,
-            end=end,
-            geom=geom,
-            locations=locations,
-            provider=provider,
-            **kwargs,
-        )
+        try:
+            search_plugins, search_kwargs = self._prepare_search(
+                start=start,
+                end=end,
+                geom=geom,
+                locations=locations,
+                provider=provider,
+                **kwargs,
+            )
+        except Exception as e:
+            if raise_errors:
+                raise
+            logger.exception("Error while preparing search (ignored):")
+            if not provider and self._providers:
+                provider = self.get_preferred_provider()[0]
+            return SearchResult([], 0 if count else None, [(provider or "", e)])
         if search_kwargs.get("id"):
             # Don't validate requests by ID. "id" is not queryable.
             return self._search_by_id(
