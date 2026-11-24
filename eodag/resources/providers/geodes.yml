@@ -85,7 +85,7 @@ geodes:
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
       sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
-      eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
+      eodag:download_link: '$.assets[?(@.roles[0] == "data") && (@.type != "application/xml")].href'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # order:status set to orderable by default and then updated from plugin
