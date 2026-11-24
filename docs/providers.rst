@@ -1114,10 +1114,22 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
+  Create an account `here <https://user.eumetsat.int/register>`__.
 
-  Then use the consumer key as ``username`` and the consumer secret as ``password`` from `here
-  <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
+  Configure your EUMETSAT account username and password as the provider credentials. These are your account login
+  credentials, not the consumer key and secret used by the former authentication method.
+
+  To download data you have to accept the `Licence to use Meteosat & Metop Products`. To accept the licence:
+
+  * Go to `your profile <https://user.eumetsat.int/profile>`__ while being logged in.
+  * Go to the tab *My data licences*.
+  * In section *Licences you can request*, select *Meteosat > 1 hr latency & Metop* for having free access to almost all data.
+  * Scroll down and accept the licensing terms and conditions.
+  * You can check which licences you have accepted in this same tab in the section *My licences*.
+  * Wait for the licence to be activated, log out and log in again before attempting to download data.
+
+  You can read more about EUMETSAT data licences
+  `here <https://user.eumetsat.int/resources/user-guides/data-registration-and-licensing#ID-Data-Licensing>`__.
 
 ----
 
