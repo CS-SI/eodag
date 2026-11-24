@@ -149,8 +149,8 @@ class OARSearch(QueryStringSearch):
             "geometry",
             [
                 "bbox={geometry#to_bounds_str}",
-                "($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, "
-                "-180 90, -180 -90, 180 -90)))`)|($.geometry[*])",
+                '{$.geometry.`str()`#replace_str("^None$",'
+                '"POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))")}',
             ],
         )
 

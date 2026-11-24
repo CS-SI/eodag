@@ -79,6 +79,47 @@ from tests.context import (
 class TestUtils(unittest.TestCase):
     """Unit tests for utility functions in eodag.utils."""
 
+    def test_string_to_jsonpath_wildcards(self):
+        from jsonpath_ng import jsonpath
+
+        for path in ("$.value[*]", "$.value.*"):
+            for value in ([1, 2], {"first": 1, "second": 2}):
+                with self.subTest(path=path, value=value):
+                    parsed = utils.string_to_jsonpath(path)
+                    expected = [1, 2]
+                    if not hasattr(jsonpath, "Wildcard"):
+                        if path.endswith("[*]") and isinstance(value, dict):
+                            expected = [value]
+                        elif path.endswith(".*") and isinstance(value, list):
+                            expected = []
+                    self.assertEqual(
+                        [match.value for match in parsed.find({"value": value})],
+                        expected,
+                    )
+
+    def test_cached_parse_filter_and(self):
+        expression = '$.assets[?(@.roles[0] == "data" && @.type != "application/xml" && @.title == "A && B")].href'
+        assets = [
+            {"roles": ["data"], "type": "image/tiff", "title": "A && B", "href": "yes"},
+            {
+                "roles": ["data"],
+                "type": "application/xml",
+                "title": "A && B",
+                "href": "no",
+            },
+            {
+                "roles": ["overview"],
+                "type": "image/tiff",
+                "title": "A && B",
+                "href": "no",
+            },
+            {"roles": ["data"], "type": "image/tiff", "title": "A & B", "href": "no"},
+        ]
+        parsed = utils.cached_parse(expression)
+        self.assertEqual(
+            [match.value for match in parsed.find({"assets": assets})], ["yes"]
+        )
+
     def setUp(self) -> None:
         """Set up logging before each test."""
         super(TestUtils, self).setUp()

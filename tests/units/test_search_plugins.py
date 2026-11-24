@@ -3224,6 +3224,24 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.assertIsInstance(self.search_plugin, GeodesSearch)
 
+    def test_plugins_search_geodes_download_link_mapping(self):
+        from eodag.api.product.metadata_mapping import properties_from_json
+
+        assets = [
+            {"roles": ["data"], "type": "application/xml", "href": "metadata.xml"},
+            {"roles": ["overview"], "type": "image/tiff", "href": "overview.tif"},
+            {"roles": ["data"], "type": "image/tiff", "href": "data.tif"},
+        ]
+        properties = properties_from_json(
+            {"assets": assets},
+            {
+                "eodag:download_link": self.search_plugin.config.metadata_mapping[
+                    "eodag:download_link"
+                ]
+            },
+        )
+        self.assertEqual(properties["eodag:download_link"], "data.tif")
+
     def _build_product(
         self, identifier, checksum, endpoint_url="https://geodes.example/data"
     ):
@@ -6345,6 +6363,22 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.assertIn("datetime", plugin.config.metadata_mapping)
         self.assertIn("datetime", str(plugin.config.metadata_mapping["datetime"]))
         self.assertIn("updated", plugin.config.metadata_mapping)
+
+        from eodag.api.product.metadata_mapping import properties_from_json
+
+        for geometry, expected in (
+            (
+                {"type": "Point", "coordinates": [1, 2]},
+                {"type": "Point", "coordinates": [1, 2]},
+            ),
+            (None, "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"),
+        ):
+            with self.subTest(geometry=geometry):
+                properties = properties_from_json(
+                    {"geometry": geometry},
+                    {"geometry": plugin.config.metadata_mapping["geometry"][1]},
+                )
+                self.assertEqual(properties["geometry"], expected)
 
         self.assertIn(
             "matched", str(plugin.config.pagination["total_items_nb_key_path"])
