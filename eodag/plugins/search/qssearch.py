@@ -1375,8 +1375,15 @@ class QueryStringSearch(Search):
         )
         if result_type == "xml":
             root_node = etree.fromstring(response.content)
+            xpath = self.config.pagination["total_items_nb_key_path"]
+            if not isinstance(xpath, str):
+                msg = (
+                    "pagination.total_items_nb_key_path must be an XPath for XML; "
+                    f"got JSONPath {str(xpath)!r}"
+                )
+                raise PluginImplementationError(msg)
             total_nb_results = root_node.xpath(
-                self.config.pagination["total_items_nb_key_path"],
+                xpath,
                 namespaces={k or "ns": v for k, v in root_node.nsmap.items()},
             )[0]
             total_results = int(total_nb_results)

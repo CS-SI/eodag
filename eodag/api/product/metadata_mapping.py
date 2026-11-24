@@ -30,7 +30,7 @@ import orjson
 import pyproj
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import tzutc
-from jsonpath_ng.jsonpath import Child, JSONPath
+from jsonpath_ng.jsonpath import Child, Fields, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
 from pydantic import AliasChoices
@@ -817,18 +817,15 @@ def _format_metadata(  # noqa: C901
             matches = jsonpath_filter.find(input_dict)
             result = {}
             for match in matches:
-                # extract key index from matched jsonpath
-                if not hasattr(match.path, "index") and not hasattr(
-                    match.path, "fields"
-                ):
-                    continue
-                key = (
+                # Extract the dictionary key from the matched JSONPath.
+                if hasattr(match.path, "index"):
                     # jsonpath-ng <= 1.7.0
-                    keys_list[match.path.index]
-                    if hasattr(match.path, "index")
+                    key = keys_list[match.path.index]
+                elif isinstance(match.path, Fields):
                     # jsonpath-ng >= 1.9.0
-                    else match.path.fields[0]
-                )
+                    key = match.path.fields[0]
+                else:
+                    continue
                 result[key] = match.value
             return result
 
@@ -1359,14 +1356,24 @@ def properties_from_json(  # noqa: C901
                 if not found_key_paths or isinstance(found_key_paths, int):
                     continue
                 found_key = found_key_paths[0].value
+                value_path = string_to_jsonpath(
+                    discovery_config["metadata_path_value"], force=True
+                )
+                if isinstance(value_path, str):
+                    msg = f"Invalid JSONPath for metadata_path_value: {value_path!r}"
+                    raise ValueError(msg)
                 used_jsonpath = Child(
                     found_jsonpath.full_path,
-                    string_to_jsonpath(
-                        discovery_config["metadata_path_value"], force=True
-                    ),
+                    value_path,
                 )
             else:
                 # default key got from metadata_path
+                if not isinstance(found_jsonpath.path, Fields):
+                    msg = (
+                        f"metadata_path {discovery_path!r} must select object fields "
+                        "unless metadata_path_id is set"
+                    )
+                    raise ValueError(msg)
                 found_key = found_jsonpath.path.fields[-1]
                 used_jsonpath = found_jsonpath.full_path
             if (

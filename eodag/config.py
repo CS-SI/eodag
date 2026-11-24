@@ -466,7 +466,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Type of the result
         result_type: str
         #: JsonPath to retrieve the queryables from the provider result
-        results_entry: str
+        results_entry: str | JSONPath
         #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
         constraints_entry: str
         #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
@@ -568,7 +568,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration which can be used to simplify further metadata extraction"""
 
         #: JsonPath of the metadata entry
-        metadata_path: str
+        metadata_path: str | JSONPath
         #: Key to get the metadata id
         metadata_path_id: str
         #: Key to get the metadata value
