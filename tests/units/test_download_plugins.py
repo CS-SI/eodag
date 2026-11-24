@@ -564,6 +564,66 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(responses.calls[0].request.url, download_url)
         self.assertIn("get", responses.calls[0].request.method.lower())
 
+    @responses.activate
+    def test_plugins_download_http_retries_creodias_session_limit(self):
+        """A creodias 429 that only means the session cap was hit is retried."""
+        provider = "creodias"
+        download_url = (
+            "https://zipper.creodias.eu/odata/v1/"
+            "Products(1c2380ed-ff07-5edf-b7cb-a9e86550675e)/$value"
+        )
+        local_filename = "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911"
+        local_product_as_archive_path = os.path.abspath(
+            os.path.join(
+                TEST_RESOURCES_PATH,
+                "products",
+                "as_archive",
+                "{}.zip".format(local_filename),
+            )
+        )
+        collection = "S2_MSI_L1C"
+
+        with open(local_product_as_archive_path, "rb") as fh:
+            archive_content = fh.read()
+
+        responses.add(
+            responses.GET,
+            download_url,
+            json={
+                "code": "DAT-ZIP-100",
+                "message": "Max session number exceeded",
+            },
+            status=429,
+        )
+        responses.add(
+            responses.GET,
+            download_url,
+            body=archive_content,
+            status=200,
+            content_type="application/zip",
+            auto_calculate_content_length=True,
+        )
+
+        product = self._dummy_downloadable_product(
+            provider,
+            {
+                "id": "1c2380ed-ff07-5edf-b7cb-a9e86550675e",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+                },
+                "collection": collection,
+                "title": local_filename,
+                "eodag:download_link": download_url,
+            },
+            collection,
+        )
+        path = product.download(wait=0, timeout=1)
+
+        self.assertTrue(os.path.isfile(path))
+        self.assertTrue(zipfile.is_zipfile(path))
+        self.assertEqual(len(responses.calls), 2)
+
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True
     )

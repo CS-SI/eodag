@@ -23,6 +23,7 @@ import re
 import shutil
 import tarfile
 import zipfile
+from time import sleep
 from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
@@ -1047,62 +1048,83 @@ class HTTPDownload(Download):
             auth = None
 
         s = requests.Session()
-        try:
-            product._stream = s.request(
-                req_method,
-                req_url,
-                stream=True,
-                auth=auth,
-                params=params,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                verify=ssl_verify,
-                **req_kwargs,
-            )
-        except requests.exceptions.MissingSchema:
-            # location is not a valid url -> product is not available yet
-            raise NotAvailableError("Product is not available yet") from None
-        try:
-            product._stream.raise_for_status()
-        except requests.exceptions.Timeout as exc:
-            raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
-        except RequestException as e:
-            self._process_exception(e, product, ordered_message)
-            raise DownloadError(
-                f"download of {product.properties['id']} is empty"
-            ) from e
-        else:
-            # check if product was ordered
+        # Creodias zipper answers 429 "Max session number exceeded" when
+        # download_all opens sessions back to back (#2019). That is a short
+        # cap, not a quota, so try again before giving up.
+        session_limit_tries = 4
+        for attempt in range(session_limit_tries):
+            try:
+                product._stream = s.request(
+                    req_method,
+                    req_url,
+                    stream=True,
+                    auth=auth,
+                    params=params,
+                    headers=USER_AGENT,
+                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
+                    **req_kwargs,
+                )
+            except requests.exceptions.MissingSchema:
+                # location is not a valid url -> product is not available yet
+                raise NotAvailableError("Product is not available yet") from None
+            try:
+                product._stream.raise_for_status()
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(
+                    exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
+                ) from exc
+            except RequestException as e:
+                response_text = ""
+                if e.response is not None and e.response.text:
+                    response_text = e.response.text
+                if (
+                    e.response is not None
+                    and e.response.status_code == 429
+                    and "max session number" in response_text.lower()
+                    and attempt + 1 < session_limit_tries
+                ):
+                    product._stream.close()
+                    sleep(0.05 * (attempt + 1))
+                    continue
+                self._process_exception(e, product, ordered_message)
+                raise DownloadError(
+                    f"download of {product.properties['id']} is empty"
+                ) from e
+            else:
+                break
 
-            if getattr(
-                product._stream, "status_code", None
-            ) is not None and product._stream.status_code == getattr(
-                self.config, "order_status", {}
-            ).get("ordered", {}).get("http_code"):
-                product.properties["order:status"] = "ORDERED"
-                self._process_exception(None, product, ordered_message)
-            stream_size = self._check_stream_size(product) or None
+        # check if product was ordered
 
-            product.headers = CaseInsensitiveDict(
-                {
-                    k: v
-                    for k, v in product._stream.headers.items()
-                    if k.lower() not in EXCLUDED_RESPONSE_HEADERS
-                }
-            )
-            filename = self._check_product_filename(product)
-            content_type = product.headers.get("Content-Type")
-            guessed_content_type = (
-                guess_file_type(filename) if filename and not content_type else None
-            )
-            if guessed_content_type is not None:
-                product.headers["Content-Type"] = guessed_content_type
+        if getattr(
+            product._stream, "status_code", None
+        ) is not None and product._stream.status_code == getattr(
+            self.config, "order_status", {}
+        ).get("ordered", {}).get("http_code"):
+            product.properties["order:status"] = "ORDERED"
+            self._process_exception(None, product, ordered_message)
+        stream_size = self._check_stream_size(product) or None
 
-            progress_callback.reset(total=stream_size)
-            product.size = stream_size
+        product.headers = CaseInsensitiveDict(
+            {
+                k: v
+                for k, v in product._stream.headers.items()
+                if k.lower() not in EXCLUDED_RESPONSE_HEADERS
+            }
+        )
+        filename = self._check_product_filename(product)
+        content_type = product.headers.get("Content-Type")
+        guessed_content_type = (
+            guess_file_type(filename) if filename and not content_type else None
+        )
+        if guessed_content_type is not None:
+            product.headers["Content-Type"] = guessed_content_type
 
-            product.filename = filename
-            return product._stream.iter_content(chunk_size=64 * 1024)
+        progress_callback.reset(total=stream_size)
+        product.size = stream_size
+
+        product.filename = filename
+        return product._stream.iter_content(chunk_size=64 * 1024)
 
     def _raw_stream_download_assets(
         self,
