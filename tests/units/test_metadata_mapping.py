@@ -668,6 +668,35 @@ class TestMetadataFormatter(unittest.TestCase):
             },
         )
 
+    def test_properties_from_json_invalid_discovery_paths(self):
+        discovery_config = {
+            "metadata_pattern": ".*",
+            "metadata_path": "$.items[*]",
+            "metadata_path_id": "id",
+            "metadata_path_value": "$[",
+        }
+        with self.assertRaises(ValueError) as invalid_value_path:
+            properties_from_json(
+                json={"items": [{"id": "test"}]},
+                mapping={},
+                discovery_config=discovery_config,
+            )
+        self.assertIn(
+            "Invalid JSONPath for metadata_path_value: '$['",
+            str(invalid_value_path.exception),
+        )
+
+        del discovery_config["metadata_path_id"]
+        with self.assertRaises(ValueError) as missing_id_path:
+            properties_from_json(
+                json={"items": [{"id": "test"}]},
+                mapping={},
+                discovery_config=discovery_config,
+            )
+        message = str(missing_id_path.exception)
+        self.assertIn("metadata_path '$.items[*]' must select object fields", message)
+        self.assertIn("unless metadata_path_id is set", message)
+
     def test_convert_split_id_into_s3_params(self):
         to_format = "{id#split_id_into_s3_params}"
         expected = {

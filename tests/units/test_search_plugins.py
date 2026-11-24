@@ -1083,6 +1083,21 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             result = search_plugin.count_hits("http://fake.url", result_type="xml")
             assert result == 4
 
+    def test_plugins_search_querystringsearch_count_hits_xml_jsonpath(self):
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
+        search_plugin.config.pagination = {"total_items_nb_key_path": parse("$.total")}
+        mock_response = mock.Mock()
+        mock_response.content = b"<root/>"
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            with pytest.raises(PluginImplementationError) as error:
+                search_plugin.count_hits("http://fake.url", result_type="xml")
+        message = str(error.value)
+        assert "pagination.total_items_nb_key_path must be an XPath for XML" in message
+        assert (
+            str(search_plugin.config.pagination["total_items_nb_key_path"]) in message
+        )
+
     def test_plugins_search_querystringsearch_count_hits_json_dict_ok(self):
         """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path"""
         provider = "earth_search"
