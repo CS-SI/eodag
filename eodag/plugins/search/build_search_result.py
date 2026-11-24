@@ -602,6 +602,11 @@ class ECMWFSearch(PostJsonSearch):
         default_values.pop("metadata_mapping_from_product", None)
         default_values.pop("discover_queryables", None)
         kwargs.pop("discover_queryables", None)
+        # product:type is the configured provider product id, not a queryable.
+        # The colon also excludes it from discover_metadata.metadata_pattern.
+        if "product:type" in col_config:
+            default_values.pop("product:type", None)
+            kwargs.pop("product:type", None)
         filters = {**default_values, **kwargs}
 
         if "start" in filters:

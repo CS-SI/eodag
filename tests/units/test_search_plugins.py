@@ -3531,6 +3531,19 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             ),
         )
 
+    def test_plugins_search_meteoblue_product_type_is_not_a_queryable(self):
+        """product:type on the collection definition must not reject the search."""
+        self.search_plugin.config.collection_config = {"alias": "NEMSGLOBAL_TCDC"}
+        queryables = self.search_plugin.list_queryables(
+            filters={"start": "2024-10-15", "end": "2024-10-15"},
+            available_collections=["NEMSGLOBAL_TCDC"],
+            collection_configs={
+                "NEMSGLOBAL_TCDC": self.search_plugin.config.collection_config
+            },
+            collection="NEMSGLOBAL_TCDC",
+        )
+        self.assertNotIn("product:type", queryables)
+
 
 class MockResponse:
     def __init__(self, json_data, status_code, headers=None):
