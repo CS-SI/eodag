@@ -228,13 +228,20 @@ class Download(PluginTopic):
 
         prefix = os.path.abspath(output_dir)
         sanitized_title = sanitize(product.properties["title"])
-        if sanitized_title == product.properties["title"]:
+        sanitized_id = sanitize(product.properties["id"])
+        # Skip the id suffix when the title is already safe, or when sanitizing
+        # the title yields the id. Hydroweb ids contain "@" and ":", so the
+        # suffix used to repeat the directory name past Windows MAX_PATH (#1881).
+        if (
+            sanitized_title == product.properties["title"]
+            or sanitized_title == sanitized_id
+        ):
             collision_avoidance_suffix = ""
         else:
-            collision_avoidance_suffix = "-" + sanitize(product.properties["id"])
+            collision_avoidance_suffix = "-" + sanitized_id
         fs_path = os.path.join(
             prefix,
-            f"{sanitize(product.properties['title'])}{collision_avoidance_suffix}{output_extension}",
+            f"{sanitized_title}{collision_avoidance_suffix}{output_extension}",
         )
         fs_dir_path = (
             fs_path.replace(output_extension, "") if output_extension else fs_path

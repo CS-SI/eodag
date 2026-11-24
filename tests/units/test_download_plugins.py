@@ -34,7 +34,7 @@ from unittest import mock
 import responses
 from requests.structures import CaseInsensitiveDict
 
-from eodag.utils import MockResponse, ProgressCallback
+from eodag.utils import MockResponse, ProgressCallback, sanitize
 from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
@@ -340,6 +340,32 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         fs_path, _ = plugin._prepare_download(self.product)
 
         self.assertEqual(fs_path, os.path.join(gettempdir(), "needs_sanitize-also.zip"))
+
+    def test_plugins_download_base_prepare_download_id_not_doubled(self):
+        """A title that sanitizes to the product id must not be suffixed with that id.
+
+        Hydroweb titles contain ``@`` and ``:``. ``sanitize()`` rewrites those, then
+        the collision suffix appends the same sanitized id. The directory is longer
+        than Windows MAX_PATH and ``os.makedirs`` raises ``WinError 3`` (#1881).
+        """
+        raw = (
+            "SWOT_LakeDatabaseSci_EU_21_20000101T000000_20991231T235959_"
+            "20250331T170000_v202@hysope2:129cde75-fbbd-341f-811a-b56dd673262e:V1"
+        )
+        self.product.properties["title"] = raw
+        self.product.properties["id"] = raw
+        self.product.location = self.product.remote_location = (
+            "http://example.test/item"
+        )
+
+        plugin = self.get_download_plugin(self.product)
+
+        with TemporaryDirectory() as output_dir:
+            fs_path, _ = plugin._prepare_download(self.product, output_dir=output_dir)
+
+        self.assertEqual(os.path.basename(fs_path), sanitize(raw))
+        windows_temp = "C:\\Users\\aaiche\\AppData\\Local\\Temp"
+        self.assertLess(len(os.path.join(windows_temp, os.path.basename(fs_path))), 260)
 
     def test_plugins_download_base_prepare_download_dir_permission(self):
         """Download._prepare_download must check output directory permissions."""
