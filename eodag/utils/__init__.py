@@ -65,8 +65,6 @@ import shapefile
 import shapely.wkt
 import yaml
 from jsonpath_ng import jsonpath
-from jsonpath_ng.ext import parse
-from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests import HTTPError, Response
 from shapely.geometry import LineString, Point, Polygon, box, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
@@ -926,6 +924,7 @@ def list_items_recursive_sort(config_list: list[Any]) -> list[Any]:
 def string_to_jsonpath(*args: Any, force: bool = False) -> str | JSONPath:
     """Get :class:`jsonpath_ng.JSONPath` for ``$.foo.bar`` like string
 
+    >>> from jsonpath_ng.jsonpath import Child, Fields, Root
     >>> string_to_jsonpath(None, "$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
     >>> string_to_jsonpath("$.foo.bar")
@@ -934,17 +933,24 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> str | JSONPath:
     'foo'
     >>> string_to_jsonpath("foo", force=True)
     Fields('foo')
-    >>> string_to_jsonpath('$.foo[0][*]') == Child(
-    ...     Child(Child(Root(), Fields('foo')), Index(0)),
-    ...     Slice(start=None, end=None, step=None),
-    ... )
-    True
+    >>> [match.value for match in string_to_jsonpath('$.foo[0][*]').find({'foo': [[1, 2]]})]
+    [1, 2]
+    >>> string_to_jsonpath("$.foo[bar]")
+    Child(Child(Root(), Fields('foo')), Fields('bar'))
 
     :param args: Last arg as input string value, to be converted
     :param force: force conversion even if input string is not detected as a :class:`jsonpath_ng.JSONPath`
     :returns: Parsed value
     """
-    path_str: str = args[-1]
+
+    from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
+
+    try:
+        from jsonpath_ng.jsonpath import Wildcard
+    except ImportError:
+        Wildcard = None
+
+    path_str = args[-1]
     if JSONPATH_MATCH.match(str(path_str)) or force:
         try:
             common_jsonpath = "$"
@@ -972,7 +978,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> str | JSONPath:
                             if index == "*":
                                 parsed_path = Child(
                                     parsed_path,
-                                    Slice(start=None, end=None, step=None),
+                                    Wildcard() if Wildcard else Slice(),
                                 )
                                 continue
                             try:
@@ -991,7 +997,14 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> str | JSONPath:
                         parsed_path = cached_parse(path_str)
                         break
                     else:
-                        parsed_path = Child(parsed_path, Fields(path_split))
+                        parsed_path = Child(
+                            parsed_path,
+                            (
+                                Wildcard()
+                                if path_split == "*" and Wildcard
+                                else Fields(path_split)
+                            ),
+                        )
                 return parsed_path
             else:
                 return cached_parse(path_str)
@@ -1425,7 +1438,37 @@ def cached_parse(str_to_parse: str) -> JSONPath:
     :param str_to_parse: string to parse as :class:`jsonpath_ng.JSONPath`
     :returns: parsed :class:`jsonpath_ng.JSONPath`
     """
-    return parse(str_to_parse)
+    from jsonpath_ng.exceptions import JsonPathParserError
+    from jsonpath_ng.ext import parse
+
+    try:
+        return parse(str_to_parse)
+    except JsonPathParserError:
+        # jsonpath-ng < 1.13.0 only accepts '&' for filter conjunctions.
+        # Retry with their syntax only when the original expression has '&&'.
+        if "&&" not in str_to_parse:
+            raise
+        from jsonpath_ng.ext.parser import ExtendedJsonPathLexer
+
+        # Identify adjacent ampersand tokens so quoted strings and named
+        # operators containing '&&' are left unchanged.
+        tokens = list(ExtendedJsonPathLexer().tokenize(str_to_parse))
+        positions = [
+            first.lexpos
+            for index, first in enumerate(tokens[:-1])
+            if first.type == tokens[index + 1].type == "&"
+            and tokens[index + 1].lexpos == first.lexpos + 1
+        ]
+        if not positions:
+            raise
+        # Remove one ampersand from each conjunction and retry parsing.
+        return parse(
+            "".join(
+                char
+                for index, char in enumerate(str_to_parse)
+                if index not in positions
+            )
+        )
 
 
 @functools.lru_cache()
