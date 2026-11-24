@@ -34,9 +34,8 @@ from jsonpath_ng.jsonpath import Child, Fields, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
 from pydantic import AliasChoices
-from shapely import wkt
+from shapely import transform, wkt
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
-from shapely.ops import transform
 
 from eodag.api.product._assets import Asset
 from eodag.types.queryables import Queryables
@@ -77,6 +76,19 @@ COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
 DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
+
+
+def _reproject_geometry(
+    geometry: BaseGeometry, project: Callable[..., Any]
+) -> BaseGeometry:
+    def transform_coordinates(coordinates: Any) -> Any:
+        if len(coordinates) == 1:
+            coordinates[0] = project(*coordinates[0])
+        else:
+            coordinates.T[:] = project(*coordinates.T)
+        return coordinates
+
+    return transform(geometry, transform_coordinates, include_z=geometry.has_z)
 
 
 def _parse_converter_chain(
@@ -562,7 +574,7 @@ def _format_metadata(  # noqa: C901
                     project = pyproj.Transformer.from_crs(
                         from_proj, to_proj, always_xy=True
                     ).transform
-                    return transform(project, input_geom)
+                    return _reproject_geometry(input_geom, project)
                 else:
                     return input_geom
             else:
@@ -618,7 +630,9 @@ def _format_metadata(  # noqa: C901
                     polygon = Polygon(polygon_args)
                     # reproject if needed
                     if from_proj and from_proj != to_proj:
-                        polygons_list.append(transform(project, polygon))
+                        polygons_list.append(
+                            cast(Polygon, _reproject_geometry(polygon, project))
+                        )
                     else:
                         polygons_list.append(polygon)
 
