@@ -1971,6 +1971,49 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         response.json.assert_not_called()
 
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order_status_json_result_entry(self, mock_request):
+        plugin = HTTPDownload(
+            provider=self.product.provider,
+            config=PluginConfig.from_mapping(
+                {
+                    "type": "HTTPDownload",
+                    "order_status": {
+                        "success": {"http_code": 200},
+                        "on_success": {"results_entry": "$["},
+                    },
+                }
+            ),
+        )
+        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
+        mock_request.return_value.status_code = 200
+        mock_request.return_value.headers = {"Content-Type": "application/json"}
+
+        for result_entry in ("$[", "$.results"):
+            with self.subTest(result_entry=result_entry):
+                plugin.config.order_status["on_success"]["results_entry"] = result_entry
+                with self.assertRaises(NotImplementedError) as error:
+                    plugin._order_status(self.product)
+                message = str(error.exception)
+                self.assertIn(
+                    f"order_status.on_success.results_entry {result_entry!r}", message
+                )
+                self.assertIn("not supported for JSON responses", message)
+
+        plugin.config.order_status["on_success"] = {"result_type": "xml"}
+        with self.assertRaisesRegex(MisconfiguredError, "results_entry is required"):
+            plugin._order_status(self.product)
+
+        plugin.config.order_status["on_success"]["results_entry"] = "//entry"
+        mock_request.return_value.content = b"<invalid"
+        with self.assertRaises(DownloadError) as error:
+            plugin._order_status(self.product)
+        self.assertIn(
+            "Could not parse result after order success", str(error.exception)
+        )
+        self.assertIsNotNone(error.exception.__cause__)
+
     @mock.patch(
         "eodag.plugins.authentication.token.TokenAuth.authenticate", autospec=True
     )

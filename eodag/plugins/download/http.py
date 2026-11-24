@@ -65,7 +65,6 @@ from eodag.utils import (
     path_to_uri,
     rename_with_version,
     sanitize,
-    string_to_jsonpath,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
@@ -79,7 +78,6 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from jsonpath_ng import JSONPath
     from mypy_boto3_s3 import S3ServiceResource
     from requests import Response
 
@@ -531,22 +529,29 @@ class HTTPDownload(Download):
         result_type = config_on_success.get("result_type", "json")
         result_entry = config_on_success.get("results_entry")
 
+        if result_type == "xml" and not result_entry:
+            raise MisconfiguredError(
+                "order_status.on_success.results_entry is required for XML responses"
+            )
+        if result_type != "xml" and result_entry:
+            msg = (
+                f"order_status.on_success.results_entry {result_entry!r} "
+                "is not supported for JSON responses"
+            )
+            raise NotImplementedError(msg)
+
         on_success_mm_querypath = (
             # append product.properties as input for on success response parsing
             mtd_cfg_as_conversion_and_querypath(on_success_mm) if on_success_mm else {}
         )
         try:
             if result_type == "xml":
-                if not result_entry:
-                    raise MisconfiguredError(
-                        '"result_entry" is required with "result_type" "xml"in "order_status.on_success"'
-                    )
                 root_node = etree.fromstring(response.content)
                 namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
                 results = [
                     etree.tostring(entry)
                     for entry in root_node.xpath(
-                        result_entry,
+                        cast(str, result_entry),
                         namespaces=namespaces,
                     )
                 ]
@@ -577,14 +582,6 @@ class HTTPDownload(Download):
                     )
                     else {}
                 )
-                if result_entry:
-                    entry_jsonpath: JSONPath = string_to_jsonpath(
-                        result_entry, force=True
-                    )
-                    json_response = entry_jsonpath.find(json_response)
-                    raise NotImplementedError(
-                        'result_entry in config.on_success is not yet supported for result_type "json"'
-                    )
                 if on_success_mm_querypath:
                     logger.debug(
                         "Parsing on-success metadata-mapping using order status response"
