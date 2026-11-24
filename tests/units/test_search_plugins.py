@@ -7483,3 +7483,40 @@ class TestSearchPluginStacListAssets(BaseSearchPluginTest):
         with self.assertRaises(RequestError):
             product.register_downloader(downloader, mock.Mock())
         mock_update_assets_from_s3.assert_called_once()
+
+
+class TestDedlEmptyOrderStatus(BaseSearchPluginTest):
+    def test_dedl_empty_order_status_maps_to_succeeded(self):
+        """An empty order:status on a dedl marine item is online (succeeded)."""
+        collection = "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024"
+        plugin = self.get_search_plugin(collection=collection, provider="dedl")
+        geometry = {
+            "type": "Polygon",
+            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+        }
+
+        def status_for(raw_status):
+            properties = {
+                "datetime": "2010-03-04T00:00:00Z",
+                "start_datetime": "2010-03-04T00:00:00Z",
+                "end_datetime": "2010-03-05T00:00:00Z",
+            }
+            if raw_status is not None:
+                properties["order:status"] = raw_status
+            feature = {
+                "type": "Feature",
+                "id": "marine-1",
+                "properties": properties,
+                "geometry": geometry,
+            }
+            products = plugin.normalize_results(
+                RawSearchResult([feature]), collection=collection
+            )
+            return products[0].properties.get("order:status")
+
+        self.assertEqual(status_for(""), "succeeded")
+        self.assertEqual(status_for("succeeded"), "succeeded")
+        self.assertEqual(status_for("shipping"), "ordered")
+        self.assertEqual(status_for("orderable"), "orderable")
+        self.assertIsNone(status_for("unexpected"))
+        self.assertIsNone(status_for(None))

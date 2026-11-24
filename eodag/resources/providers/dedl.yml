@@ -20,7 +20,8 @@ dedl:
     metadata_mapping:
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       eodag:quicklook: '{eodag:thumbnail}'
-      order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
+      # An empty order:status means the item is already online (#1512).
+      order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded|^$)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.downloadLink.href'
       federation:backends:
         - '{{"query": {{"federation:backends": {{"eq": "{federation:backends}"}}}}}}'
