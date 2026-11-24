@@ -46,7 +46,10 @@ from requests import RequestException
 from shapely.geometry.base import BaseGeometry
 
 from eodag.api.product import AssetsDict
-from eodag.api.product.metadata_mapping import get_queryable_from_provider
+from eodag.api.product.metadata_mapping import (
+    get_queryable_from_provider,
+    mtd_cfg_as_conversion_and_querypath,
+)
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.build_search_result import (
@@ -3709,6 +3712,41 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 collection=collection, provider=provider
             )
         )
+
+    def test_format_as_provider_keyword_uses_collection_metadata_mapping(self):
+        """A collection metadata mapping must override the provider mapping."""
+        collection = self.collection
+        products = self.search_plugin.config.products[collection]
+        saved_mapping = products.get("metadata_mapping")
+        had_value = "ecmwf:custom_only" in products
+        saved_value = products.get("ecmwf:custom_only")
+        try:
+            extra = mtd_cfg_as_conversion_and_querypath(
+                {"ecmwf:custom_only": ["custom_only", "$.custom_only"]}
+            )
+            products["metadata_mapping"] = {**(saved_mapping or {}), **extra}
+            products["ecmwf:custom_only"] = "from-collection"
+            self.assertNotIn(
+                "ecmwf:custom_only", self.search_plugin.config.metadata_mapping
+            )
+
+            formatted = self.search_plugin.format_as_provider_keyword(
+                collection,
+                {
+                    "start_datetime": "2020-01-01",
+                    "end_datetime": "2020-01-02",
+                },
+            )
+            self.assertEqual(formatted.get("custom_only"), "from-collection")
+        finally:
+            if saved_mapping is None:
+                products.pop("metadata_mapping", None)
+            else:
+                products["metadata_mapping"] = saved_mapping
+            if had_value:
+                products["ecmwf:custom_only"] = saved_value
+            else:
+                products.pop("ecmwf:custom_only", None)
 
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """ECMWFSearch.query must adapt end date in certain cases"""

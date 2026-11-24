@@ -1056,14 +1056,20 @@ class ECMWFSearch(PostJsonSearch):
             collection, format_variables=properties
         )
 
+        # Collection metadata mapping overwrites the provider mapping (#1542).
+        collection_metadata_mapping = {
+            **self.config.metadata_mapping,
+            **collection_def_params.get("metadata_mapping", {}),
+        }
+
         # Add to the query, the queryable parameters set in the provider collection definition
         properties.update(
             {
                 k: v
                 for k, v in collection_def_params.items()
                 if k not in properties.keys()
-                and k in self.config.metadata_mapping.keys()
-                and isinstance(self.config.metadata_mapping[k], list)
+                and k in collection_metadata_mapping
+                and isinstance(collection_metadata_mapping[k], list)
             }
         )
         qp, _ = self.build_query_string(collection, properties)
