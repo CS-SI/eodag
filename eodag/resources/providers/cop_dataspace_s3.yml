@@ -255,6 +255,8 @@ cop_dataspace_s3:
     s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
     support_presign_url: False
     matching_url: 's3://eodata'
+    matching_conf:
+      s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
   products:
     # S2
     S2_MSI_L1C:
