@@ -4675,6 +4675,7 @@
     type: ECMWFSearch
     need_auth: true
     ssl_verify: true
+    timeout: 20
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
@@ -4700,7 +4701,7 @@
   products:
     DT_EXTREMES:
       discover_queryables:
-        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}.json"
       dataset: extremes-dt
       class: d1
       expver: "0001"
@@ -4827,6 +4828,7 @@
     auth_error_code: 401
     order_enabled: True
     order_method: POST
+    timeout: 20
     order_on_response:
       metadata_mapping:
         eodag:order_id: '{$.headers.Location#replace_str(r".*\W(\w+)$",r"\1")}'
