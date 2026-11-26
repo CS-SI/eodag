@@ -962,18 +962,29 @@ class ECMWFSearch(PostJsonSearch):
             user_default = defaults.get(name)
             if (
                 name not in available_values
-                and isinstance(user_default, str)
                 and isinstance(values, list)
                 and values
                 and all(isinstance(item, str) for item in values)
-                and user_default not in values
             ):
-                allowed = ", ".join(sorted(values))
-                raise ValidationError(
-                    f"{name}={user_default} is not allowed. "
-                    f"Allowed values are {allowed}.",
-                    {name},
-                )
+                invalid_values: list[str] = []
+                if isinstance(user_default, str) and user_default not in values:
+                    invalid_values.append(user_default)
+                elif (
+                    element["type"] in ("StringListWidget", "StringListArrayWidget")
+                    and isinstance(user_default, list)
+                    and all(isinstance(item, str) for item in user_default)
+                ):
+                    invalid_values = [
+                        item for item in user_default if item not in values
+                    ]
+
+                if invalid_values:
+                    allowed = ", ".join(sorted(values))
+                    raise ValidationError(
+                        f"{name}={user_default} is not allowed. "
+                        f"Allowed values are {allowed}.",
+                        {name},
+                    )
 
             # updates the properties with the values given based on the information from the element
             _update_properties_from_element(prop, element, values)

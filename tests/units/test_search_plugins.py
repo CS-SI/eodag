@@ -3716,6 +3716,35 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "zip", get_args(queryables["ecmwf_download_format"])[1].default
         )
 
+    def test_queryables_by_form_rejects_invalid_multi_choice_values(self):
+        form = [
+            {
+                "name": "variable",
+                "type": "StringListWidget",
+                "id": 1,
+                "required": False,
+                "details": {"values": ["ozone", "nitrogen_dioxide"]},
+            }
+        ]
+        with self.assertRaises(ValidationError) as caught:
+            self.search_plugin.queryables_by_form(
+                form,
+                {},
+                {"variable": ["ozone", "invalid"]},
+            )
+        self.assertIn("invalid", caught.exception.message)
+        self.assertIn("variable", caught.exception.message)
+
+        queryables = self.search_plugin.queryables_by_form(
+            form,
+            {},
+            {"variable": ["ozone", "nitrogen_dioxide"]},
+        )
+        self.assertEqual(
+            ["ozone", "nitrogen_dioxide"],
+            get_args(queryables["ecmwf_variable"])[1].default,
+        )
+
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """ECMWFSearch.query must adapt end date in certain cases"""
         # start & stop as dates -> keep end date as it is
