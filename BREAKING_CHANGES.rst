@@ -3,6 +3,17 @@ Migration guide
 
 Full changelog available in `Release history <changelog.html>`_.
 
+v4.12.0
++++++++
+
+EUMETSAT authentication
+~~~~~~~~~~~~~~~~~~~~~~~
+
+EUMETSAT Data Store authentication now uses the username and password of an EUMETSAT user account with the
+authorization-code flow. Existing user configurations that provide a consumer key and secret must be updated to
+provide the account username and password under ``eumetsat_ds.auth.credentials``. See the
+:doc:`EUMETSAT provider documentation <providers>` for migration instructions.
+
 v4.0.0a2
 ++++++++
 

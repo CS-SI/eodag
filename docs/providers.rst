@@ -1116,8 +1116,16 @@ No credentials are needed
 
   Create an account `here <https://user.eumetsat.int/register>`__.
 
-  Configure your EUMETSAT account username and password as the provider credentials. These are your account login
-  credentials, not the consumer key and secret used by the former authentication method.
+  EUMETSAT Data Store authentication now uses your EUMETSAT account username and password. Replace the consumer key
+  and secret from the former authentication method in your user configuration with:
+
+  .. code-block:: yaml
+
+     eumetsat_ds:
+       auth:
+         credentials:
+           username: "your EUMETSAT username"
+           password: "your EUMETSAT password"
 
   To download data you have to accept the `Licence to use Meteosat & Metop Products`. To accept the licence:
 
