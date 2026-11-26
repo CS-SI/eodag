@@ -39,7 +39,7 @@ from shapely.errors import ShapelyError
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.types.queryables import CommonStacMetadata
-from eodag.types.stac_metadata import create_stac_metadata_model
+from eodag.types.stac_metadata import get_default_stac_metadata_model
 
 try:
     # import from eodag-cube if installed
@@ -267,7 +267,7 @@ class EOProduct:
             stac_providers.append({"name": self.provider, "roles": ["host"]})
             stac_properties["providers"] = stac_providers
 
-        props_model = cast(type[CommonStacMetadata], create_stac_metadata_model())
+        props_model = cast(type[CommonStacMetadata], get_default_stac_metadata_model())
         props_validated = props_model.safe_validate(
             stac_properties, skip_invalid=skip_invalid
         )
