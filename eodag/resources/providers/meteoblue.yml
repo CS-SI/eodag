@@ -25,7 +25,7 @@ meteoblue:
         - '{{"geometry": {geometry#to_geojson} }}'
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      collection: '$.queries[0].domain'
+      _collection: '$.queries[0].domain'
       order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       qs: $.qs
       eodag:download_link: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
@@ -48,14 +48,14 @@ meteoblue:
       eodag:order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
   products:
     NEMSGLOBAL_TCDC:
-      product:type: NEMSGLOBAL
+      _collection: NEMSGLOBAL
       queries: [{'domain':'NEMSGLOBAL','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
       format: netCDF
       units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
       timeIntervalsAlignment:
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
     NEMSAUTO_TCDC:
-      product:type: NEMSAUTO
+      _collection: NEMSAUTO
       queries: [{'domain':'NEMSAUTO','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
       format: netCDF
       units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
