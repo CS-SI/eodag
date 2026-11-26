@@ -576,6 +576,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 "The authorized URL is missing the state parameter"
             )
         if received_state != state:
+            self._code_verifier = None
             raise AuthenticationError(
                 "The state received in the authorized url does not match initially computed state"
             )

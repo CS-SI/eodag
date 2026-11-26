@@ -3669,7 +3669,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuthPKCE(unittest.TestCase):
             post.assert_not_called()
 
     def test_pkce_state_mismatch_rejected(self):
-        """Continue enforcing state validation when PKCE is enabled."""
+        """Reject state mismatch and clear the verifier when PKCE is enabled."""
         self.plugin._code_verifier = "test-verifier"
         with mock.patch.object(self.plugin.session, "post") as post:
             with self.assertRaises(AuthenticationError):
@@ -3677,6 +3677,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuthPKCE(unittest.TestCase):
                     self.config.redirect_uri + "?code=code&state=wrong", "state"
                 )
             post.assert_not_called()
+        self.assertIsNone(self.plugin._code_verifier)
 
     def test_pkce_verifier_cleared_on_exchange_error(self):
         """Clear the verifier if code exchange fails."""
