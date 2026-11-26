@@ -66,6 +66,85 @@ class TestCoreSearch(unittest.TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", return_value=None
+    )
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_core_search_next_page_wekeo_main(self, mock_request, mock_authenticate):
+        """Verify that wekeo requests the next page with the correct offset."""
+        page_ids = (["product-1", "product-2"], ["product-3"])
+        mock_request.return_value.json.side_effect = [
+            {
+                "properties": {"totalResults": 3},
+                "features": [
+                    {
+                        "id": product_id + ".SAFE",
+                        "geometry": {"type": "Point", "coordinates": [0, 0]},
+                        "properties": {},
+                    }
+                    for product_id in ids
+                ],
+            }
+            for ids in page_ids
+        ]
+
+        first_page = self.dag.search(
+            provider="wekeo_main",
+            collection="S2_MSI_L1C",
+            limit=2,
+            validate=False,
+            raise_errors=True,
+        )
+        self.assertEqual(
+            [product.properties["id"] for product in first_page], page_ids[0]
+        )
+        self.assertEqual(
+            [
+                [product.properties["id"] for product in page]
+                for page in first_page.next_page(update=False)
+            ],
+            [page_ids[1]],
+        )
+        self.assertEqual(
+            [
+                (params["startIndex"], params["itemsPerPage"])
+                for params in (
+                    request.args[1].query_params
+                    for request in mock_request.call_args_list
+                )
+            ],
+            [(0, 2), (2, 2)],
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate", return_value=None
+    )
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_core_search_by_id_wekeo_main_sentinel2(
+        self, mock_request, mock_authenticate
+    ):
+        """Verify that wekeo search-by-id uses the sensing hour for Sentinel-2 L1C and L2A."""
+        mock_request.return_value.json.return_value = {
+            "properties": {"totalResults": 0},
+            "features": [],
+        }
+
+        for collection, level in (("S2_MSI_L1C", "L1C"), ("S2_MSI_L2A", "L2A")):
+            with self.subTest(collection=collection):
+                mock_request.reset_mock()
+                self.dag.search(
+                    provider="wekeo_main",
+                    collection=collection,
+                    id=f"S2A_MSI{level}_20250402T175741_N0511_R141_T14ULD_20250403T022035",
+                    validate=False,
+                    raise_errors=True,
+                )
+
+                mock_request.assert_called_once()
+                params = mock_request.call_args.args[1].query_params
+                self.assertEqual(params["startdate"], "2025-04-02T17%3A00%3A00Z")
+                self.assertEqual(params["enddate"], "2025-04-02T17%3A59%3A59Z")
+
+    @mock.patch(
         "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
