@@ -3743,6 +3743,67 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             )
         )
 
+    def test_queryables_by_form_rejects_value_absent_from_form(self):
+        """A form-only choice must not keep a caller value outside its allowed values."""
+        form = [
+            {
+                "name": "download_format",
+                "type": "StringChoiceWidget",
+                "id": 1,
+                "required": False,
+                "details": {
+                    "values": ["unarchived", "zip"],
+                    "default": ["unarchived"],
+                },
+            }
+        ]
+        with self.assertRaises(ValidationError) as caught:
+            self.search_plugin.queryables_by_form(
+                form,
+                {},
+                {"download_format": "unarchivedddd"},
+            )
+        self.assertIn("unarchivedddd", caught.exception.message)
+        self.assertIn("download_format", caught.exception.message)
+
+        queryables = self.search_plugin.queryables_by_form(
+            form,
+            {},
+            {"download_format": "zip"},
+        )
+        self.assertEqual(
+            "zip", get_args(queryables["ecmwf_download_format"])[1].default
+        )
+
+    def test_queryables_by_form_rejects_invalid_multi_choice_values(self):
+        form = [
+            {
+                "name": "variable",
+                "type": "StringListWidget",
+                "id": 1,
+                "required": False,
+                "details": {"values": ["ozone", "nitrogen_dioxide"]},
+            }
+        ]
+        with self.assertRaises(ValidationError) as caught:
+            self.search_plugin.queryables_by_form(
+                form,
+                {},
+                {"variable": ["ozone", "invalid"]},
+            )
+        self.assertIn("invalid", caught.exception.message)
+        self.assertIn("variable", caught.exception.message)
+
+        queryables = self.search_plugin.queryables_by_form(
+            form,
+            {},
+            {"variable": ["ozone", "nitrogen_dioxide"]},
+        )
+        self.assertEqual(
+            ["ozone", "nitrogen_dioxide"],
+            get_args(queryables["ecmwf_variable"])[1].default,
+        )
+
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """ECMWFSearch.query must adapt end date in certain cases"""
         # start & stop as dates -> keep end date as it is
@@ -4601,14 +4662,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         params[eodag_formatted_data_format] = ""
 
         # use a parameter among the ones of the form file but not among the ones of the constraints file
-        # and of provider default configuration to check if an error is raised, which is supposed to not happen
+        # and of provider default configuration. An allowed form value is accepted.
+        # An illegal value is covered by test_queryables_by_form_rejects_value_absent_from_form.
         eodag_formatted_download_format = "ecmwf:download_format"
         provider_download_format = eodag_formatted_download_format.replace("ecmwf:", "")
         self.assertNotIn(eodag_formatted_download_format, default_values)
         self.assertIn(provider_download_format, [param["name"] for param in form])
         for constraint in constraints:
             self.assertNotIn(provider_data_format, constraint)
-        params[eodag_formatted_download_format] = "foo"
+        params[eodag_formatted_download_format] = "zip"
         # create parameters matching the first constraint
         params["variable"] = "nitrogen_dioxide"
 
