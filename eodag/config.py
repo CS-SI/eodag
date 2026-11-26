@@ -755,8 +755,14 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC token audiences
     allowed_audiences: list[str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Enable PKCE with S256 for authorization code exchange
+    pkce: bool
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Refresh token lifetime in days when refresh_expires_in is absent
+    refresh_token_lifetime: int
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Whether a user consent is needed during the authentication or not
-    user_consent_needed: str
+    user_consent_needed: bool
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Where to look for the :attr:`~eodag.config.PluginConfig.authorization_uri`
     authentication_uri_source: str
@@ -793,9 +799,12 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Way to pass the data to the POST request that is made to the token server
     token_exchange_post_data_method: str
-    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: :class:`~eodag.plugins.authentication.OIDCTokenExchangeAuth`
     #: The url to query to get the authorized token
     token_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Optional override for the token endpoint obtained from OIDC discovery
+    token_endpoint_override: str
     #: :class:`~eodag.plugins.authentication.sas_auth.SASAuth` Key to get the signed url
     signed_url_key: str
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`

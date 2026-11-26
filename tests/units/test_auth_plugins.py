@@ -16,15 +16,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 import datetime as dt
+import hashlib
 import pickle
 import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest import mock
+from urllib.parse import urlencode
 
 import boto3
+import jwt
 import requests
 import responses
 from concurrent.futures import ThreadPoolExecutor
@@ -38,6 +42,7 @@ from eodag.api.product._product import EOProduct
 from eodag.api.provider import ProvidersDict
 from eodag.plugins.authentication import sas_auth
 from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
+from eodag.plugins.authentication.openid_connect import OIDCAuthorizationCodeFlowAuth
 from eodag.utils import MockResponse
 from tests.context import (
     HTTP_REQ_TIMEOUT,
@@ -47,6 +52,7 @@ from tests.context import (
     HeaderAuth,
     MisconfiguredError,
     OIDCTokenExchangeAuth,
+    PluginConfig,
     PluginManager,
     RequestError,
     TimeOutError,
@@ -3299,6 +3305,46 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             state,
         )
 
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_missing_state_or_code(
+        self,
+    ):
+        """Missing callback parameters raise AuthenticationError, not KeyError."""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        with mock.patch.object(auth_plugin.session, "post") as mock_post:
+            with self.assertRaisesRegex(AuthenticationError, "missing the state"):
+                auth_plugin.exchange_code_for_token(
+                    auth_plugin.config.redirect_uri, "expected-state"
+                )
+            with self.assertRaisesRegex(
+                AuthenticationError, "missing the authorization code"
+            ):
+                auth_plugin.exchange_code_for_token(
+                    f"{auth_plugin.config.redirect_uri}?state=expected-state",
+                    "expected-state",
+                )
+        mock_post.assert_not_called()
+
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_oauth_error(
+        self,
+    ):
+        """Report OAuth callback errors and their description without exchanging a code."""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.config.credentials = {"foo": "bar"}
+        authorized_url = (
+            f"{auth_plugin.config.redirect_uri}?state=expected-state"
+            "&error=access_denied&error_description=User+denied+access"
+        )
+
+        with mock.patch.object(auth_plugin.session, "post") as mock_post:
+            with self.assertRaisesRegex(
+                AuthenticationError,
+                "access_denied.*User denied access",
+            ):
+                auth_plugin.exchange_code_for_token(authorized_url, "expected-state")
+        mock_post.assert_not_called()
+
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.post", autospec=True
     )
@@ -3454,3 +3500,278 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         with self.assertRaises(TimeoutError):
             auth_plugin.exchange_code_for_token(authorized_url, state)
+
+
+class TestAuthPluginOIDCAuthorizationCodeFlowAuthPKCE(unittest.TestCase):
+    """Test PKCE and token handling for the authorization-code plugin."""
+
+    def setUp(self):
+        """Build an isolated plugin using dummy credentials and test endpoints."""
+        self.config = PluginConfig.from_mapping(
+            {
+                "type": "OIDCAuthorizationCodeFlowAuth",
+                "oidc_config_url": "https://auth.test/discovery",
+                "token_endpoint_override": "https://auth.test/oauth/token",
+                "client_id": "public-client",
+                "allowed_audiences": ["public-client"],
+                "redirect_uri": "https://api.test/cli",
+                "pkce": True,
+                "refresh_token_lifetime": 30,
+                "token_provision": "header",
+                "token_exchange_post_data_method": "data",
+                "user_consent_needed": False,
+                "login_form_xpath": "//form[@id='fm1']",
+                "authentication_uri_source": "config",
+                "authentication_uri": "https://auth.test/login",
+                "additional_login_form_data": {
+                    "execution": "xpath(.//input[@name='execution']/@value)",
+                    "_eventId": "xpath(.//input[@name='_eventId']/@value)",
+                },
+                "credentials": {"username": "test-user", "password": "test-password"},
+            }
+        )
+        self.discovery = {
+            "authorization_endpoint": "https://auth.test/authorize",
+            "token_endpoint": "https://auth.test/discovered/token",
+            "jwks_uri": "https://auth.test/jwks",
+            "id_token_signing_alg_values_supported": ["HS256"],
+        }
+        with mock.patch(
+            "eodag.plugins.authentication.openid_connect.requests.get"
+        ) as discovery_get:
+            discovery_get.return_value.json.return_value = self.discovery
+            self.plugin = OIDCAuthorizationCodeFlowAuth("test-provider", self.config)
+        self.addCleanup(self.plugin.session.close)
+
+    def login_response(self):
+        """Return a minimal login form with hidden fields."""
+        return mock.Mock(
+            text='<form id="fm1"><input name="execution" value="execution-id"/>'
+            '<input name="_eventId" value="submit"/></form>'
+        )
+
+    def remove_config_key_temporarily(self, key):
+        """Restore a temporarily removed config key at test cleanup."""
+        value = self.config.__dict__.pop(key)
+        self.addCleanup(self.config.__dict__.__setitem__, key, value)
+
+    def test_pkce_authentication_and_refresh(self):
+        """Exercise PKCE, JWT validation, and refresh-token rotation."""
+        signing_key = "a-test-signing-key-with-at-least-32-bytes"  # gitleaks:allow
+        expiration = datetime.now(timezone.utc) + timedelta(hours=8)
+        token = jwt.encode(
+            {"exp": expiration, "aud": "public-client"}, signing_key, algorithm="HS256"
+        )
+
+        def post(url, **kwargs):
+            if url == self.config.authentication_uri:
+                self.assertEqual(kwargs["data"]["execution"], "execution-id")
+                self.assertEqual(kwargs["data"]["_eventId"], "submit")
+                self.assertEqual(kwargs["data"]["username"], "test-user")
+                self.assertEqual(kwargs["data"]["password"], "test-password")
+                state = mock_session_get.call_args.kwargs["params"]["state"]
+                return mock.Mock(
+                    url=self.config.redirect_uri
+                    + "?"
+                    + urlencode({"code": "authorization-code", "state": state})
+                )
+            self.assertEqual(url, self.config.token_endpoint_override)
+            data = kwargs["data"]
+            if data["grant_type"] == "authorization_code":
+                verifier = data["code_verifier"]
+                self.assertGreaterEqual(len(verifier), 43)
+                self.assertLessEqual(len(verifier), 128)
+                params = mock_session_get.call_args.kwargs["params"]
+                self.assertEqual(params["code_challenge_method"], "S256")
+                self.assertEqual(
+                    params["code_challenge"],
+                    base64.urlsafe_b64encode(
+                        hashlib.sha256(verifier.encode("ascii")).digest()
+                    )
+                    .decode("ascii")
+                    .rstrip("="),
+                )
+                refresh_token = "first-refresh"
+            else:
+                self.assertEqual(data["grant_type"], "refresh_token")
+                self.assertEqual(data["refresh_token"], "first-refresh")
+                self.assertNotIn("code_verifier", data)
+                refresh_token = "rotated-refresh"
+            return mock.Mock(
+                json=lambda: {
+                    "access_token": token,
+                    "refresh_token": refresh_token,
+                    "expires_in": 28800,
+                }
+            )
+
+        with (
+            mock.patch.object(
+                self.plugin.session, "get", return_value=self.login_response()
+            ) as mock_session_get,
+            mock.patch.object(
+                self.plugin.session, "post", side_effect=post
+            ) as mock_session_post,
+            mock.patch.object(
+                self.plugin.jwks_client,
+                "get_signing_key_from_jwt",
+                return_value=mock.Mock(key=signing_key),
+            ),
+        ):
+            before = datetime.now(timezone.utc)
+            auth = self.plugin.authenticate()
+            self.assertEqual(auth.token, token)
+            self.assertIsNone(self.plugin._code_verifier)
+            self.assertGreaterEqual(
+                self.plugin.refresh_token_expiration, before + timedelta(days=30)
+            )
+            self.plugin.authenticate()
+            self.assertEqual(mock_session_post.call_count, 2)
+            self.plugin.access_token_expiration = before - timedelta(seconds=1)
+            self.plugin.authenticate()
+            self.assertEqual(self.plugin.refresh_token, "rotated-refresh")
+            self.assertEqual(mock_session_get.call_count, 1)
+            self.assertEqual(mock_session_post.call_count, 3)
+
+    def test_pkce_verifier_is_fresh_for_each_authorization(self):
+        """Create a fresh verifier for every authorization attempt."""
+        with mock.patch.object(
+            self.plugin.session, "get", return_value=mock.Mock(text="<html/>")
+        ):
+            self.plugin.authenticate_user("first-state")
+            first = self.plugin._code_verifier
+            self.plugin.authenticate_user("second-state")
+            self.assertNotEqual(first, self.plugin._code_verifier)
+
+    def test_pkce_disabled_by_default(self):
+        """Support authorization-code providers that do not require PKCE."""
+        self.remove_config_key_temporarily("pkce")
+        with (
+            mock.patch.object(
+                self.plugin.session, "get", return_value=mock.Mock(text="<html/>")
+            ) as get,
+            mock.patch.object(self.plugin.session, "post") as post,
+        ):
+            self.plugin.authenticate_user("state")
+            self.assertNotIn("code_challenge", get.call_args.kwargs["params"])
+            self.plugin.exchange_code_for_token(
+                self.config.redirect_uri + "?code=code&state=state", "state"
+            )
+            self.assertNotIn("code_verifier", post.call_args.kwargs["data"])
+
+    def test_pkce_missing_verifier_rejected(self):
+        """Reject code exchange if PKCE is enabled but no verifier exists."""
+        with mock.patch.object(self.plugin.session, "post") as post:
+            with self.assertRaisesRegex(AuthenticationError, "Missing PKCE verifier"):
+                self.plugin.exchange_code_for_token(
+                    self.config.redirect_uri + "?code=code&state=state", "state"
+                )
+            post.assert_not_called()
+
+    def test_pkce_state_mismatch_rejected(self):
+        """Reject state mismatch and clear the verifier when PKCE is enabled."""
+        self.plugin._code_verifier = "test-verifier"
+        with mock.patch.object(self.plugin.session, "post") as post:
+            with self.assertRaises(AuthenticationError):
+                self.plugin.exchange_code_for_token(
+                    self.config.redirect_uri + "?code=code&state=wrong", "state"
+                )
+            post.assert_not_called()
+        self.assertIsNone(self.plugin._code_verifier)
+
+    def test_pkce_verifier_cleared_on_exchange_error(self):
+        """Clear the verifier if code exchange fails."""
+        self.plugin._code_verifier = "test-verifier"
+        with mock.patch.object(
+            self.plugin.session, "post", side_effect=requests.ConnectionError
+        ):
+            with self.assertRaises(RequestError):
+                self.plugin.exchange_code_for_token(
+                    self.config.redirect_uri + "?code=code&state=state", "state"
+                )
+        self.assertIsNone(self.plugin._code_verifier)
+
+    def test_discovered_endpoint_used_without_override(self):
+        """Fall back to the discovered endpoint when there is no override."""
+        self.remove_config_key_temporarily("token_endpoint_override")
+        with mock.patch.object(
+            OIDCAuthorizationCodeFlowAuth,
+            "_get_oidc_endpoints",
+            return_value=self.discovery,
+        ):
+            plugin = OIDCAuthorizationCodeFlowAuth("test-provider", self.config)
+        self.addCleanup(plugin.session.close)
+        self.assertEqual(plugin.token_endpoint, self.discovery["token_endpoint"])
+
+    def test_refresh_lifetime_response_overrides_fallback(self):
+        """Honor explicit refresh lifetimes in responses, including zero."""
+        for value in (0, "0", 7200, "7200"):
+            with self.subTest(value=value):
+                self.plugin.access_token = ""
+                self.plugin.refresh_token = ""
+                before = datetime.now(timezone.utc)
+                with (
+                    mock.patch.object(
+                        self.plugin,
+                        "_request_new_token",
+                        return_value={
+                            "access_token": "token",
+                            "refresh_token": "refresh",
+                            "refresh_expires_in": value,
+                        },
+                    ),
+                    mock.patch.object(
+                        self.plugin,
+                        "decode_jwt_token",
+                        return_value={"exp": (before + timedelta(hours=1)).timestamp()},
+                    ),
+                ):
+                    self.plugin.authenticate()
+                self.assertGreaterEqual(
+                    self.plugin.refresh_token_expiration,
+                    before + timedelta(seconds=int(value)),
+                )
+                self.assertLessEqual(
+                    self.plugin.refresh_token_expiration,
+                    datetime.now(timezone.utc) + timedelta(seconds=int(value)),
+                )
+
+    def test_missing_refresh_lifetime_uses_default_fallback(self):
+        """Use the configured estimate when a response omits token lifetime."""
+        self.remove_config_key_temporarily("refresh_token_lifetime")
+        before = datetime.now(timezone.utc)
+        with (
+            mock.patch.object(
+                self.plugin,
+                "_request_new_token",
+                return_value={"access_token": "token", "refresh_token": "refresh"},
+            ),
+            mock.patch.object(
+                self.plugin,
+                "decode_jwt_token",
+                return_value={"exp": (before + timedelta(hours=1)).timestamp()},
+            ),
+        ):
+            self.plugin.authenticate()
+        self.assertGreaterEqual(
+            self.plugin.refresh_token_expiration, before + timedelta(days=1000)
+        )
+
+    def test_wrong_audience_still_rejected(self):
+        """Keep JWT audience validation enabled for configured audiences."""
+        signing_key = "a-test-signing-key-with-at-least-32-bytes"  # gitleaks:allow
+        token = jwt.encode(
+            {
+                "aud": "other-client",
+                "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            },
+            signing_key,
+            algorithm="HS256",
+        )
+        with mock.patch.object(
+            self.plugin.jwks_client,
+            "get_signing_key_from_jwt",
+            return_value=mock.Mock(key=signing_key),
+        ):
+            with self.assertRaises(AuthenticationError):
+                self.plugin.decode_jwt_token(token)

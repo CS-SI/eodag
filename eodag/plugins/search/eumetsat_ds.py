@@ -27,7 +27,7 @@ from eodag.plugins.search.qssearch import QueryStringSearch
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
 
-logger = logging.getLogger("eodag.search.geodes")
+logger = logging.getLogger("eodag.search.eumetsat_ds")
 
 
 class EumetsatDsSearch(QueryStringSearch):

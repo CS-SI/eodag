@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import base64
 import datetime as dt
+import hashlib
 import logging
 import re
+import secrets
 import string
 from random import SystemRandom
 from threading import Lock
@@ -89,7 +91,10 @@ class OIDCRefreshTokenBase(Authentication):
         auth_config = self._get_oidc_endpoints()
 
         self.jwks_client = jwt.PyJWKClient(auth_config["jwks_uri"])
-        self.token_endpoint = auth_config["token_endpoint"]
+        self.token_endpoint = (
+            getattr(config, "token_endpoint_override", None)
+            or (auth_config["token_endpoint"])
+        )
         self.authorization_endpoint = auth_config["authorization_endpoint"]
         self.algorithms = auth_config["id_token_signing_alg_values_supported"]
 
@@ -159,13 +164,16 @@ class OIDCRefreshTokenBase(Authentication):
         self.refresh_token = response.get(
             getattr(self.config, "refresh_token_key", "refresh_token"), ""
         )
-        if self.refresh_token and response.get("refresh_expires_in", "0"):
+        refresh_expires_in = response.get("refresh_expires_in")
+        if self.refresh_token and refresh_expires_in is not None:
             self.refresh_token_expiration = now + dt.timedelta(
-                seconds=int(response["refresh_expires_in"])
+                seconds=int(refresh_expires_in)
             )
         else:
-            # refresh token does not expire but will be changed at each request
-            self.refresh_token_expiration = now + dt.timedelta(days=1000)
+            # If the provider omits the lifetime, use the configured estimate (1000 days by default).
+            self.refresh_token_expiration = now + dt.timedelta(
+                days=getattr(self.config, "refresh_token_lifetime", 1000)
+            )
 
         return self.access_token
 
@@ -235,6 +243,17 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     The headless interaction is fully configurable, and rely on XPATH to retrieve all the necessary
     information.
 
+    **Protocol concepts for maintainers**
+
+    Central Authentication Service (CAS) is a name for a centralized login service, not a requirement
+    of this plugin. The plugin is identity-provider agnostic as long as the provider exposes compatible
+    OpenID Connect (OIDC) discovery and authorization-code endpoints.
+
+    Proof Key for Code Exchange (PKCE) is an optional OAuth 2.0 security mechanism for public clients that
+    cannot keep a client secret. It binds an authorization code to the client that initiated the flow;
+    it complements, but does not replace, user authentication or the authorization ``state`` check.
+    ``pkce`` must be configured only when the identity provider supports or requires it.
+
     :param provider: provider name
     :param config: Authentication plugin configuration:
 
@@ -291,7 +310,14 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           the refresh_token in the json response to the POST request to the token server
         * :attr:`~eodag.config.PluginConfig.token_expiration_margin` (``int``): The margin of time (in seconds)
           before a token is considered expired. Default: 60 seconds.
-
+        * :attr:`~eodag.config.PluginConfig.pkce` (``bool``): Enable PKCE using S256. Default: ``False``.
+          Both PKCE-enabled and regular authorization-code authentication are supported; enable it when
+          the provider requires PKCE.
+        * :attr:`~eodag.config.PluginConfig.token_endpoint_override` (``str``): Override the token endpoint
+            obtained from OIDC discovery for code exchange and refresh requests.
+        * :attr:`~eodag.config.PluginConfig.allowed_audiences` (``list[str]``): Accepted JWT audiences.
+        * :attr:`~eodag.config.PluginConfig.refresh_token_lifetime` (``int``): Refresh token lifetime in days
+          when the response omits ``refresh_expires_in``. The default is a 1000-day fallback.
     """
 
     SCOPE = "openid"
@@ -300,6 +326,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
+        self._code_verifier: str | None = None
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -407,6 +434,17 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             "state": state,
             "redirect_uri": self.config.redirect_uri,
         }
+        if getattr(self.config, "pkce", False):
+            # A fresh verifier is bound to each authorization attempt, never to refresh requests.
+            self._code_verifier = secrets.token_urlsafe(64)
+            params.update(
+                code_challenge=base64.urlsafe_b64encode(
+                    hashlib.sha256(self._code_verifier.encode("ascii")).digest()
+                )
+                .decode("ascii")
+                .rstrip("="),
+                code_challenge_method="S256",
+            )
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             authorization_response = self.session.get(
@@ -531,17 +569,42 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 
     def exchange_code_for_token(self, authorized_url: str, state: str) -> Response:
         """Get exchange code for token"""
-        qs = parse_qs(urlparse(authorized_url).query)
-        if qs["state"][0] != state:
+        qs = parse_qs(urlparse(authorized_url).query, keep_blank_values=True)
+        received_state = qs.get("state", [None])[0]
+        if not received_state:
+            raise AuthenticationError(
+                "The authorized URL is missing the state parameter"
+            )
+        if received_state != state:
+            self._code_verifier = None
             raise AuthenticationError(
                 "The state received in the authorized url does not match initially computed state"
             )
-        code = qs["code"][0]
+
+        error = qs.get("error", [None])[0]
+        if error:
+            error_description = qs.get("error_description", [None])[0]
+            message = f"The authorization server returned an error: {error}"
+            if error_description:
+                message += f" ({error_description})"
+            raise AuthenticationError(message)
+
+        code = qs.get("code", [None])[0]
+        if not code:
+            raise AuthenticationError(
+                "The authorized URL is missing the authorization code"
+            )
         token_exchange_data: dict[str, Any] = {
             "code": code,
             "state": state,
             "grant_type": "authorization_code",
         }
+        if getattr(self.config, "pkce", False):
+            if not self._code_verifier:
+                raise AuthenticationError(
+                    "Missing PKCE verifier for authorization code exchange"
+                )
+            token_exchange_data["code_verifier"] = self._code_verifier
         token_exchange_data = self._prepare_token_post_data(token_exchange_data)
         post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_exchange_data
@@ -562,6 +625,8 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             raise RequestError.from_error(
                 exc, "An error occurred while authenticating the user."
             ) from exc
+        finally:
+            self._code_verifier = None
 
     def _constant_or_xpath_extracted(self, value: str, form_element: Any) -> str | None:
         match = self.CONFIG_XPATH_REGEX.match(value)

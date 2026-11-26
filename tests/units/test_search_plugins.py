@@ -7294,7 +7294,7 @@ class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
 
         self.assertTrue(len(normalized) > 0)
         base_href = (
-            "https://api.eumetsat.int/data/download/1.0.0/collections/"
+            "https://api.eumetsat.int/data/download/2.0.0/collections/"
             "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
             "entry?name="
         )
