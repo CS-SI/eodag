@@ -3305,6 +3305,46 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             state,
         )
 
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_missing_state_or_code(
+        self,
+    ):
+        """Missing callback parameters raise AuthenticationError, not KeyError."""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        with mock.patch.object(auth_plugin.session, "post") as mock_post:
+            with self.assertRaisesRegex(AuthenticationError, "missing the state"):
+                auth_plugin.exchange_code_for_token(
+                    auth_plugin.config.redirect_uri, "expected-state"
+                )
+            with self.assertRaisesRegex(
+                AuthenticationError, "missing the authorization code"
+            ):
+                auth_plugin.exchange_code_for_token(
+                    f"{auth_plugin.config.redirect_uri}?state=expected-state",
+                    "expected-state",
+                )
+        mock_post.assert_not_called()
+
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_oauth_error(
+        self,
+    ):
+        """Report OAuth callback errors and their description without exchanging a code."""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.config.credentials = {"foo": "bar"}
+        authorized_url = (
+            f"{auth_plugin.config.redirect_uri}?state=expected-state"
+            "&error=access_denied&error_description=User+denied+access"
+        )
+
+        with mock.patch.object(auth_plugin.session, "post") as mock_post:
+            with self.assertRaisesRegex(
+                AuthenticationError,
+                "access_denied.*User denied access",
+            ):
+                auth_plugin.exchange_code_for_token(authorized_url, "expected-state")
+        mock_post.assert_not_called()
+
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.post", autospec=True
     )

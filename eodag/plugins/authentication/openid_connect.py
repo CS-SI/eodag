@@ -569,12 +569,30 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 
     def exchange_code_for_token(self, authorized_url: str, state: str) -> Response:
         """Get exchange code for token"""
-        qs = parse_qs(urlparse(authorized_url).query)
-        if qs["state"][0] != state:
+        qs = parse_qs(urlparse(authorized_url).query, keep_blank_values=True)
+        received_state = qs.get("state", [None])[0]
+        if not received_state:
+            raise AuthenticationError(
+                "The authorized URL is missing the state parameter"
+            )
+        if received_state != state:
             raise AuthenticationError(
                 "The state received in the authorized url does not match initially computed state"
             )
-        code = qs["code"][0]
+
+        error = qs.get("error", [None])[0]
+        if error:
+            error_description = qs.get("error_description", [None])[0]
+            message = f"The authorization server returned an error: {error}"
+            if error_description:
+                message += f" ({error_description})"
+            raise AuthenticationError(message)
+
+        code = qs.get("code", [None])[0]
+        if not code:
+            raise AuthenticationError(
+                "The authorized URL is missing the authorization code"
+            )
         token_exchange_data: dict[str, Any] = {
             "code": code,
             "state": state,
