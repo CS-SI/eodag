@@ -26,6 +26,7 @@ from unittest import mock
 import orjson
 from lxml import html
 
+import eodag.types.stac_metadata as stac_metadata
 from eodag.databases.sqlite import SQLiteDatabase
 from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils.exceptions import ValidationError
@@ -79,7 +80,8 @@ class TestCollection(unittest.TestCase):
 
     def test_collection_enable_validation(self):
         """Collection validation is enabled by an environment variable.
-        It allows to log warnings on bad formatted attributes spotted during collection initialization"""
+        It allows to log warnings on bad formatted attributes spotted during collection initialization
+        """
         try:
             # ensure validation is enabled for collections
             os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
@@ -762,6 +764,27 @@ class TestCollection(unittest.TestCase):
                 "Create with: Collection.create_with_dag(dag, id='...')"
             ),
             str(context.exception),
+        )
+
+    def test_collection_serialize_reuses_default_stac_metadata_model(self):
+        """Collection serialization should reuse the default STAC metadata model."""
+        stac_metadata.get_default_stac_metadata_model.cache_clear()
+        try:
+            with mock.patch(
+                "eodag.types.stac_metadata.create_stac_metadata_model",
+                wraps=stac_metadata.create_stac_metadata_model,
+            ) as create_model:
+                first_serialization = self.collection.serialize()
+                second_serialization = Collection(id="bar").serialize()
+
+            self.assertEqual(create_model.call_count, 1)
+        finally:
+            stac_metadata.get_default_stac_metadata_model.cache_clear()
+
+        self.assertIn("stac_extensions", first_serialization)
+        self.assertEqual(
+            first_serialization["stac_extensions"],
+            second_serialization["stac_extensions"],
         )
 
     @mock.patch(

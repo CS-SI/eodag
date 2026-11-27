@@ -33,7 +33,7 @@ from stac_pydantic.shared import SEMVER_REGEX, StacBaseModel
 
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
-from eodag.types.stac_metadata import create_stac_metadata_model
+from eodag.types.stac_metadata import get_default_stac_metadata_model
 from eodag.utils import STAC_VERSION
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import ValidationError
@@ -543,7 +543,7 @@ class Collection(StacCollection):
                 by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
             )
 
-        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
+        summaries_model = cast(CommonStacMetadata, get_default_stac_metadata_model())
         summaries_validated = summaries_model.model_construct(
             _fields_set=None, **self.summaries
         )
@@ -577,7 +577,7 @@ class Collection(StacCollection):
                 by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
             )
 
-        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
+        summaries_model = cast(CommonStacMetadata, get_default_stac_metadata_model())
         summaries_validated = summaries_model.model_construct(
             _fields_set=None, **self.summaries
         )

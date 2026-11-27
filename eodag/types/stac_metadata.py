@@ -20,6 +20,7 @@
 import datetime as dt
 import logging
 from collections.abc import Callable
+from functools import cache
 from typing import Annotated, Any, ClassVar, Type, TypeVar, cast
 
 from pydantic import (
@@ -343,6 +344,12 @@ def create_stac_metadata_model(
         model.model_fields.pop(key)
 
     return model
+
+
+@cache
+def get_default_stac_metadata_model() -> type[BaseModel]:
+    """Return the cached model for the default STAC metadata extensions."""
+    return create_stac_metadata_model()
 
 
 def _get_conformance_classes(self) -> list[str]:
