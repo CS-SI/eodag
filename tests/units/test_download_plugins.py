@@ -364,7 +364,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             fs_path, _ = plugin._prepare_download(self.product, output_dir=output_dir)
 
         self.assertEqual(os.path.basename(fs_path), sanitize(raw))
-        windows_temp = "C:\\Users\\aaiche\\AppData\\Local\\Temp"
+        windows_temp = "C:\\Users\\johndoe\\AppData\\Local\\Temp"
         self.assertLess(len(os.path.join(windows_temp, os.path.basename(fs_path))), 260)
 
     def test_plugins_download_base_prepare_download_dir_permission(self):
