@@ -38,7 +38,7 @@ from typing_extensions import LiteralString
 
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
-from eodag.types.stac_metadata import create_stac_metadata_model
+from eodag.types.stac_metadata import get_default_stac_metadata_model
 from eodag.utils import STAC_VERSION
 from eodag.utils.exceptions import ValidationError
 from eodag.utils.repr import dict_to_html_table
@@ -360,7 +360,7 @@ class Collection(BaseModel):
             del stac_dict[k]
 
         # add extensions
-        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
+        summaries_model = cast(CommonStacMetadata, get_default_stac_metadata_model())
         summaries_validated = summaries_model.model_construct(
             _fields_set=None, **summaries
         )
