@@ -27,6 +27,7 @@ from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
+from time import sleep
 from typing import TYPE_CHECKING, Any, Iterator, Literal, cast
 from urllib.parse import parse_qs, urlparse
 
@@ -38,6 +39,8 @@ from requests import RequestException
 from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
 from typing_extensions import TypedDict
+from urllib3.exceptions import InvalidHeader
+from urllib3.util import Retry
 from zipstream import ZipStream
 
 from eodag.api.product.metadata_mapping import (
@@ -55,6 +58,8 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
+    REQ_RETRY_BACKOFF_FACTOR,
+    REQ_RETRY_TOTAL,
     USER_AGENT,
     ProgressCallback,
     StreamResponse,
@@ -129,6 +134,11 @@ class HTTPDownload(Download):
           default: ``False``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): number of retries for HTTP 429 responses;
+          default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): factor for exponential fallback delays
+          after the initial ``0.5`` second wait; default: ``2``. A valid ``Retry-After`` response header takes
+          precedence; fallback delays are capped by urllib3.
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
@@ -1047,62 +1057,104 @@ class HTTPDownload(Download):
             auth = None
 
         s = requests.Session()
-        try:
-            product._stream = s.request(
-                req_method,
-                req_url,
-                stream=True,
-                auth=auth,
-                params=params,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                verify=ssl_verify,
-                **req_kwargs,
-            )
-        except requests.exceptions.MissingSchema:
-            # location is not a valid url -> product is not available yet
-            raise NotAvailableError("Product is not available yet") from None
-        try:
-            product._stream.raise_for_status()
-        except requests.exceptions.Timeout as exc:
-            raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
-        except RequestException as e:
-            self._process_exception(e, product, ordered_message)
-            raise DownloadError(
-                f"download of {product.properties['id']} is empty"
-            ) from e
-        else:
-            # check if product was ordered
+        # HTTP 429 can indicate rate limiting or a temporary session cap;
+        # retry before quota handling.
+        retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
+        retry_backoff_factor = getattr(
+            self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+        )
+        retry_strategy = Retry(
+            total=retry_total,
+            backoff_factor=retry_backoff_factor,
+        )
+        retry_backoff_max = getattr(
+            retry_strategy,
+            "backoff_max",
+            getattr(retry_strategy, "BACKOFF_MAX", 120),
+        )
+        retry_tries = retry_total + 1
+        for attempt in range(retry_tries):
+            try:
+                product._stream = s.request(
+                    req_method,
+                    req_url,
+                    stream=True,
+                    auth=auth,
+                    params=params,
+                    headers=USER_AGENT,
+                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
+                    **req_kwargs,
+                )
+            except requests.exceptions.MissingSchema:
+                # location is not a valid url -> product is not available yet
+                raise NotAvailableError("Product is not available yet") from None
+            try:
+                product._stream.raise_for_status()
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(
+                    exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
+                ) from exc
+            except RequestException as e:
+                if e.response is not None and e.response.status_code == 429:
+                    if attempt + 1 == retry_tries:
+                        self._process_exception(e, product, ordered_message)
+                        msg = f"download of product {product.properties.get('id', 'unknown')} failed"
+                        raise DownloadError(msg) from e
+                    retry_after_header = e.response.headers.get("Retry-After")
+                    try:
+                        retry_after = (
+                            retry_strategy.parse_retry_after(retry_after_header)
+                            if retry_after_header is not None
+                            else None
+                        )
+                    except InvalidHeader:
+                        retry_after = None
+                    product._stream.close()
+                    backoff = 0.5 if attempt == 0 else retry_backoff_factor * 2**attempt
+                    sleep(
+                        retry_after
+                        if retry_after is not None
+                        else min(backoff, retry_backoff_max)
+                    )
+                    continue
+                self._process_exception(e, product, ordered_message)
+                msg = f"download of {product.properties.get('id', 'unknown')} is empty"
+                raise DownloadError(msg) from e
+            else:
+                break
 
-            if getattr(
-                product._stream, "status_code", None
-            ) is not None and product._stream.status_code == getattr(
-                self.config, "order_status", {}
-            ).get("ordered", {}).get("http_code"):
-                product.properties["order:status"] = "ORDERED"
-                self._process_exception(None, product, ordered_message)
-            stream_size = self._check_stream_size(product) or None
+        # check if product was ordered
 
-            product.headers = CaseInsensitiveDict(
-                {
-                    k: v
-                    for k, v in product._stream.headers.items()
-                    if k.lower() not in EXCLUDED_RESPONSE_HEADERS
-                }
-            )
-            filename = self._check_product_filename(product)
-            content_type = product.headers.get("Content-Type")
-            guessed_content_type = (
-                guess_file_type(filename) if filename and not content_type else None
-            )
-            if guessed_content_type is not None:
-                product.headers["Content-Type"] = guessed_content_type
+        if getattr(
+            product._stream, "status_code", None
+        ) is not None and product._stream.status_code == getattr(
+            self.config, "order_status", {}
+        ).get("ordered", {}).get("http_code"):
+            product.properties["order:status"] = "ORDERED"
+            self._process_exception(None, product, ordered_message)
+        stream_size = self._check_stream_size(product) or None
 
-            progress_callback.reset(total=stream_size)
-            product.size = stream_size
+        product.headers = CaseInsensitiveDict(
+            {
+                k: v
+                for k, v in product._stream.headers.items()
+                if k.lower() not in EXCLUDED_RESPONSE_HEADERS
+            }
+        )
+        filename = self._check_product_filename(product)
+        content_type = product.headers.get("Content-Type")
+        guessed_content_type = (
+            guess_file_type(filename) if filename and not content_type else None
+        )
+        if guessed_content_type is not None:
+            product.headers["Content-Type"] = guessed_content_type
 
-            product.filename = filename
-            return product._stream.iter_content(chunk_size=64 * 1024)
+        progress_callback.reset(total=stream_size)
+        product.size = stream_size
+
+        product.filename = filename
+        return product._stream.iter_content(chunk_size=64 * 1024)
 
     def _raw_stream_download_assets(
         self,
