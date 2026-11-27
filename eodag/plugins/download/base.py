@@ -228,7 +228,7 @@ class Download(PluginTopic):
 
         prefix = os.path.abspath(output_dir)
         sanitized_title = sanitize(product.properties["title"])
-        sanitized_id = sanitize(product.properties["id"])
+        sanitized_id = sanitize(str(product.properties["id"]))
         # Skip the id suffix when the title is already safe, or when sanitizing
         # the title yields the id. Hydroweb ids contain "@" and ":", so the
         # suffix used to repeat the directory name past Windows MAX_PATH (#1881).
