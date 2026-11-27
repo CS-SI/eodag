@@ -2519,16 +2519,15 @@ class TestCore(TestCoreBase):
                 self.assertIsInstance(url_auth_plugins[0], AwsAuth)
                 self.assertEqual(url_auth_plugins[0].provider, provider)
 
-                with mock.patch.dict(
-                    auth_plugin.config.credentials,
-                    {
-                        "aws_access_key_id": "dummy_access_key",
-                        "aws_secret_access_key": "dummy_secret_key",
-                    },
-                ):
+                with mock.patch.object(
+                    auth_plugin,
+                    "authenticate",
+                    return_value=mock.sentinel.s3_resource,
+                ) as mock_authenticate:
                     queryables = self.dag.list_queryables(
                         collection="S1_SAR_GRD", provider=provider
                     )
+                mock_authenticate.assert_called_once_with()
                 self.assertIsInstance(queryables, QueryablesDict)
                 self.assertIn("collection", queryables)
 
