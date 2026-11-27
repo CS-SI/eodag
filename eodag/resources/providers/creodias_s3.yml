@@ -255,6 +255,8 @@ creodias_s3:
     s3_endpoint: 'https://eodata.cloudferro.com'
     support_presign_url: False
     matching_url: 's3://eodata'
+    matching_conf:
+      s3_endpoint: 'https://eodata.cloudferro.com'
   products:
       # S1
     S1_AUX_GNSSRD:

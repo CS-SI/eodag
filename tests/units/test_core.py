@@ -2493,6 +2493,50 @@ class TestCore(TestCoreBase):
             str(cm.output),
         )
 
+    def test_list_queryables_s3_providers_use_own_auth_plugin(self):
+        """creodias_s3 and cop_dataspace_s3 must attach their own AwsAuth plugin."""
+        from eodag.plugins.authentication.aws_auth import AwsAuth
+
+        for provider in ("creodias_s3", "cop_dataspace_s3"):
+            with self.subTest(provider=provider):
+                search_plugin = next(
+                    self.dag._plugins_manager.get_search_plugins(
+                        collection="S1_SAR_GRD", provider=provider
+                    )
+                )
+                auth_plugin = self.dag._plugins_manager.get_auth_plugin(search_plugin)
+                self.assertIsInstance(auth_plugin, AwsAuth)
+                assert auth_plugin is not None
+                self.assertEqual(auth_plugin.provider, provider)
+
+                # s3://eodata URL matching without matching_conf must still work
+                url_auth_plugins = list(
+                    self.dag._plugins_manager.get_auth_plugins(
+                        provider, matching_url="s3://eodata/path/to/asset"
+                    )
+                )
+                self.assertGreaterEqual(len(url_auth_plugins), 1)
+                self.assertIsInstance(url_auth_plugins[0], AwsAuth)
+                self.assertEqual(url_auth_plugins[0].provider, provider)
+
+                with mock.patch.object(
+                    auth_plugin,
+                    "authenticate",
+                    return_value=mock.sentinel.s3_resource,
+                ) as mock_authenticate:
+                    queryables = self.dag.list_queryables(
+                        collection="S1_SAR_GRD", provider=provider
+                    )
+                mock_authenticate.assert_called_once_with()
+                self.assertIsInstance(queryables, QueryablesDict)
+                self.assertIn("collection", queryables)
+
+        # Distinct S3 endpoints must not share credentials with each other
+        creodias_s3_auth = self.dag._providers["creodias_s3"].config.auth
+        cop_dataspace_s3_auth = self.dag._providers["cop_dataspace_s3"].config.auth
+        self.assertFalse(creodias_s3_auth.matches_target_auth(cop_dataspace_s3_auth))
+        self.assertFalse(cop_dataspace_s3_auth.matches_target_auth(creodias_s3_auth))
+
     def test_queryables_repr(self):
         """The HTML representation of queryables must be correct."""
         queryables = self.dag.list_queryables(

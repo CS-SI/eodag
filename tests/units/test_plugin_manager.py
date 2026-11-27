@@ -75,6 +75,44 @@ class TestPluginManager(unittest.TestCase):
 
         self.assertEqual([config.name for config in configs], ["high", "low"])
 
+    def test_s3_provider_credentials_are_not_shared_across_endpoints(self):
+        """S3 credentials are only shared by providers with the same endpoint."""
+        endpoints = {
+            "creodias_s3": "https://eodata.cloudferro.com",
+            "cop_dataspace_s3": "https://eodata.dataspace.copernicus.eu",
+        }
+
+        for source_provider, target_provider in (
+            ("creodias_s3", "cop_dataspace_s3"),
+            ("cop_dataspace_s3", "creodias_s3"),
+        ):
+            with self.subTest(source_provider=source_provider):
+                configs = {
+                    provider: {
+                        "auth": {
+                            "type": "AwsAuth",
+                            "s3_endpoint": endpoint,
+                            "matching_url": "s3://eodata",
+                            "matching_conf": {"s3_endpoint": endpoint},
+                        }
+                    }
+                    for provider, endpoint in endpoints.items()
+                }
+                credentials = {
+                    "aws_access_key_id": "test-access-key",
+                    "aws_secret_access_key": "test-secret-key",
+                }
+                configs[source_provider]["auth"]["credentials"] = credentials
+
+                providers = ProvidersDict.from_configs(configs)
+
+                self.assertEqual(
+                    providers[source_provider].config.auth.credentials, credentials
+                )
+                self.assertFalse(
+                    getattr(providers[target_provider].config.auth, "credentials", {})
+                )
+
     def test_get_skipped_plugin_messages(self):
         """Skipped plugin messages are returned for configured plugin types."""
         provider_config = self.providers["low"].config
