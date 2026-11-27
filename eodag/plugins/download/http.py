@@ -134,6 +134,11 @@ class HTTPDownload(Download):
           default: ``False``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): number of retries for HTTP 429 responses
+          indicating a session limit; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): factor for exponential fallback delays
+          after the initial ``0.5`` second wait; default: ``2``. A valid ``Retry-After`` response header takes
+          precedence; fallback delays are capped by urllib3.
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
