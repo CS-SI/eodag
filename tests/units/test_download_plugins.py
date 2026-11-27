@@ -629,7 +629,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @responses.activate
     def test_plugins_download_http_session_limit_retries_exhausted(self):
-        """Exhausting session-limit retries raises a download error."""
+        """Exhausted HTTP 429 retries retain quota error classification."""
         download_url = "https://zipper.creodias.eu/odata/v1/Products(test)/$value"
         session_limit_response = {
             "code": "DAT-ZIP-100",
@@ -652,10 +652,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
         with mock.patch("eodag.plugins.download.http.sleep") as sleep_mock:
-            with self.assertRaisesRegex(
-                DownloadError,
-                "session limit exceeded for product unknown",
-            ):
+            with self.assertRaises(QuotaExceededError):
                 product.downloader._raw_stream_download(product)
 
         self.assertEqual(len(responses.calls), 4)
@@ -691,7 +688,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         product.downloader.config.retry_backoff_factor = 1
 
         with mock.patch("eodag.plugins.download.http.sleep") as sleep_mock:
-            with self.assertRaisesRegex(DownloadError, "session limit exceeded"):
+            with self.assertRaises(QuotaExceededError):
                 product.downloader._raw_stream_download(product)
 
         # Assert three total requests and the fixed 0.5s first wait plus 2s backoff.
@@ -699,15 +696,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual([call.args[0] for call in sleep_mock.call_args_list], [0.5, 2])
 
     @responses.activate
-    def test_plugins_download_http_unrelated_429_is_not_retried(self):
-        """A 429 unrelated to the session cap remains a quota error."""
+    def test_plugins_download_http_unrelated_429_retries_then_raises_quota_error(self):
+        """An unrelated HTTP 429 is retried and ultimately remains a quota error."""
         download_url = "https://zipper.creodias.eu/odata/v1/Products(test)/$value"
-        responses.add(
-            responses.GET,
-            download_url,
-            json={"message": "Quota exceeded"},
-            status=429,
-        )
+        for _ in range(4):
+            responses.add(
+                responses.GET,
+                download_url,
+                json={"message": "Quota exceeded"},
+                status=429,
+            )
         product = self._dummy_downloadable_product(
             "creodias",
             {
@@ -724,8 +722,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             with self.assertRaises(QuotaExceededError):
                 product.download(wait=0, timeout=1)
 
-        self.assertEqual(len(responses.calls), 1)
-        sleep_mock.assert_not_called()
+        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(
+            [call.args[0] for call in sleep_mock.call_args_list], [0.5, 4, 8]
+        )
 
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True

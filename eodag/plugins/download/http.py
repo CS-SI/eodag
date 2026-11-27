@@ -134,8 +134,8 @@ class HTTPDownload(Download):
           default: ``False``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
-        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): number of retries for HTTP 429 responses
-          indicating a session limit; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): number of retries for HTTP 429 responses;
+          default: ``3``
         * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): factor for exponential fallback delays
           after the initial ``0.5`` second wait; default: ``2``. A valid ``Retry-After`` response header takes
           precedence; fallback delays are capped by urllib3.
@@ -1057,8 +1057,8 @@ class HTTPDownload(Download):
             auth = None
 
         s = requests.Session()
-        # Some servers return 429 "Max session number exceeded" when downloads
-        # open sessions back to back. Treat this as a temporary cap and retry.
+        # HTTP 429 can indicate rate limiting or a temporary session cap;
+        # retry before quota handling.
         retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
         retry_backoff_factor = getattr(
             self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
@@ -1072,8 +1072,8 @@ class HTTPDownload(Download):
             "backoff_max",
             getattr(retry_strategy, "BACKOFF_MAX", 120),
         )
-        session_limit_tries = retry_total + 1
-        for attempt in range(session_limit_tries):
+        retry_tries = retry_total + 1
+        for attempt in range(retry_tries):
             try:
                 product._stream = s.request(
                     req_method,
@@ -1096,17 +1096,10 @@ class HTTPDownload(Download):
                     exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
                 ) from exc
             except RequestException as e:
-                response_text = ""
-                if e.response is not None and e.response.text:
-                    response_text = e.response.text
-                if (
-                    e.response is not None
-                    and e.response.status_code == 429
-                    and "max session number" in response_text.lower()
-                ):
-                    product._stream.close()
-                    if attempt + 1 == session_limit_tries:
-                        msg = f"Download session limit exceeded for product {product.properties.get('id', 'unknown')}"
+                if e.response is not None and e.response.status_code == 429:
+                    if attempt + 1 == retry_tries:
+                        self._process_exception(e, product, ordered_message)
+                        msg = f"download of product {product.properties.get('id', 'unknown')} failed"
                         raise DownloadError(msg) from e
                     retry_after_header = e.response.headers.get("Retry-After")
                     try:
@@ -1117,6 +1110,7 @@ class HTTPDownload(Download):
                         )
                     except InvalidHeader:
                         retry_after = None
+                    product._stream.close()
                     backoff = 0.5 if attempt == 0 else retry_backoff_factor * 2**attempt
                     sleep(
                         retry_after
