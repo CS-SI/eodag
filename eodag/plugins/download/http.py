@@ -23,11 +23,11 @@ import re
 import shutil
 import tarfile
 import zipfile
-from time import sleep
 from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
+from time import sleep
 from typing import TYPE_CHECKING, Any, Iterator, Literal, cast
 from urllib.parse import parse_qs, urlparse
 
@@ -39,6 +39,8 @@ from requests import RequestException
 from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
 from typing_extensions import TypedDict
+from urllib3.exceptions import InvalidHeader
+from urllib3.util import Retry
 from zipstream import ZipStream
 
 from eodag.api.product.metadata_mapping import (
@@ -56,6 +58,8 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
+    REQ_RETRY_BACKOFF_FACTOR,
+    REQ_RETRY_TOTAL,
     USER_AGENT,
     ProgressCallback,
     StreamResponse,
@@ -1048,10 +1052,22 @@ class HTTPDownload(Download):
             auth = None
 
         s = requests.Session()
-        # Creodias zipper answers 429 "Max session number exceeded" when
-        # download_all opens sessions back to back (#2019). That is a short
-        # cap, not a quota, so try again before giving up.
-        session_limit_tries = 4
+        # Some servers return 429 "Max session number exceeded" when downloads
+        # open sessions back to back. Treat this as a temporary cap and retry.
+        retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
+        retry_backoff_factor = getattr(
+            self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+        )
+        retry_strategy = Retry(
+            total=retry_total,
+            backoff_factor=retry_backoff_factor,
+        )
+        retry_backoff_max = getattr(
+            retry_strategy,
+            "backoff_max",
+            getattr(retry_strategy, "BACKOFF_MAX", 120),
+        )
+        session_limit_tries = retry_total + 1
         for attempt in range(session_limit_tries):
             try:
                 product._stream = s.request(
@@ -1082,15 +1098,30 @@ class HTTPDownload(Download):
                     e.response is not None
                     and e.response.status_code == 429
                     and "max session number" in response_text.lower()
-                    and attempt + 1 < session_limit_tries
                 ):
                     product._stream.close()
-                    sleep(0.05 * (attempt + 1))
+                    if attempt + 1 == session_limit_tries:
+                        msg = f"Download session limit exceeded for product {product.properties.get('id', 'unknown')}"
+                        raise DownloadError(msg) from e
+                    retry_after_header = e.response.headers.get("Retry-After")
+                    try:
+                        retry_after = (
+                            retry_strategy.parse_retry_after(retry_after_header)
+                            if retry_after_header is not None
+                            else None
+                        )
+                    except InvalidHeader:
+                        retry_after = None
+                    backoff = 0.5 if attempt == 0 else retry_backoff_factor * 2**attempt
+                    sleep(
+                        retry_after
+                        if retry_after is not None
+                        else min(backoff, retry_backoff_max)
+                    )
                     continue
                 self._process_exception(e, product, ordered_message)
-                raise DownloadError(
-                    f"download of {product.properties['id']} is empty"
-                ) from e
+                msg = f"download of {product.properties.get('id', 'unknown')} is empty"
+                raise DownloadError(msg) from e
             else:
                 break
 

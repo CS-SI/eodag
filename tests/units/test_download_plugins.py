@@ -594,6 +594,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 "message": "Max session number exceeded",
             },
             status=429,
+            headers={"Retry-After": "2"},
         )
         responses.add(
             responses.GET,
@@ -618,11 +619,113 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             },
             collection,
         )
-        path = product.download(wait=0, timeout=1)
+        with mock.patch("eodag.plugins.download.http.sleep") as sleep_mock:
+            path = product.download(wait=0, timeout=1)
 
         self.assertTrue(os.path.isfile(path))
         self.assertTrue(zipfile.is_zipfile(path))
         self.assertEqual(len(responses.calls), 2)
+        sleep_mock.assert_called_once_with(2)
+
+    @responses.activate
+    def test_plugins_download_http_session_limit_retries_exhausted(self):
+        """Exhausting session-limit retries raises a download error."""
+        download_url = "https://zipper.creodias.eu/odata/v1/Products(test)/$value"
+        session_limit_response = {
+            "code": "DAT-ZIP-100",
+            "message": "Max session number exceeded",
+        }
+        for _ in range(4):
+            responses.add(
+                responses.GET, download_url, json=session_limit_response, status=429
+            )
+
+        product = self._dummy_downloadable_product(
+            "creodias",
+            {
+                "geometry": None,
+                "collection": "S2_MSI_L1C",
+                "title": "test",
+                "eodag:download_link": download_url,
+            },
+            "S2_MSI_L1C",
+        )
+
+        with mock.patch("eodag.plugins.download.http.sleep") as sleep_mock:
+            with self.assertRaisesRegex(
+                DownloadError,
+                "session limit exceeded for product unknown",
+            ):
+                product.downloader._raw_stream_download(product)
+
+        self.assertEqual(len(responses.calls), 4)
+        self.assertEqual(
+            [call.args[0] for call in sleep_mock.call_args_list], [0.5, 4, 8]
+        )
+
+    @responses.activate
+    def test_plugins_download_http_session_limit_uses_retry_config(self):
+        """Session-limit retries honor configured count and backoff values."""
+        download_url = "https://zipper.creodias.eu/odata/v1/Products(test)/$value"
+        session_limit_response = {
+            "code": "DAT-ZIP-100",
+            "message": "Max session number exceeded",
+        }
+        for _ in range(3):
+            responses.add(
+                responses.GET, download_url, json=session_limit_response, status=429
+            )
+
+        product = self._dummy_downloadable_product(
+            "creodias",
+            {
+                "geometry": None,
+                "collection": "S2_MSI_L1C",
+                "title": "test",
+                "eodag:download_link": download_url,
+            },
+            "S2_MSI_L1C",
+        )
+        # Two retries add to the initial request; factor 1 gives a 2s second wait.
+        product.downloader.config.retry_total = 2
+        product.downloader.config.retry_backoff_factor = 1
+
+        with mock.patch("eodag.plugins.download.http.sleep") as sleep_mock:
+            with self.assertRaisesRegex(DownloadError, "session limit exceeded"):
+                product.downloader._raw_stream_download(product)
+
+        # Assert three total requests and the fixed 0.5s first wait plus 2s backoff.
+        self.assertEqual(len(responses.calls), 3)
+        self.assertEqual([call.args[0] for call in sleep_mock.call_args_list], [0.5, 2])
+
+    @responses.activate
+    def test_plugins_download_http_unrelated_429_is_not_retried(self):
+        """A 429 unrelated to the session cap remains a quota error."""
+        download_url = "https://zipper.creodias.eu/odata/v1/Products(test)/$value"
+        responses.add(
+            responses.GET,
+            download_url,
+            json={"message": "Quota exceeded"},
+            status=429,
+        )
+        product = self._dummy_downloadable_product(
+            "creodias",
+            {
+                "id": "test",
+                "geometry": None,
+                "collection": "S2_MSI_L1C",
+                "title": "test",
+                "eodag:download_link": download_url,
+            },
+            "S2_MSI_L1C",
+        )
+
+        with mock.patch("eodag.plugins.download.http.sleep") as sleep_mock:
+            with self.assertRaises(QuotaExceededError):
+                product.download(wait=0, timeout=1)
+
+        self.assertEqual(len(responses.calls), 1)
+        sleep_mock.assert_not_called()
 
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True
